@@ -73,13 +73,13 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 
 ## Current focus
 **Step 1 — Project initialization**
-- [ ] Spring Initializr setup (Web, JPA, Security, Validation, Flyway, PostgreSQL, Lombok)
-- [ ] Manually add MapStruct + Springdoc OpenAPI to pom.xml
-- [ ] Create empty package structure
-- [ ] Git init + .gitignore + README
+- [x] Spring Initializr setup (Web, JPA, Security, Validation, Flyway, PostgreSQL, Lombok)
+- [x] Manually add MapStruct + Springdoc OpenAPI to pom.xml
+- [x] Create empty package structure
+- [x] Git init + .gitignore + README
 
 **Step 2 — Local infrastructure**
-- [ ] docker-compose.yml with PostgreSQL
-- [ ] application.yml with dev/prod profiles
-- [ ] First empty Flyway migration
-- [ ] Verify DB connection
+- [x] docker-compose.yml with PostgreSQL
+- [x] application.yml with dev/prod profiles
+- [x] First empty Flyway migration
+- [x] Verify DB connection
