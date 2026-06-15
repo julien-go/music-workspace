@@ -73,11 +73,12 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 
 ## Current focus
 
-**Step 3 — Auth JWT**
+**Step 3 — Auth JWT (Complete)**
 - [x] User entity + Flyway migration
 - [x] Register / login endpoints (public)
 - [x] JWT generation and validation
 - [x] Spring Security filter
 - [x] DTOs + MapStruct
+- [x] GET /api/v1/auth/me (protected)
 - [x] Unit tests (service) + integration tests (endpoints)
   On travaille sur la branche feature/auth. Crée-la depuis develop si elle n'existe pas
