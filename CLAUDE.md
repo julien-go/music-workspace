@@ -72,14 +72,12 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 - No Co-Authored-By in commit messages
 
 ## Current focus
-**Step 1 — Project initialization**
-- [x] Spring Initializr setup (Web, JPA, Security, Validation, Flyway, PostgreSQL, Lombok)
-- [x] Manually add MapStruct + Springdoc OpenAPI to pom.xml
-- [x] Create empty package structure
-- [x] Git init + .gitignore + README
 
-**Step 2 — Local infrastructure**
-- [x] docker-compose.yml with PostgreSQL
-- [x] application.yml with dev/prod profiles
-- [x] First empty Flyway migration
-- [x] Verify DB connection
+**Step 3 — Auth JWT**
+- [x] User entity + Flyway migration
+- [x] Register / login endpoints (public)
+- [x] JWT generation and validation
+- [x] Spring Security filter
+- [x] DTOs + MapStruct
+- [x] Unit tests (service) + integration tests (endpoints)
+  On travaille sur la branche feature/auth. Crée-la depuis develop si elle n'existe pas
