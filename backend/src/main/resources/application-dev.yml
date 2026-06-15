@@ -10,6 +10,10 @@ spring:
   flyway:
     enabled: true
 
+jwt:
+  # Dev-only signing key, not used in production (see application-prod.yml)
+  secret: ${JWT_SECRET:8lWx1XGsfQp6tkHDUAl9/CEUOYkXhvcFDEAfUF2Uvv8=}
+
 logging:
   level:
     org.hibernate.SQL: debug
