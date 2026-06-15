@@ -12,19 +12,27 @@ import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserMapper;
+import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.exception.UsernameAlreadyExistsException;
 import com.musicworkspace.backend.repository.UserRepository;
 import com.musicworkspace.backend.security.JwtService;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +52,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private Authentication authentication;
 
     @InjectMocks
     private AuthService authService;
@@ -121,5 +132,64 @@ class AuthServiceTest {
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(jwtService, never()).generateToken(anyString());
+    }
+
+    @Test
+    void register_mapsEmailUniqueConstraintViolationToEmailAlreadyExists() {
+        User mappedUser = User.builder()
+                .email(registerRequest.email())
+                .username(registerRequest.username())
+                .build();
+
+        when(userRepository.existsByEmail(registerRequest.email())).thenReturn(false);
+        when(userRepository.existsByUsername(registerRequest.username())).thenReturn(false);
+        when(userMapper.toEntity(registerRequest)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(registerRequest.password())).thenReturn("hashed-password");
+        when(userRepository.save(mappedUser)).thenThrow(constraintViolation("users_email_key"));
+
+        assertThatThrownBy(() -> authService.register(registerRequest))
+                .isInstanceOf(EmailAlreadyExistsException.class);
+    }
+
+    @Test
+    void register_mapsUsernameUniqueConstraintViolationToUsernameAlreadyExists() {
+        User mappedUser = User.builder()
+                .email(registerRequest.email())
+                .username(registerRequest.username())
+                .build();
+
+        when(userRepository.existsByEmail(registerRequest.email())).thenReturn(false);
+        when(userRepository.existsByUsername(registerRequest.username())).thenReturn(false);
+        when(userMapper.toEntity(registerRequest)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(registerRequest.password())).thenReturn("hashed-password");
+        when(userRepository.save(mappedUser)).thenThrow(constraintViolation("users_username_key"));
+
+        assertThatThrownBy(() -> authService.register(registerRequest))
+                .isInstanceOf(UsernameAlreadyExistsException.class);
+    }
+
+    @Test
+    void getCurrentUser_returnsMappedUserResponse() {
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email(registerRequest.email())
+                .username(registerRequest.username())
+                .createdAt(Instant.now())
+                .build();
+        UserResponse expectedResponse = new UserResponse(user.getId(), user.getEmail(), user.getUsername(), user.getCreatedAt());
+
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userMapper.toResponse(user)).thenReturn(expectedResponse);
+
+        UserResponse response = authService.getCurrentUser(authentication);
+
+        assertThat(response).isEqualTo(expectedResponse);
+    }
+
+    private static DataIntegrityViolationException constraintViolation(String constraintName) {
+        return new DataIntegrityViolationException("could not execute statement",
+                new ConstraintViolationException("duplicate key value violates unique constraint",
+                        new SQLException("duplicate key value"), constraintName));
     }
 }

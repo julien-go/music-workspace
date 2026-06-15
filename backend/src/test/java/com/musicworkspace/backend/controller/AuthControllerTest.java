@@ -2,6 +2,7 @@ package com.musicworkspace.backend.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,9 +11,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
+import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.security.JwtService;
 import com.musicworkspace.backend.service.AuthService;
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -122,5 +126,16 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void me_returnsCurrentUserProfile() throws Exception {
+        UserResponse response = new UserResponse(UUID.randomUUID(), "test@example.com", "testuser", Instant.now());
+        when(authService.getCurrentUser(any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.username").value("testuser"));
     }
 }
