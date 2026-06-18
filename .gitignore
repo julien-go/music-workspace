@@ -10,3 +10,6 @@ Thumbs.db
 ### Environment ###
 .env
 .env.local
+
+### Local config (contains secrets) ###
+backend/src/main/resources/application-dev.yml
