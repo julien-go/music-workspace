@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(TrackNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTrackNotFound(TrackNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(TrackAlreadyArchivedException.class)
+    public ResponseEntity<ErrorResponse> handleTrackAlreadyArchived(TrackAlreadyArchivedException ex) {
+        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
+    }
+
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required", List.of());
