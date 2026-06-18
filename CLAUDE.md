@@ -77,11 +77,10 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 
 ## Current focus
 
-**Step 4 — Projects **
 
-- [ ] Entité Project liée à User
-- [ ] CRUD complet
-- [ ] Securisation : seul le créateur peut modifier / supprimer
-- [ ] Upload cover image (Cloudinary)
+** Step 5 — Tracks **
+- [ ] Entité Track liée à Project
+- [ ] CRUD + archivage
+- [ ] Sécurisation par projet
 - [ ] DTOs + MapStruct + tests
-  On travaille sur la branche feature/auth. Crée-la depuis develop si elle n'existe pas
+  On travaille sur la branche feature/tracks. Crée-la depuis develop si elle n'existe pas
