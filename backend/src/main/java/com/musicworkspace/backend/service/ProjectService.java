@@ -11,6 +11,7 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.CloudinaryUploadException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,9 @@ public class ProjectService {
     private final ProjectMapper projectMapper;
     private final UserRepository userRepository;
     private final Cloudinary cloudinary;
+
+    @Value("${cloudinary.folder.cover}")
+    private String coverFolder;
 
     @Transactional
     public ProjectResponse create(CreateProjectRequest request, String email) {
@@ -93,15 +98,15 @@ public class ProjectService {
             Map<String, Object> result = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", "music-workspace/covers",
-                            "public_id", "project-cover-" + id,
+                            "folder", String.format(coverFolder, id),
+                            "public_id", "cover",
                             "overwrite", true,
                             "resource_type", "image"
                     )
             );
             project.setCoverUrl((String) result.get("secure_url"));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload cover image", e);
+            throw new CloudinaryUploadException("Failed to upload cover image", e);
         }
 
         return projectMapper.toResponse(project);
