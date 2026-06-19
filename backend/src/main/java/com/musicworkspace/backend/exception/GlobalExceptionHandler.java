@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestControllerAdvice
@@ -47,6 +48,22 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(TrackVersionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTrackVersionNotFound(TrackVersionNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(VersionConflictException.class)
+    public ResponseEntity<ErrorResponse> handleVersionConflict(VersionConflictException ex) {
+        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(CloudinaryUploadException.class)
+    public ResponseEntity<ErrorResponse> handleCloudinaryUpload(CloudinaryUploadException ex) {
+        log.error("Cloudinary upload failed", ex);
+        return buildResponse(HttpStatus.BAD_GATEWAY, "BAD_GATEWAY", ex.getMessage(), List.of());
+    }
+
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required", List.of());
@@ -55,6 +72,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Invalid email or password", List.of());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return buildResponse(status, status.name(), ex.getReason(), List.of());
     }
 
     @ExceptionHandler(Exception.class)
