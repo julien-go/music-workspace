@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.web.MockMultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,6 +67,7 @@ class ProjectServiceTest {
     @BeforeEach
     void setUp() {
         mockUploader = org.mockito.Mockito.mock(Uploader.class);
+        ReflectionTestUtils.setField(projectService, "coverFolder", "music-workspace/projects/%s/cover");
         owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
