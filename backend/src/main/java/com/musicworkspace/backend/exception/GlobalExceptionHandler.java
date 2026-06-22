@@ -15,13 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
-        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
     }
 
@@ -38,24 +33,9 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
     }
 
-    @ExceptionHandler(TrackAlreadyArchivedException.class)
-    public ResponseEntity<ErrorResponse> handleTrackAlreadyArchived(TrackAlreadyArchivedException ex) {
-        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(MemberAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleMemberAlreadyExists(MemberAlreadyExistsException ex) {
-        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
-    }
-
     @ExceptionHandler(OwnerRoleException.class)
     public ResponseEntity<ErrorResponse> handleOwnerRole(OwnerRoleException ex) {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(VersionConflictException.class)
-    public ResponseEntity<ErrorResponse> handleVersionConflict(VersionConflictException ex) {
-        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
     }
 
     @ExceptionHandler(CloudinaryUploadException.class)

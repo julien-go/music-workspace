@@ -1,6 +1,6 @@
 package com.musicworkspace.backend.controller;
 
-import com.musicworkspace.backend.dto.AddMemberRequest;
+import com.musicworkspace.backend.dto.CreateMemberRequest;
 import com.musicworkspace.backend.dto.ProjectMemberResponse;
 import com.musicworkspace.backend.dto.UpdateMemberRoleRequest;
 import com.musicworkspace.backend.service.ProjectMemberService;
@@ -30,7 +30,7 @@ public class ProjectMemberController {
     @PostMapping
     public ResponseEntity<ProjectMemberResponse> addMember(
             @PathVariable UUID projectId,
-            @Valid @RequestBody AddMemberRequest request,
+            @Valid @RequestBody CreateMemberRequest request,
             Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(projectMemberService.addMember(projectId, request, authentication.getName()));

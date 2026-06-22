@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.musicworkspace.backend.dto.AddMemberRequest;
+import com.musicworkspace.backend.dto.CreateMemberRequest;
 import com.musicworkspace.backend.dto.ProjectMemberResponse;
 import com.musicworkspace.backend.dto.UpdateMemberRoleRequest;
 import com.musicworkspace.backend.dto.UserSummary;
@@ -69,7 +69,7 @@ class ProjectMemberControllerTest {
 
     @Test
     void addMember_returns201() throws Exception {
-        AddMemberRequest request = new AddMemberRequest(UUID.randomUUID(), ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest(UUID.randomUUID(), ProjectRole.COLLABORATOR);
         when(projectMemberService.addMember(eq(projectId), any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/projects/{projectId}/members", projectId)
@@ -82,7 +82,7 @@ class ProjectMemberControllerTest {
 
     @Test
     void addMember_returns403WhenOwnerRole() throws Exception {
-        AddMemberRequest request = new AddMemberRequest(UUID.randomUUID(), ProjectRole.OWNER);
+        CreateMemberRequest request = new CreateMemberRequest(UUID.randomUUID(), ProjectRole.OWNER);
         when(projectMemberService.addMember(eq(projectId), any(), any()))
                 .thenThrow(new OwnerRoleException("Cannot assign OWNER role"));
 

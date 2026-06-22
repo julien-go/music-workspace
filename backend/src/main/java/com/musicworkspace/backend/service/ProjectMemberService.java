@@ -1,9 +1,10 @@
 package com.musicworkspace.backend.service;
 
-import com.musicworkspace.backend.dto.AddMemberRequest;
+import com.musicworkspace.backend.dto.CreateMemberRequest;
 import com.musicworkspace.backend.dto.ProjectMemberMapper;
 import com.musicworkspace.backend.dto.ProjectMemberResponse;
 import com.musicworkspace.backend.dto.UpdateMemberRoleRequest;
+import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
@@ -29,13 +30,11 @@ public class ProjectMemberService {
     private final ProjectMemberMapper projectMemberMapper;
 
     @Transactional
-    public ProjectMemberResponse addMember(UUID projectId, AddMemberRequest request, String email) {
+    public ProjectMemberResponse addMember(UUID projectId, CreateMemberRequest request, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        Project project = projectAccessService.resolveOwnedProject(projectId, owner.getId());
 
-        if (request.role() == ProjectRole.OWNER) {
-            throw new OwnerRoleException("Cannot assign OWNER role");
-        }
+        rejectOwnerRole(request.role());
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, request.userId())) {
             throw new MemberAlreadyExistsException("User is already a member of this project");
@@ -45,7 +44,7 @@ public class ProjectMemberService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         ProjectMember member = ProjectMember.builder()
-                .project(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .project(project)
                 .user(newMember)
                 .role(request.role())
                 .build();
@@ -56,8 +55,16 @@ public class ProjectMemberService {
     @Transactional(readOnly = true)
     public List<ProjectMemberResponse> findAll(UUID projectId, String email) {
         User user = projectAccessService.resolveUser(email);
-        resolveProjectMember(projectId, user.getId());
-        return projectMemberRepository.findByProjectId(projectId).stream()
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+
+        boolean isMember = members.stream()
+                .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+
+        if (!isMember) {
+            throw new MemberNotFoundException("Project not found");
+        }
+
+        return members.stream()
                 .map(projectMemberMapper::toResponse)
                 .toList();
     }
@@ -67,9 +74,7 @@ public class ProjectMemberService {
         User owner = projectAccessService.resolveUser(email);
         projectAccessService.resolveOwnedProject(projectId, owner.getId());
 
-        if (request.role() == ProjectRole.OWNER) {
-            throw new OwnerRoleException("Cannot assign OWNER role");
-        }
+        rejectOwnerRole(request.role());
 
         ProjectMember member = resolveMember(memberId, projectId);
 
@@ -78,7 +83,7 @@ public class ProjectMemberService {
         }
 
         member.setRole(request.role());
-        return projectMemberMapper.toResponse(member);
+        return projectMemberMapper.toResponse(projectMemberRepository.save(member));
     }
 
     @Transactional
@@ -100,9 +105,9 @@ public class ProjectMemberService {
                 .orElseThrow(() -> new MemberNotFoundException("Member not found"));
     }
 
-    private void resolveProjectMember(UUID projectId, UUID userId) {
-        if (!projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
-            throw new MemberNotFoundException("Project not found");
+    private void rejectOwnerRole(ProjectRole role) {
+        if (role == ProjectRole.OWNER) {
+            throw new OwnerRoleException("Cannot assign OWNER role");
         }
     }
 }

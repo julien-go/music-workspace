@@ -14,6 +14,7 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
 
     Optional<ProjectMember> findByProjectIdAndUserId(UUID projectId, UUID userId);
 
+    @EntityGraph(attributePaths = {"user"})
     Optional<ProjectMember> findByIdAndProjectId(UUID id, UUID projectId);
 
     boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);

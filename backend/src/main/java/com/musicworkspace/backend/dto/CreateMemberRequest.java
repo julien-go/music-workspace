@@ -4,7 +4,7 @@ import com.musicworkspace.backend.entity.ProjectRole;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
-public record AddMemberRequest(
+public record CreateMemberRequest(
         @NotNull UUID userId,
         @NotNull ProjectRole role
 ) {

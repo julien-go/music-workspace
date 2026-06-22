@@ -7,7 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.musicworkspace.backend.dto.AddMemberRequest;
+import com.musicworkspace.backend.dto.CreateMemberRequest;
 import com.musicworkspace.backend.dto.ProjectMemberMapper;
 import com.musicworkspace.backend.dto.ProjectMemberResponse;
 import com.musicworkspace.backend.dto.UpdateMemberRoleRequest;
@@ -78,7 +78,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_savesAndReturnsMember() {
-        AddMemberRequest request = new AddMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
 
         when(projectAccessService.resolveUser(OWNER_EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
@@ -98,7 +98,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_throwsWhenRoleIsOwner() {
-        AddMemberRequest request = new AddMemberRequest(collaborator.getId(), ProjectRole.OWNER);
+        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.OWNER);
 
         when(projectAccessService.resolveUser(OWNER_EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
@@ -111,7 +111,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_throwsWhenUserAlreadyMember() {
-        AddMemberRequest request = new AddMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
 
         when(projectAccessService.resolveUser(OWNER_EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
@@ -124,7 +124,7 @@ class ProjectMemberServiceTest {
     @Test
     void addMember_throwsWhenUserNotFound() {
         UUID fakeUserId = UUID.randomUUID();
-        AddMemberRequest request = new AddMemberRequest(fakeUserId, ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest(fakeUserId, ProjectRole.COLLABORATOR);
 
         when(projectAccessService.resolveUser(OWNER_EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
@@ -138,18 +138,21 @@ class ProjectMemberServiceTest {
     @Test
     void findAll_returnsAllMembersForProjectMember() {
         User member = User.builder().id(UUID.randomUUID()).email(MEMBER_EMAIL).username("member").build();
+        ProjectMember memberEntry = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(member).role(ProjectRole.COLLABORATOR).build();
 
         when(projectAccessService.resolveUser(MEMBER_EMAIL)).thenReturn(member);
-        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, member.getId())).thenReturn(true);
-        when(projectMemberRepository.findByProjectId(projectId)).thenReturn(List.of(ownerMember, collabMember));
+        when(projectMemberRepository.findByProjectId(projectId)).thenReturn(List.of(ownerMember, memberEntry, collabMember));
         when(projectMemberMapper.toResponse(ownerMember)).thenReturn(
                 new ProjectMemberResponse(ownerMember.getId(), new UserSummary(owner.getId(), "owner"),
                         ProjectRole.OWNER, Instant.now()));
+        when(projectMemberMapper.toResponse(memberEntry)).thenReturn(
+                new ProjectMemberResponse(memberEntry.getId(), new UserSummary(member.getId(), "member"),
+                        ProjectRole.COLLABORATOR, Instant.now()));
         when(projectMemberMapper.toResponse(collabMember)).thenReturn(collabResponse);
 
         List<ProjectMemberResponse> result = projectMemberService.findAll(projectId, MEMBER_EMAIL);
 
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(3);
     }
 
     @Test
@@ -157,7 +160,7 @@ class ProjectMemberServiceTest {
         User stranger = User.builder().id(UUID.randomUUID()).email("stranger@example.com").username("stranger").build();
 
         when(projectAccessService.resolveUser("stranger@example.com")).thenReturn(stranger);
-        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, stranger.getId())).thenReturn(false);
+        when(projectMemberRepository.findByProjectId(projectId)).thenReturn(List.of(ownerMember, collabMember));
 
         assertThatThrownBy(() -> projectMemberService.findAll(projectId, "stranger@example.com"))
                 .isInstanceOf(MemberNotFoundException.class);
@@ -170,11 +173,13 @@ class ProjectMemberServiceTest {
         when(projectAccessService.resolveUser(OWNER_EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(collabMember));
+        when(projectMemberRepository.save(collabMember)).thenReturn(collabMember);
         when(projectMemberMapper.toResponse(collabMember)).thenReturn(collabResponse);
 
         projectMemberService.updateRole(projectId, memberId, request, OWNER_EMAIL);
 
         assertThat(collabMember.getRole()).isEqualTo(ProjectRole.VIEWER);
+        verify(projectMemberRepository).save(collabMember);
     }
 
     @Test
