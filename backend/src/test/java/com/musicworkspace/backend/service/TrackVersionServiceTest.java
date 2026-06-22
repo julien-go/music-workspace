@@ -15,6 +15,7 @@ import com.musicworkspace.backend.entity.TrackVersion;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.CloudinaryUploadException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
+import org.springframework.web.server.ResponseStatusException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
 import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
@@ -62,6 +63,10 @@ class TrackVersionServiceTest {
     private TrackVersion version;
     private TrackVersionResponse response;
 
+    private static final byte[] MP3_MAGIC_BYTES = {
+            (byte) 0xFF, (byte) 0xFB, (byte) 0x90, 0x00
+    };
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(trackVersionService, "audioFolder", "music-workspace/projects/%s/tracks/%s/versions");
@@ -77,7 +82,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_uploadsAudioAndSavesVersion() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
@@ -95,7 +100,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_incrementsVersionNumber() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
@@ -116,7 +121,7 @@ class TrackVersionServiceTest {
     @Test
     void create_throwsWhenTrackIsArchived() {
         Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).archived(true).build();
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(archivedTrack);
@@ -127,7 +132,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsWhenProjectNotFound() {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
@@ -139,7 +144,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsWhenTrackNotFound() {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
@@ -151,7 +156,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsVersionConflictOnDuplicateVersionNumber() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
@@ -166,7 +171,7 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsCloudinaryUploadExceptionOnIOError() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", "audio-data".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
@@ -250,5 +255,36 @@ class TrackVersionServiceTest {
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))
                 .isInstanceOf(TrackNotFoundException.class);
+    }
+
+    @Test
+    void create_throwsWhenFileIsEmpty() {
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", new byte[0]);
+
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("File must not be empty");
+    }
+
+    @Test
+    void create_throwsWhenFileExceeds70MB() {
+        byte[] largeContent = new byte[70 * 1024 * 1024 + 1];
+        largeContent[0] = (byte) 0xFF;
+        largeContent[1] = (byte) 0xFB;
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", largeContent);
+
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("File size must not exceed 70MB");
+    }
+
+    @Test
+    void create_throwsWhenFileIsNotAudio() {
+        MockMultipartFile file = new MockMultipartFile("file", "image.png", "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
+
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Only audio files are accepted");
     }
 }
