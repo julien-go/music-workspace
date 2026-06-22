@@ -7,8 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.Uploader;
 import com.musicworkspace.backend.dto.CreateProjectRequest;
 import com.musicworkspace.backend.dto.ProjectMapper;
 import com.musicworkspace.backend.dto.ProjectResponse;
@@ -20,10 +18,8 @@ import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,8 +28,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -48,15 +44,13 @@ class ProjectServiceTest {
     private ProjectMapper projectMapper;
 
     @Mock
-    private UserRepository userRepository;
+    private ProjectAccessService projectAccessService;
 
     @Mock
-    private Cloudinary cloudinary;
+    private CloudinaryService cloudinaryService;
 
     @InjectMocks
     private ProjectService projectService;
-
-    private Uploader mockUploader;
 
     private static final String EMAIL = "test@example.com";
     private User owner;
@@ -66,7 +60,6 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        mockUploader = org.mockito.Mockito.mock(Uploader.class);
         ReflectionTestUtils.setField(projectService, "coverFolder", "music-workspace/projects/%s/cover");
         owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
@@ -80,7 +73,7 @@ class ProjectServiceTest {
         CreateProjectRequest request = new CreateProjectRequest("My Album", null);
         Project mapped = Project.builder().name("My Album").build();
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectMapper.toEntity(request)).thenReturn(mapped);
         when(projectRepository.save(mapped)).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
@@ -94,7 +87,7 @@ class ProjectServiceTest {
 
     @Test
     void findAll_returnsMappedList() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectRepository.findByOwnerId(owner.getId())).thenReturn(List.of(project));
         when(projectMapper.toResponse(project)).thenReturn(response);
 
@@ -105,8 +98,8 @@ class ProjectServiceTest {
 
     @Test
     void findById_returnsProjectWhenOwner() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         ProjectResponse result = projectService.findById(projectId, EMAIL);
@@ -116,8 +109,9 @@ class ProjectServiceTest {
 
     @Test
     void findById_throwsNotFoundWhenNotOwner() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.findById(projectId, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -127,8 +121,8 @@ class ProjectServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         projectService.update(projectId, request, EMAIL);
@@ -141,8 +135,9 @@ class ProjectServiceTest {
     void update_throwsNotFoundWhenNotOwner() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.update(projectId, request, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -150,8 +145,8 @@ class ProjectServiceTest {
 
     @Test
     void delete_deletesWhenOwner() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
 
         projectService.delete(projectId, EMAIL);
 
@@ -160,8 +155,9 @@ class ProjectServiceTest {
 
     @Test
     void delete_throwsNotFoundWhenNotOwner() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.delete(projectId, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -173,11 +169,10 @@ class ProjectServiceTest {
     void uploadCover_uploadsToCloudinaryAndUpdatesCoverUrl() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
 
-        when(cloudinary.uploader()).thenReturn(mockUploader);
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(mockUploader.upload(any(byte[].class), any(Map.class)))
-                .thenReturn(Map.of("secure_url", "https://res.cloudinary.com/cover.jpg"));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
+                .thenReturn("https://res.cloudinary.com/cover.jpg");
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         ProjectResponse result = projectService.uploadCover(projectId, file, EMAIL);
@@ -190,8 +185,9 @@ class ProjectServiceTest {
     void uploadCover_throwsNotFoundWhenNotOwner() {
         MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);

@@ -19,7 +19,6 @@ import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
 import com.musicworkspace.backend.exception.UserNotFoundException;
-import com.musicworkspace.backend.repository.ProjectRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
 import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
@@ -33,7 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
@@ -42,13 +40,13 @@ class TaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
     private UserRepository userRepository;
 
     @Mock
     private TaskMapper taskMapper;
+
+    @Mock
+    private ProjectAccessService projectAccessService;
 
     @InjectMocks
     private TaskService taskService;
@@ -79,8 +77,8 @@ class TaskServiceTest {
     void create_savesTaskWithDefaultStatusTodo() {
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.save(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -102,8 +100,8 @@ class TaskServiceTest {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, assignee.getId());
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
@@ -120,8 +118,8 @@ class TaskServiceTest {
         UUID fakeUserId = UUID.randomUUID();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, fakeUserId);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.create(projectId, request, EMAIL))
@@ -132,8 +130,9 @@ class TaskServiceTest {
     void create_throwsWhenProjectNotFound() {
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.create(projectId, request, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -141,8 +140,8 @@ class TaskServiceTest {
 
     @Test
     void findAll_returnsMappedListForProject() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByProjectId(projectId)).thenReturn(List.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -153,8 +152,9 @@ class TaskServiceTest {
 
     @Test
     void findAll_throwsWhenProjectNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.findAll(projectId, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -162,8 +162,8 @@ class TaskServiceTest {
 
     @Test
     void findById_returnsTask() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -174,8 +174,8 @@ class TaskServiceTest {
 
     @Test
     void findById_throwsWhenTaskNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.findById(projectId, taskId, EMAIL))
@@ -186,8 +186,8 @@ class TaskServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, TaskStatus.DOING, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -203,8 +203,8 @@ class TaskServiceTest {
         task.setDescription("Old description");
         UpdateTaskRequest request = new UpdateTaskRequest(null, JsonNullable.of(null), null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -219,8 +219,8 @@ class TaskServiceTest {
         task.setAssignedTo(assignee);
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(null));
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -234,8 +234,8 @@ class TaskServiceTest {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(assignee.getId()));
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
         when(taskMapper.toResponse(task)).thenReturn(response);
@@ -250,8 +250,8 @@ class TaskServiceTest {
         UUID fakeUserId = UUID.randomUUID();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(fakeUserId));
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
 
@@ -263,8 +263,9 @@ class TaskServiceTest {
     void update_throwsWhenProjectNotFound() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -274,8 +275,8 @@ class TaskServiceTest {
     void update_throwsWhenTaskNotFound() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
@@ -284,8 +285,8 @@ class TaskServiceTest {
 
     @Test
     void delete_removesTask() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
 
         taskService.delete(projectId, taskId, EMAIL);
@@ -295,8 +296,8 @@ class TaskServiceTest {
 
     @Test
     void delete_throwsWhenTaskNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.delete(projectId, taskId, EMAIL))

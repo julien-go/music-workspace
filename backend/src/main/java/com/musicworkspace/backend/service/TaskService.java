@@ -8,17 +8,14 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
-import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
 import com.musicworkspace.backend.exception.UserNotFoundException;
-import com.musicworkspace.backend.repository.ProjectRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
 import com.musicworkspace.backend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional
     public TaskResponse create(UUID projectId, CreateTaskRequest request, String email) {
-        User creator = resolveUser(email);
-        Project project = resolveOwnedProject(projectId, creator.getId());
+        User creator = projectAccessService.resolveUser(email);
+        Project project = projectAccessService.resolveOwnedProject(projectId, creator.getId());
 
         Task task = Task.builder()
                 .title(request.title())
@@ -50,8 +47,8 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll(UUID projectId, String email) {
-        User owner = resolveUser(email);
-        resolveOwnedProject(projectId, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        projectAccessService.resolveOwnedProject(projectId, owner.getId());
         return taskRepository.findByProjectId(projectId).stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -59,15 +56,15 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskResponse findById(UUID projectId, UUID taskId, String email) {
-        User owner = resolveUser(email);
-        resolveOwnedProject(projectId, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        projectAccessService.resolveOwnedProject(projectId, owner.getId());
         return taskMapper.toResponse(resolveTask(taskId, projectId));
     }
 
     @Transactional
     public TaskResponse update(UUID projectId, UUID taskId, UpdateTaskRequest request, String email) {
-        User owner = resolveUser(email);
-        resolveOwnedProject(projectId, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        projectAccessService.resolveOwnedProject(projectId, owner.getId());
         Task task = resolveTask(taskId, projectId);
 
         if (request.title() != null) task.setTitle(request.title());
@@ -87,25 +84,15 @@ public class TaskService {
 
     @Transactional
     public void delete(UUID projectId, UUID taskId, String email) {
-        User owner = resolveUser(email);
-        resolveOwnedProject(projectId, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        projectAccessService.resolveOwnedProject(projectId, owner.getId());
         Task task = resolveTask(taskId, projectId);
         taskRepository.delete(task);
-    }
-
-    private Project resolveOwnedProject(UUID projectId, UUID ownerId) {
-        return projectRepository.findByIdAndOwnerId(projectId, ownerId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
     }
 
     private Task resolveTask(UUID taskId, UUID projectId) {
         return taskRepository.findByIdAndProjectId(taskId, projectId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
-    }
-
-    private User resolveUser(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 
     private User resolveAssignee(UUID userId) {

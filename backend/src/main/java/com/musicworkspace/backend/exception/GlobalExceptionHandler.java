@@ -33,34 +33,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Validation failed", errors);
     }
 
-    @ExceptionHandler(ProjectNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleProjectNotFound(ProjectNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(TrackNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTrackNotFound(TrackNotFoundException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
     }
 
     @ExceptionHandler(TrackAlreadyArchivedException.class)
     public ResponseEntity<ErrorResponse> handleTrackAlreadyArchived(TrackAlreadyArchivedException ex) {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(TrackVersionNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTrackVersionNotFound(TrackVersionNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(TaskNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTaskNotFound(TaskNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
     }
 
     @ExceptionHandler(VersionConflictException.class)
