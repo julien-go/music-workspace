@@ -9,10 +9,17 @@ import com.musicworkspace.backend.entity.User;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class TaskMapperTest {
 
-    private final TaskMapper mapper = Mappers.getMapper(TaskMapper.class);
+    private final TaskMapper mapper = createMapper();
+
+    private static TaskMapper createMapper() {
+        TaskMapper m = Mappers.getMapper(TaskMapper.class);
+        ReflectionTestUtils.setField(m, "userSummaryMapper", Mappers.getMapper(UserSummaryMapper.class));
+        return m;
+    }
 
     @Test
     void toResponse_mapsProjectIdAndUsers() {

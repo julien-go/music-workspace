@@ -31,7 +31,8 @@ public class ProjectAccessService {
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
     }
 
-    public Track resolveTrack(UUID trackId, UUID projectId) {
+    public Track resolveTrack(UUID trackId, UUID projectId, UUID ownerId) {
+        resolveOwnedProject(projectId, ownerId);
         return trackRepository.findByIdAndProjectId(trackId, projectId)
                 .orElseThrow(() -> new TrackNotFoundException("Track not found"));
     }

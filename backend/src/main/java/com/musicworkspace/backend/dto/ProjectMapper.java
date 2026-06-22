@@ -1,11 +1,10 @@
 package com.musicworkspace.backend.dto;
 
 import com.musicworkspace.backend.entity.Project;
-import com.musicworkspace.backend.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = UserSummaryMapper.class)
 public interface ProjectMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -17,6 +16,4 @@ public interface ProjectMapper {
 
     @Mapping(source = "owner", target = "owner")
     ProjectResponse toResponse(Project project);
-
-    UserSummary toUserSummary(User user);
 }

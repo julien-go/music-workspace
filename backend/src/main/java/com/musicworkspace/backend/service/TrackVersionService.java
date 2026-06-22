@@ -33,8 +33,7 @@ public class TrackVersionService {
     @Transactional
     public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, MultipartFile file, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        Track track = projectAccessService.resolveTrack(trackId, projectId);
+        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
 
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Cannot add a version to an archived track");
@@ -60,8 +59,7 @@ public class TrackVersionService {
     @Transactional(readOnly = true)
     public List<TrackVersionResponse> findAll(UUID projectId, UUID trackId, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        projectAccessService.resolveTrack(trackId, projectId);
+        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
         return trackVersionRepository.findByTrackId(trackId).stream()
                 .map(trackVersionMapper::toResponse)
                 .toList();
@@ -70,8 +68,7 @@ public class TrackVersionService {
     @Transactional(readOnly = true)
     public TrackVersionResponse findById(UUID projectId, UUID trackId, UUID versionId, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        projectAccessService.resolveTrack(trackId, projectId);
+        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
         return trackVersionMapper.toResponse(
                 trackVersionRepository.findByIdAndTrackId(versionId, trackId)
                         .orElseThrow(() -> new TrackVersionNotFoundException("Track version not found"))
