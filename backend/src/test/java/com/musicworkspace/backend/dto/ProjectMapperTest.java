@@ -7,10 +7,17 @@ import com.musicworkspace.backend.entity.User;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class ProjectMapperTest {
 
-    private final ProjectMapper mapper = Mappers.getMapper(ProjectMapper.class);
+    private final ProjectMapper mapper = createMapper();
+
+    private static ProjectMapper createMapper() {
+        ProjectMapper m = Mappers.getMapper(ProjectMapper.class);
+        ReflectionTestUtils.setField(m, "userSummaryMapper", Mappers.getMapper(UserSummaryMapper.class));
+        return m;
+    }
 
     @Test
     void toResponse_mapsOwnerToUserSummary() {

@@ -49,15 +49,13 @@ public class TrackService {
     @Transactional(readOnly = true)
     public TrackResponse findById(UUID projectId, UUID trackId, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        return trackMapper.toResponse(projectAccessService.resolveTrack(trackId, projectId));
+        return trackMapper.toResponse(projectAccessService.resolveTrack(trackId, projectId, owner.getId()));
     }
 
     @Transactional
     public TrackResponse update(UUID projectId, UUID trackId, UpdateTrackRequest request, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        Track track = projectAccessService.resolveTrack(trackId, projectId);
+        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
 
         if (request.name() != null) track.setName(request.name());
         if (request.description() != null) track.setDescription(request.description());
@@ -69,8 +67,7 @@ public class TrackService {
     @Transactional
     public TrackResponse archive(UUID projectId, UUID trackId, String email) {
         User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
-        Track track = projectAccessService.resolveTrack(trackId, projectId);
+        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Track is already archived");
         }

@@ -120,8 +120,7 @@ class TrackServiceTest {
     @Test
     void findById_returnsTrack() {
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId)).thenReturn(track);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         TrackResponse result = trackService.findById(projectId, trackId, EMAIL);
@@ -132,8 +131,7 @@ class TrackServiceTest {
     @Test
     void findById_throwsNotFoundWhenTrackNotInProject() {
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId))
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.findById(projectId, trackId, EMAIL))
@@ -145,8 +143,7 @@ class TrackServiceTest {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, TrackStatus.DONE);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId)).thenReturn(track);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.update(projectId, trackId, request, EMAIL);
@@ -161,7 +158,7 @@ class TrackServiceTest {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, null);
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackService.update(projectId, trackId, request, EMAIL))
@@ -171,8 +168,7 @@ class TrackServiceTest {
     @Test
     void archive_setsArchivedTrueAndReturnsResponse() {
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId)).thenReturn(track);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.archive(projectId, trackId, EMAIL);
@@ -183,8 +179,7 @@ class TrackServiceTest {
     @Test
     void archive_throwsNotFoundWhenTrackNotInProject() {
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId))
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
@@ -197,8 +192,7 @@ class TrackServiceTest {
                 .status(TrackStatus.DRAFT).archived(true).build();
 
         when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(projectAccessService.resolveTrack(trackId, projectId)).thenReturn(archivedTrack);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);
