@@ -1,0 +1,51 @@
+package com.musicworkspace.backend.dto;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.User;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+
+class ProjectMapperTest {
+
+    private final ProjectMapper mapper = Mappers.getMapper(ProjectMapper.class);
+
+    @Test
+    void toResponse_mapsOwnerToUserSummary() {
+        User owner = User.builder()
+                .id(UUID.randomUUID())
+                .username("alice")
+                .email("alice@example.com")
+                .build();
+        Project project = Project.builder()
+                .id(UUID.randomUUID())
+                .name("My Album")
+                .description("desc")
+                .coverUrl("https://example.com/cover.jpg")
+                .owner(owner)
+                .build();
+
+        ProjectResponse response = mapper.toResponse(project);
+
+        assertThat(response.id()).isEqualTo(project.getId());
+        assertThat(response.name()).isEqualTo("My Album");
+        assertThat(response.coverUrl()).isEqualTo("https://example.com/cover.jpg");
+        assertThat(response.owner()).isNotNull();
+        assertThat(response.owner().id()).isEqualTo(owner.getId());
+        assertThat(response.owner().username()).isEqualTo("alice");
+    }
+
+    @Test
+    void toResponse_handlesNullOwner() {
+        Project project = Project.builder()
+                .id(UUID.randomUUID())
+                .name("No Owner")
+                .build();
+
+        ProjectResponse response = mapper.toResponse(project);
+
+        assertThat(response.owner()).isNull();
+    }
+}
