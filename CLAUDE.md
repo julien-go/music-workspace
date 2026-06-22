@@ -77,13 +77,8 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 
 ## Current focus
 
-
-
-
-** Step 6 — TrackVersion **
-- [x] Entité TrackVersion liée à Track
-- [x] Upload fichier audio (Cloudinary)
-- [x] Notes texte
-- [x] Endpoint écoute / téléchargement
+** Step 7 — Tasks **
+- [x] Entité Task liée à Project
+- [x] CRUD + statut TODO / DOING / DONE
 - [x] DTOs + MapStruct + tests
-  On travaille sur la branche feature/track-versions. Crée-la depuis develop si elle n'existe pas
+  On travaille sur la branche feature/tasks. Crée-la depuis develop si elle n'existe pas
