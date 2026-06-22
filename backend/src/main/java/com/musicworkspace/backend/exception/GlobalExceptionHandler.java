@@ -53,6 +53,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(TaskNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTaskNotFound(TaskNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), List.of());
+    }
+
     @ExceptionHandler(VersionConflictException.class)
     public ResponseEntity<ErrorResponse> handleVersionConflict(VersionConflictException ex) {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
