@@ -17,12 +17,9 @@ import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
-import com.musicworkspace.backend.repository.ProjectRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,13 +35,10 @@ class TrackServiceTest {
     private TrackRepository trackRepository;
 
     @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
     private TrackMapper trackMapper;
 
     @Mock
-    private UserRepository userRepository;
+    private ProjectAccessService projectAccessService;
 
     @InjectMocks
     private TrackService trackService;
@@ -72,8 +66,8 @@ class TrackServiceTest {
         CreateTrackRequest request = new CreateTrackRequest("Intro", null, null);
         Track mapped = Track.builder().name("Intro").build();
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.save(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
@@ -90,8 +84,8 @@ class TrackServiceTest {
         CreateTrackRequest request = new CreateTrackRequest("Intro", null, TrackStatus.IN_PROGRESS);
         Track mapped = Track.builder().name("Intro").status(TrackStatus.IN_PROGRESS).build();
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.save(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
@@ -103,8 +97,8 @@ class TrackServiceTest {
 
     @Test
     void findAll_returnsMappedListForProjectOwner() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
         when(trackRepository.findByProjectIdAndArchivedFalse(projectId)).thenReturn(List.of(track));
         when(trackMapper.toResponse(track)).thenReturn(response);
 
@@ -115,8 +109,9 @@ class TrackServiceTest {
 
     @Test
     void findAll_throwsNotFoundWhenProjectNotOwned() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackService.findAll(projectId, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -124,9 +119,8 @@ class TrackServiceTest {
 
     @Test
     void findById_returnsTrack() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(track));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         TrackResponse result = trackService.findById(projectId, trackId, EMAIL);
@@ -136,9 +130,9 @@ class TrackServiceTest {
 
     @Test
     void findById_throwsNotFoundWhenTrackNotInProject() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+                .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.findById(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackNotFoundException.class);
@@ -148,9 +142,8 @@ class TrackServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, TrackStatus.DONE);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(track));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.update(projectId, trackId, request, EMAIL);
@@ -164,8 +157,9 @@ class TrackServiceTest {
     void update_throwsNotFoundWhenProjectNotOwned() {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, null);
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackService.update(projectId, trackId, request, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
@@ -173,9 +167,8 @@ class TrackServiceTest {
 
     @Test
     void archive_setsArchivedTrueAndReturnsResponse() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(track));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.archive(projectId, trackId, EMAIL);
@@ -185,9 +178,9 @@ class TrackServiceTest {
 
     @Test
     void archive_throwsNotFoundWhenTrackNotInProject() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.empty());
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+                .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackNotFoundException.class);
@@ -198,9 +191,8 @@ class TrackServiceTest {
         Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro")
                 .status(TrackStatus.DRAFT).archived(true).build();
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner));
-        when(projectRepository.findByIdAndOwnerId(projectId, owner.getId())).thenReturn(Optional.of(project));
-        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(archivedTrack));
+        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);

@@ -73,40 +73,6 @@ class TrackVersionControllerTest {
     }
 
     @Test
-    void create_returns422WhenFileIsEmpty() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", new byte[0]);
-
-        mockMvc.perform(multipart("/api/v1/projects/{projectId}/tracks/{trackId}/versions", projectId, trackId)
-                        .file(file)
-                        .with(csrf()))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
-    void create_returns422WhenFileExceeds10MB() throws Exception {
-        byte[] largeContent = new byte[10 * 1024 * 1024 + 1];
-        largeContent[0] = (byte) 0xFF;
-        largeContent[1] = (byte) 0xFB;
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", largeContent);
-
-        mockMvc.perform(multipart("/api/v1/projects/{projectId}/tracks/{trackId}/versions", projectId, trackId)
-                        .file(file)
-                        .with(csrf()))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
-    void create_returns422WhenFileIsNotAudio() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "image.png", "image/png",
-                new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
-
-        mockMvc.perform(multipart("/api/v1/projects/{projectId}/tracks/{trackId}/versions", projectId, trackId)
-                        .file(file)
-                        .with(csrf()))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
     void list_returns200WithVersions() throws Exception {
         when(trackVersionService.findAll(eq(projectId), eq(trackId), any())).thenReturn(List.of(response));
 

@@ -1,8 +1,6 @@
 
 package com.musicworkspace.backend.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.musicworkspace.backend.dto.CreateProjectRequest;
 import com.musicworkspace.backend.dto.ProjectMapper;
 import com.musicworkspace.backend.dto.ProjectResponse;
@@ -11,18 +9,12 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
-import com.musicworkspace.backend.exception.CloudinaryUploadException;
-import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
-import com.musicworkspace.backend.repository.UserRepository;
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,15 +26,15 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMapper projectMapper;
-    private final UserRepository userRepository;
-    private final Cloudinary cloudinary;
+    private final ProjectAccessService projectAccessService;
+    private final CloudinaryService cloudinaryService;
 
     @Value("${cloudinary.folder.cover}")
     private String coverFolder;
 
     @Transactional
     public ProjectResponse create(CreateProjectRequest request, String email) {
-        User owner = resolveUser(email);
+        User owner = projectAccessService.resolveUser(email);
 
         Project project = projectMapper.toEntity(request);
         project.setOwner(owner);
@@ -59,7 +51,7 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAll(String email) {
-        User owner = resolveUser(email);
+        User owner = projectAccessService.resolveUser(email);
         return projectRepository.findByOwnerId(owner.getId()).stream()
                 .map(projectMapper::toResponse)
                 .toList();
@@ -67,14 +59,14 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectResponse findById(UUID id, String email) {
-        User owner = resolveUser(email);
-        return projectMapper.toResponse(resolveOwnedProject(id, owner.getId()));
+        User owner = projectAccessService.resolveUser(email);
+        return projectMapper.toResponse(projectAccessService.resolveOwnedProject(id, owner.getId()));
     }
 
     @Transactional
     public ProjectResponse update(UUID id, UpdateProjectRequest request, String email) {
-        User owner = resolveUser(email);
-        Project project = resolveOwnedProject(id, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        Project project = projectAccessService.resolveOwnedProject(id, owner.getId());
 
         if (request.name() != null) project.setName(request.name());
         if (request.description() != null) project.setDescription(request.description());
@@ -84,41 +76,19 @@ public class ProjectService {
 
     @Transactional
     public void delete(UUID id, String email) {
-        User owner = resolveUser(email);
-        projectRepository.delete(resolveOwnedProject(id, owner.getId()));
+        User owner = projectAccessService.resolveUser(email);
+        projectRepository.delete(projectAccessService.resolveOwnedProject(id, owner.getId()));
     }
 
     @Transactional
     public ProjectResponse uploadCover(UUID id, MultipartFile file, String email) {
-        User owner = resolveUser(email);
-        Project project = resolveOwnedProject(id, owner.getId());
+        User owner = projectAccessService.resolveUser(email);
+        Project project = projectAccessService.resolveOwnedProject(id, owner.getId());
 
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "folder", String.format(coverFolder, id),
-                            "public_id", "cover",
-                            "overwrite", true,
-                            "resource_type", "image"
-                    )
-            );
-            project.setCoverUrl((String) result.get("secure_url"));
-        } catch (IOException e) {
-            throw new CloudinaryUploadException("Failed to upload cover image", e);
-        }
+        String coverUrl = cloudinaryService.upload(
+                file, String.format(coverFolder, id), "cover", "image", true);
+        project.setCoverUrl(coverUrl);
 
         return projectMapper.toResponse(project);
-    }
-
-    private Project resolveOwnedProject(UUID id, UUID ownerId) {
-        return projectRepository.findByIdAndOwnerId(id, ownerId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
-    }
-
-    private User resolveUser(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

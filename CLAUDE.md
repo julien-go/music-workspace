@@ -76,9 +76,13 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 - `API_DESIGN.md` — endpoints, DTOs, error format
 
 ## Current focus
+👥 Phase 3 — V1 Collaboration Objectif : rôles, permissions, commentaires 👥
+ ** Step 8 — Refactor & nettoyage transversal **
 
-** Step 7 — Tasks **
-- [x] Entité Task liée à Project
-- [x] CRUD + statut TODO / DOING / DONE
-- [x] DTOs + MapStruct + tests
-  On travaille sur la branche feature/tasks. Crée-la depuis develop si elle n'existe pas
+- [ ] ResourceNotFoundException commune → un seul handler 404
+- [ ] CloudinaryService centralisé (covers + audio)
+- [ ] Helpers resolve* mutualisés entre les services
+- [ ] Update audio file size limit (70mb)
+- [ ] Couverture tests mappers MapStruct
+
+  On travaille sur la branche feature/refactor-cleanup. Crée-la depuis develop si elle n'existe pas

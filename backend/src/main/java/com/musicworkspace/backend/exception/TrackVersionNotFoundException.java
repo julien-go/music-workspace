@@ -1,6 +1,6 @@
 package com.musicworkspace.backend.exception;
 
-public class TrackVersionNotFoundException extends RuntimeException {
+public class TrackVersionNotFoundException extends ResourceNotFoundException {
     public TrackVersionNotFoundException(String message) {
         super(message);
     }
