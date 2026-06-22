@@ -43,6 +43,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(MemberAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleMemberAlreadyExists(MemberAlreadyExistsException ex) {
+        return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(OwnerRoleException.class)
+    public ResponseEntity<ErrorResponse> handleOwnerRole(OwnerRoleException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), List.of());
+    }
+
     @ExceptionHandler(VersionConflictException.class)
     public ResponseEntity<ErrorResponse> handleVersionConflict(VersionConflictException ex) {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), List.of());
