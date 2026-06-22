@@ -15,6 +15,7 @@ import com.musicworkspace.backend.dto.TaskResponse;
 import com.musicworkspace.backend.dto.UpdateTaskRequest;
 import com.musicworkspace.backend.dto.UserSummary;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
@@ -276,9 +277,9 @@ class TaskServiceTest {
 
     @Test
     void delete_removesTask() {
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.OWNER).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        doNothing().when(permissionService).checkTaskDeletePermission(projectId, owner.getId(), EMAIL);
 
         taskService.delete(projectId, taskId, EMAIL);
 
@@ -287,7 +288,8 @@ class TaskServiceTest {
 
     @Test
     void delete_throwsWhenTaskNotFound() {
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.delete(projectId, taskId, EMAIL))
@@ -298,11 +300,12 @@ class TaskServiceTest {
     void delete_throwsWhenCollaboratorDeletesOtherUsersTask() {
         User otherUser = User.builder().id(UUID.randomUUID()).email("other@test.com").username("other").build();
         Task otherTask = Task.builder().id(taskId).project(project).createdBy(otherUser).title("Other task").status(TaskStatus.TODO).build();
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(otherTask));
         doThrow(new TaskNotFoundException("Task not found"))
-                .when(permissionService).checkTaskDeletePermission(projectId, otherUser.getId(), EMAIL);
+                .when(permissionService).checkTaskDeletePermission(ProjectRole.COLLABORATOR, owner.getId(), otherUser.getId());
 
         assertThatThrownBy(() -> taskService.delete(projectId, taskId, EMAIL))
                 .isInstanceOf(TaskNotFoundException.class);
@@ -310,9 +313,9 @@ class TaskServiceTest {
 
     @Test
     void delete_succeedsWhenCollaboratorDeletesOwnTask() {
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        doNothing().when(permissionService).checkTaskDeletePermission(projectId, owner.getId(), EMAIL);
 
         taskService.delete(projectId, taskId, EMAIL);
 

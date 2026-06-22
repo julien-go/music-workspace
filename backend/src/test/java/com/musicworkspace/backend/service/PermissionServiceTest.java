@@ -166,43 +166,49 @@ class PermissionServiceTest {
 
     @Test
     void checkTaskDeletePermission_ownerDeletingAnotherUsersTask_succeeds() {
-        stubResolveAndMember(ProjectRole.OWNER);
         UUID otherUserId = UUID.randomUUID();
 
-        assertThatCode(() -> permissionService.checkTaskDeletePermission(projectId, otherUserId, EMAIL))
+        assertThatCode(() -> permissionService.checkTaskDeletePermission(ProjectRole.OWNER, user.getId(), otherUserId))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void checkTaskDeletePermission_collaboratorDeletingOwnTask_succeeds() {
-        stubResolveAndMember(ProjectRole.COLLABORATOR);
-
-        assertThatCode(() -> permissionService.checkTaskDeletePermission(projectId, user.getId(), EMAIL))
+        assertThatCode(() -> permissionService.checkTaskDeletePermission(ProjectRole.COLLABORATOR, user.getId(), user.getId()))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void checkTaskDeletePermission_collaboratorDeletingAnothersTask_throws() {
-        stubResolveAndMember(ProjectRole.COLLABORATOR);
         UUID otherUserId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> permissionService.checkTaskDeletePermission(projectId, otherUserId, EMAIL))
+        assertThatThrownBy(() -> permissionService.checkTaskDeletePermission(ProjectRole.COLLABORATOR, user.getId(), otherUserId))
                 .isInstanceOf(TaskNotFoundException.class);
     }
 
     @Test
-    void checkTaskDeletePermission_viewer_throwsProjectNotFound() {
+    void resolveMembership_validMember_returnsMember() {
+        stubResolveAndMember(ProjectRole.COLLABORATOR);
+
+        ProjectMember result = permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER);
+
+        assertThat(result.getRole()).isEqualTo(ProjectRole.COLLABORATOR);
+        assertThat(result.getProject().getId()).isEqualTo(projectId);
+    }
+
+    @Test
+    void resolveMembership_insufficientRole_throws() {
         stubResolveAndMember(ProjectRole.VIEWER);
 
-        assertThatThrownBy(() -> permissionService.checkTaskDeletePermission(projectId, user.getId(), EMAIL))
+        assertThatThrownBy(() -> permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .isInstanceOf(ProjectNotFoundException.class);
     }
 
     @Test
-    void checkTaskDeletePermission_nonMember_throwsProjectNotFound() {
+    void resolveMembership_nonMember_throws() {
         stubResolveAndNoMember();
 
-        assertThatThrownBy(() -> permissionService.checkTaskDeletePermission(projectId, user.getId(), EMAIL))
+        assertThatThrownBy(() -> permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER))
                 .isInstanceOf(ProjectNotFoundException.class);
     }
 

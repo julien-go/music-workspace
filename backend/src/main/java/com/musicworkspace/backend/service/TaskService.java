@@ -5,6 +5,7 @@ import com.musicworkspace.backend.dto.TaskMapper;
 import com.musicworkspace.backend.dto.TaskResponse;
 import com.musicworkspace.backend.dto.UpdateTaskRequest;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
@@ -82,9 +83,9 @@ public class TaskService {
 
     @Transactional
     public void delete(UUID projectId, UUID taskId, String email) {
-        permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
+        ProjectMember member = permissionService.resolveMembership(projectId, email, ProjectRole.COLLABORATOR);
         Task task = resolveTask(taskId, projectId);
-        permissionService.checkTaskDeletePermission(projectId, task.getCreatedBy().getId(), email);
+        permissionService.checkTaskDeletePermission(member.getRole(), member.getUser().getId(), task.getCreatedBy().getId());
         taskRepository.delete(task);
     }
 
