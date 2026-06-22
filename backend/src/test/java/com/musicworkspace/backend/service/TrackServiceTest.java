@@ -2,8 +2,6 @@ package com.musicworkspace.backend.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.musicworkspace.backend.dto.CreateTrackRequest;
@@ -11,9 +9,9 @@ import com.musicworkspace.backend.dto.TrackMapper;
 import com.musicworkspace.backend.dto.TrackResponse;
 import com.musicworkspace.backend.dto.UpdateTrackRequest;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
-import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
@@ -38,13 +36,12 @@ class TrackServiceTest {
     private TrackMapper trackMapper;
 
     @Mock
-    private ProjectAccessService projectAccessService;
+    private PermissionService permissionService;
 
     @InjectMocks
     private TrackService trackService;
 
     private static final String EMAIL = "test@example.com";
-    private User owner;
     private UUID projectId;
     private UUID trackId;
     private Project project;
@@ -53,10 +50,9 @@ class TrackServiceTest {
 
     @BeforeEach
     void setUp() {
-        owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
         trackId = UUID.randomUUID();
-        project = Project.builder().id(projectId).owner(owner).name("My Album").build();
+        project = Project.builder().id(projectId).name("My Album").build();
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
         response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now());
     }
@@ -66,8 +62,7 @@ class TrackServiceTest {
         CreateTrackRequest request = new CreateTrackRequest("Intro", null, null);
         Track mapped = Track.builder().name("Intro").build();
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.save(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
@@ -84,8 +79,7 @@ class TrackServiceTest {
         CreateTrackRequest request = new CreateTrackRequest("Intro", null, TrackStatus.IN_PROGRESS);
         Track mapped = Track.builder().name("Intro").status(TrackStatus.IN_PROGRESS).build();
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.save(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
@@ -97,8 +91,7 @@ class TrackServiceTest {
 
     @Test
     void findAll_returnsMappedListForProjectOwner() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(trackRepository.findByProjectIdAndArchivedFalse(projectId)).thenReturn(List.of(track));
         when(trackMapper.toResponse(track)).thenReturn(response);
 
@@ -109,8 +102,7 @@ class TrackServiceTest {
 
     @Test
     void findAll_throwsNotFoundWhenProjectNotOwned() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackService.findAll(projectId, EMAIL))
@@ -119,8 +111,7 @@ class TrackServiceTest {
 
     @Test
     void findById_returnsTrack() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         TrackResponse result = trackService.findById(projectId, trackId, EMAIL);
@@ -130,8 +121,7 @@ class TrackServiceTest {
 
     @Test
     void findById_throwsNotFoundWhenTrackNotInProject() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.findById(projectId, trackId, EMAIL))
@@ -142,8 +132,7 @@ class TrackServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, TrackStatus.DONE);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.update(projectId, trackId, request, EMAIL);
@@ -157,8 +146,7 @@ class TrackServiceTest {
     void update_throwsNotFoundWhenProjectNotOwned() {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackService.update(projectId, trackId, request, EMAIL))
@@ -167,8 +155,7 @@ class TrackServiceTest {
 
     @Test
     void archive_setsArchivedTrueAndReturnsResponse() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.archive(projectId, trackId, EMAIL);
@@ -178,8 +165,7 @@ class TrackServiceTest {
 
     @Test
     void archive_throwsNotFoundWhenTrackNotInProject() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
@@ -191,8 +177,7 @@ class TrackServiceTest {
         Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro")
                 .status(TrackStatus.DRAFT).archived(true).build();
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(archivedTrack);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);

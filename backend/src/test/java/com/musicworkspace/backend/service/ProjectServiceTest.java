@@ -14,13 +14,13 @@ import com.musicworkspace.backend.dto.UpdateProjectRequest;
 import com.musicworkspace.backend.dto.UserSummary;
 import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ class ProjectServiceTest {
     private ProjectMapper projectMapper;
 
     @Mock
-    private ProjectAccessService projectAccessService;
+    private PermissionService permissionService;
 
     @Mock
     private CloudinaryService cloudinaryService;
@@ -73,7 +73,7 @@ class ProjectServiceTest {
         CreateProjectRequest request = new CreateProjectRequest("My Album", null);
         Project mapped = Project.builder().name("My Album").build();
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
+        when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectMapper.toEntity(request)).thenReturn(mapped);
         when(projectRepository.save(mapped)).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
@@ -87,8 +87,8 @@ class ProjectServiceTest {
 
     @Test
     void findAll_returnsMappedList() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectRepository.findByOwnerId(owner.getId())).thenReturn(List.of(project));
+        when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectRepository.findAllByMembership(owner.getId())).thenReturn(List.of(project));
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         List<ProjectResponse> result = projectService.findAll(EMAIL);
@@ -97,9 +97,8 @@ class ProjectServiceTest {
     }
 
     @Test
-    void findById_returnsProjectWhenOwner() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+    void findById_returnsProjectWhenMember() {
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         ProjectResponse result = projectService.findById(projectId, EMAIL);
@@ -108,9 +107,8 @@ class ProjectServiceTest {
     }
 
     @Test
-    void findById_throwsNotFoundWhenNotOwner() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+    void findById_throwsNotFoundWhenNotMember() {
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.findById(projectId, EMAIL))
@@ -121,8 +119,7 @@ class ProjectServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         projectService.update(projectId, request, EMAIL);
@@ -132,11 +129,10 @@ class ProjectServiceTest {
     }
 
     @Test
-    void update_throwsNotFoundWhenNotOwner() {
+    void update_throwsNotFoundWhenNotMember() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.update(projectId, request, EMAIL))
@@ -145,8 +141,7 @@ class ProjectServiceTest {
 
     @Test
     void delete_deletesWhenOwner() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.OWNER)).thenReturn(project);
 
         projectService.delete(projectId, EMAIL);
 
@@ -155,8 +150,7 @@ class ProjectServiceTest {
 
     @Test
     void delete_throwsNotFoundWhenNotOwner() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.OWNER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.delete(projectId, EMAIL))
@@ -169,8 +163,7 @@ class ProjectServiceTest {
     void uploadCover_uploadsToCloudinaryAndUpdatesCoverUrl() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://res.cloudinary.com/cover.jpg");
         when(projectMapper.toResponse(project)).thenReturn(response);
@@ -182,11 +175,10 @@ class ProjectServiceTest {
     }
 
     @Test
-    void uploadCover_throwsNotFoundWhenNotOwner() {
+    void uploadCover_throwsNotFoundWhenNotMember() {
         MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))

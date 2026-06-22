@@ -26,13 +26,12 @@ public class ProjectMemberService {
 
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
     private final ProjectMemberMapper projectMemberMapper;
 
     @Transactional
     public ProjectMemberResponse addMember(UUID projectId, CreateMemberRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        Project project = permissionService.checkProjectPermission(projectId, email, ProjectRole.OWNER);
 
         rejectOwnerRole(request.role());
 
@@ -54,25 +53,15 @@ public class ProjectMemberService {
 
     @Transactional(readOnly = true)
     public List<ProjectMemberResponse> findAll(UUID projectId, String email) {
-        User user = projectAccessService.resolveUser(email);
-        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
-
-        boolean isMember = members.stream()
-                .anyMatch(m -> m.getUser().getId().equals(user.getId()));
-
-        if (!isMember) {
-            throw new MemberNotFoundException("Project not found");
-        }
-
-        return members.stream()
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
+        return projectMemberRepository.findByProjectId(projectId).stream()
                 .map(projectMemberMapper::toResponse)
                 .toList();
     }
 
     @Transactional
     public ProjectMemberResponse updateRole(UUID projectId, UUID memberId, UpdateMemberRoleRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.OWNER);
 
         rejectOwnerRole(request.role());
 
@@ -88,8 +77,7 @@ public class ProjectMemberService {
 
     @Transactional
     public void removeMember(UUID projectId, UUID memberId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.OWNER);
 
         ProjectMember member = resolveMember(memberId, projectId);
 

@@ -2,9 +2,9 @@ package com.musicworkspace.backend.service;
 
 import com.musicworkspace.backend.dto.TrackVersionMapper;
 import com.musicworkspace.backend.dto.TrackVersionResponse;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackVersion;
-import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.exception.VersionConflictException;
@@ -29,7 +29,7 @@ public class TrackVersionService {
 
     private final TrackVersionRepository trackVersionRepository;
     private final TrackVersionMapper trackVersionMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
     private final CloudinaryService cloudinaryService;
 
     private static final long MAX_FILE_SIZE = 70 * 1024 * 1024;
@@ -41,8 +41,7 @@ public class TrackVersionService {
     @Transactional
     public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, MultipartFile file, String email) {
         validateAudioFile(file);
-        User owner = projectAccessService.resolveUser(email);
-        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
 
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Cannot add a version to an archived track");
@@ -67,8 +66,7 @@ public class TrackVersionService {
 
     @Transactional(readOnly = true)
     public List<TrackVersionResponse> findAll(UUID projectId, UUID trackId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
         return trackVersionRepository.findByTrackId(trackId).stream()
                 .map(trackVersionMapper::toResponse)
                 .toList();
@@ -76,8 +74,7 @@ public class TrackVersionService {
 
     @Transactional(readOnly = true)
     public TrackVersionResponse findById(UUID projectId, UUID trackId, UUID versionId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
         return trackVersionMapper.toResponse(
                 trackVersionRepository.findByIdAndTrackId(versionId, trackId)
                         .orElseThrow(() -> new TrackVersionNotFoundException("Track version not found"))

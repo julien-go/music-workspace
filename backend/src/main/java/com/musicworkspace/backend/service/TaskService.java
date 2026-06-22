@@ -5,6 +5,7 @@ import com.musicworkspace.backend.dto.TaskMapper;
 import com.musicworkspace.backend.dto.TaskResponse;
 import com.musicworkspace.backend.dto.UpdateTaskRequest;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
@@ -26,12 +27,12 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
 
     @Transactional
     public TaskResponse create(UUID projectId, CreateTaskRequest request, String email) {
-        User creator = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(projectId, creator.getId());
+        Project project = permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
+        User creator = permissionService.resolveUser(email);
 
         Task task = Task.builder()
                 .title(request.title())
@@ -47,8 +48,7 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll(UUID projectId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
         return taskRepository.findByProjectId(projectId).stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -56,15 +56,13 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskResponse findById(UUID projectId, UUID taskId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
         return taskMapper.toResponse(resolveTask(taskId, projectId));
     }
 
     @Transactional
     public TaskResponse update(UUID projectId, UUID taskId, UpdateTaskRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
         Task task = resolveTask(taskId, projectId);
 
         if (request.title() != null) task.setTitle(request.title());
@@ -84,9 +82,9 @@ public class TaskService {
 
     @Transactional
     public void delete(UUID projectId, UUID taskId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
         Task task = resolveTask(taskId, projectId);
+        permissionService.checkTaskDeletePermission(projectId, task.getCreatedBy().getId(), email);
         taskRepository.delete(task);
     }
 

@@ -5,9 +5,9 @@ import com.musicworkspace.backend.dto.TrackMapper;
 import com.musicworkspace.backend.dto.TrackResponse;
 import com.musicworkspace.backend.dto.UpdateTrackRequest;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
-import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.repository.TrackRepository;
 import java.util.List;
@@ -22,12 +22,11 @@ public class TrackService {
 
     private final TrackRepository trackRepository;
     private final TrackMapper trackMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
 
     @Transactional
     public TrackResponse create(UUID projectId, CreateTrackRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        Project project = permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
 
         Track track = trackMapper.toEntity(request);
         track.setProject(project);
@@ -39,8 +38,7 @@ public class TrackService {
 
     @Transactional(readOnly = true)
     public List<TrackResponse> findAll(UUID projectId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
         return trackRepository.findByProjectIdAndArchivedFalse(projectId).stream()
                 .map(trackMapper::toResponse)
                 .toList();
@@ -48,14 +46,13 @@ public class TrackService {
 
     @Transactional(readOnly = true)
     public TrackResponse findById(UUID projectId, UUID trackId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        return trackMapper.toResponse(projectAccessService.resolveTrack(trackId, projectId, owner.getId()));
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
+        return trackMapper.toResponse(track);
     }
 
     @Transactional
     public TrackResponse update(UUID projectId, UUID trackId, UpdateTrackRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
 
         if (request.name() != null) track.setName(request.name());
         if (request.description() != null) track.setDescription(request.description());
@@ -66,8 +63,7 @@ public class TrackService {
 
     @Transactional
     public TrackResponse archive(UUID projectId, UUID trackId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Track is already archived");
         }

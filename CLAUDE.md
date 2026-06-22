@@ -77,11 +77,10 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 
 ## Current focus
 👥 Phase 3 — V1 Collaboration Objectif : rôles, permissions, commentaires
-    ** Step 9 — Système de rôles **
-- [ ] Entité ProjectMember (User ↔ Project + rôle)
-- [ ] Migration Flyway
-- [ ] Inviter un membre, modifier son rôle, le retirer
-- [ ] DTOs + tests
 
+**Step 10 — Permissions métier**
+- [ ] PermissionService centralisé (vérifié dans chaque service)
+- [ ] OWNER / COLLABORATOR / VIEWER appliqués sur toutes les actions existantes
+- [ ] Tests de permissions (accès refusé, accès autorisé)
 
   On travaille sur la branche `feature/roles`. Crée-la depuis develop si elle n'existe pas

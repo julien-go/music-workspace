@@ -9,13 +9,13 @@ import static org.mockito.Mockito.when;
 import com.musicworkspace.backend.dto.TrackVersionMapper;
 import com.musicworkspace.backend.dto.TrackVersionResponse;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
 import com.musicworkspace.backend.entity.TrackVersion;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.CloudinaryUploadException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
-import org.springframework.web.server.ResponseStatusException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
 import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class TrackVersionServiceTest {
@@ -45,7 +46,7 @@ class TrackVersionServiceTest {
     private TrackVersionMapper trackVersionMapper;
 
     @Mock
-    private ProjectAccessService projectAccessService;
+    private PermissionService permissionService;
 
     @Mock
     private CloudinaryService cloudinaryService;
@@ -54,7 +55,6 @@ class TrackVersionServiceTest {
     private TrackVersionService trackVersionService;
 
     private static final String EMAIL = "test@example.com";
-    private User owner;
     private UUID projectId;
     private UUID trackId;
     private UUID versionId;
@@ -70,10 +70,10 @@ class TrackVersionServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(trackVersionService, "audioFolder", "music-workspace/projects/%s/tracks/%s/versions");
-        owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
         trackId = UUID.randomUUID();
         versionId = UUID.randomUUID();
+        User owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
         version = TrackVersion.builder().id(versionId).track(track).versionNumber(1).audioUrl("https://cloudinary.com/audio.mp3").notes("First take").build();
@@ -84,8 +84,7 @@ class TrackVersionServiceTest {
     void create_uploadsAudioAndSavesVersion() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://cloudinary.com/audio.mp3");
@@ -102,8 +101,7 @@ class TrackVersionServiceTest {
     void create_incrementsVersionNumber() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(3);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://cloudinary.com/v4.mp3");
@@ -123,8 +121,7 @@ class TrackVersionServiceTest {
         Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).archived(true).build();
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(archivedTrack);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);
@@ -134,8 +131,7 @@ class TrackVersionServiceTest {
     void create_throwsWhenProjectNotFound() {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
@@ -146,8 +142,7 @@ class TrackVersionServiceTest {
     void create_throwsWhenTrackNotFound() {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
@@ -158,8 +153,7 @@ class TrackVersionServiceTest {
     void create_throwsVersionConflictOnDuplicateVersionNumber() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://cloudinary.com/audio.mp3");
@@ -173,8 +167,7 @@ class TrackVersionServiceTest {
     void create_throwsCloudinaryUploadExceptionOnIOError() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenThrow(new CloudinaryUploadException("network error", new RuntimeException()));
@@ -185,8 +178,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findAll_returnsMappedListForTrack() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
         when(trackVersionRepository.findByTrackId(trackId)).thenReturn(List.of(version));
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
@@ -197,8 +189,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findAll_throwsWhenProjectNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackVersionService.findAll(projectId, trackId, EMAIL))
@@ -207,8 +198,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findAll_throwsWhenTrackNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackVersionService.findAll(projectId, trackId, EMAIL))
@@ -217,8 +207,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_returnsVersion() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
         when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.of(version));
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
@@ -229,8 +218,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenVersionNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId())).thenReturn(track);
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
         when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))
@@ -239,8 +227,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenProjectNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))
@@ -249,8 +236,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenTrackNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveTrack(trackId, projectId, owner.getId()))
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))

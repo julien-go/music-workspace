@@ -12,6 +12,7 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
     @EntityGraph(attributePaths = {"user"})
     List<ProjectMember> findByProjectId(UUID projectId);
 
+    @EntityGraph(attributePaths = {"project"})
     Optional<ProjectMember> findByProjectIdAndUserId(UUID projectId, UUID userId);
 
     @EntityGraph(attributePaths = {"user"})
