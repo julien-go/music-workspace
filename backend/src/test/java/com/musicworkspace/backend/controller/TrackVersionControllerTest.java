@@ -83,8 +83,8 @@ class TrackVersionControllerTest {
     }
 
     @Test
-    void create_returns422WhenFileExceeds10MB() throws Exception {
-        byte[] largeContent = new byte[10 * 1024 * 1024 + 1];
+    void create_returns422WhenFileExceeds70MB() throws Exception {
+        byte[] largeContent = new byte[70 * 1024 * 1024 + 1];
         largeContent[0] = (byte) 0xFF;
         largeContent[1] = (byte) 0xFB;
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", largeContent);

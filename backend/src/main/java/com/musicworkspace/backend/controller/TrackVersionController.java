@@ -26,7 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class TrackVersionController {
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+    private static final long MAX_FILE_SIZE = 70 * 1024 * 1024;
     private static final Tika TIKA = new Tika();
 
     private final TrackVersionService trackVersionService;
@@ -48,7 +48,7 @@ public class TrackVersionController {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "File must not be empty");
         }
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "File size must not exceed 10MB");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "File size must not exceed 70MB");
         }
         try (InputStream is = file.getInputStream()) {
             String detectedType = TIKA.detect(is, file.getOriginalFilename());
