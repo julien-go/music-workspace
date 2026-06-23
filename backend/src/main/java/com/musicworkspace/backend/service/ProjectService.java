@@ -38,7 +38,7 @@ public class ProjectService {
 
         Project project = projectMapper.toEntity(request);
         project.setOwner(owner);
-        Project saved = projectRepository.save(project);
+        Project saved = projectRepository.saveAndFlush(project);
 
         projectMemberRepository.save(ProjectMember.builder()
                 .project(saved)

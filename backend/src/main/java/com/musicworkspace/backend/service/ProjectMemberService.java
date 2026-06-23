@@ -48,7 +48,7 @@ public class ProjectMemberService {
                 .role(request.role())
                 .build();
 
-        return projectMemberMapper.toResponse(projectMemberRepository.save(member));
+        return projectMemberMapper.toResponse(projectMemberRepository.saveAndFlush(member));
     }
 
     @Transactional(readOnly = true)

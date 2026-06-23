@@ -38,6 +38,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(FileValidationException.class)
+    public ResponseEntity<ErrorResponse> handleFileValidation(FileValidationException ex) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", ex.getMessage(), List.of());
+    }
+
     @ExceptionHandler(CloudinaryUploadException.class)
     public ResponseEntity<ErrorResponse> handleCloudinaryUpload(CloudinaryUploadException ex) {
         log.error("Cloudinary upload failed", ex);

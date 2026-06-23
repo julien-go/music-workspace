@@ -33,7 +33,7 @@ public class TrackService {
         if (track.getStatus() == null) {
             track.setStatus(TrackStatus.DRAFT);
         }
-        return trackMapper.toResponse(trackRepository.save(track));
+        return trackMapper.toResponse(trackRepository.saveAndFlush(track));
     }
 
     @Transactional(readOnly = true)

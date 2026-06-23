@@ -44,7 +44,7 @@ public class TaskService {
                 .assignedTo(request.assignedToId() != null ? resolveAssignee(request.assignedToId()) : null)
                 .build();
 
-        return taskMapper.toResponse(taskRepository.save(task));
+        return taskMapper.toResponse(taskRepository.saveAndFlush(task));
     }
 
     @Transactional(readOnly = true)
