@@ -207,8 +207,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_returnsVersion() {
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
-        when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.of(version));
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
         TrackVersionResponse result = trackVersionService.findById(projectId, trackId, versionId, EMAIL);
@@ -218,8 +217,8 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenVersionNotFound() {
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
-        when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.empty());
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
+                .thenThrow(new TrackVersionNotFoundException("Track version not found"));
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))
                 .isInstanceOf(TrackVersionNotFoundException.class);
@@ -227,7 +226,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenProjectNotFound() {
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))
@@ -236,7 +235,7 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_throwsWhenTrackNotFound() {
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackVersionService.findById(projectId, trackId, versionId, EMAIL))

@@ -11,12 +11,16 @@ import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
+import com.musicworkspace.backend.entity.TrackVersion;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.CommentNotFoundException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
+import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +38,9 @@ class PermissionServiceTest {
 
     @Mock
     private TrackRepository trackRepository;
+
+    @Mock
+    private TrackVersionRepository trackVersionRepository;
 
     @Mock
     private ProjectAccessService projectAccessService;
@@ -165,6 +172,34 @@ class PermissionServiceTest {
     }
 
     @Test
+    void checkTrackVersionPermission_validMemberAndVersionExists_succeeds() {
+        stubResolveAndMember(ProjectRole.COLLABORATOR);
+        UUID trackId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+        Track track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
+        TrackVersion version = TrackVersion.builder().id(versionId).track(track).versionNumber(1).audioUrl("https://cdn.example.com/v1.mp3").build();
+        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(track));
+        when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.of(version));
+
+        TrackVersion result = permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.COLLABORATOR);
+
+        assertThat(result.getId()).isEqualTo(versionId);
+    }
+
+    @Test
+    void checkTrackVersionPermission_versionNotFound_throws() {
+        stubResolveAndMember(ProjectRole.COLLABORATOR);
+        UUID trackId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+        Track track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
+        when(trackRepository.findByIdAndProjectId(trackId, projectId)).thenReturn(Optional.of(track));
+        when(trackVersionRepository.findByIdAndTrackId(versionId, trackId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.COLLABORATOR))
+                .isInstanceOf(TrackVersionNotFoundException.class);
+    }
+
+    @Test
     void checkTaskDeletePermission_ownerDeletingAnotherUsersTask_succeeds() {
         UUID otherUserId = UUID.randomUUID();
 
@@ -210,6 +245,28 @@ class PermissionServiceTest {
 
         assertThatThrownBy(() -> permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER))
                 .isInstanceOf(ProjectNotFoundException.class);
+    }
+
+    @Test
+    void checkCommentDeletePermission_ownerDeletingAnotherUsersComment_succeeds() {
+        UUID otherUserId = UUID.randomUUID();
+
+        assertThatCode(() -> permissionService.checkCommentDeletePermission(ProjectRole.OWNER, user.getId(), otherUserId))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void checkCommentDeletePermission_authorDeletingOwnComment_succeeds() {
+        assertThatCode(() -> permissionService.checkCommentDeletePermission(ProjectRole.COLLABORATOR, user.getId(), user.getId()))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void checkCommentDeletePermission_collaboratorDeletingAnothersComment_throws() {
+        UUID otherUserId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> permissionService.checkCommentDeletePermission(ProjectRole.COLLABORATOR, user.getId(), otherUserId))
+                .isInstanceOf(CommentNotFoundException.class);
     }
 
     @Test
