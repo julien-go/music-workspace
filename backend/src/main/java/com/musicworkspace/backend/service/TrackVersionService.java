@@ -2,9 +2,10 @@ package com.musicworkspace.backend.service;
 
 import com.musicworkspace.backend.dto.TrackVersionMapper;
 import com.musicworkspace.backend.dto.TrackVersionResponse;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackVersion;
-import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.FileValidationException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.exception.VersionConflictException;
@@ -17,11 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +28,7 @@ public class TrackVersionService {
 
     private final TrackVersionRepository trackVersionRepository;
     private final TrackVersionMapper trackVersionMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
     private final CloudinaryService cloudinaryService;
 
     private static final long MAX_FILE_SIZE = 70 * 1024 * 1024;
@@ -41,8 +40,7 @@ public class TrackVersionService {
     @Transactional
     public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, MultipartFile file, String email) {
         validateAudioFile(file);
-        User owner = projectAccessService.resolveUser(email);
-        Track track = projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
 
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Cannot add a version to an archived track");
@@ -59,7 +57,7 @@ public class TrackVersionService {
                 .build();
 
         try {
-            return trackVersionMapper.toResponse(trackVersionRepository.save(version));
+            return trackVersionMapper.toResponse(trackVersionRepository.saveAndFlush(version));
         } catch (DataIntegrityViolationException e) {
             throw new VersionConflictException("Version number conflict, please retry");
         }
@@ -67,8 +65,7 @@ public class TrackVersionService {
 
     @Transactional(readOnly = true)
     public List<TrackVersionResponse> findAll(UUID projectId, UUID trackId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
         return trackVersionRepository.findByTrackId(trackId).stream()
                 .map(trackVersionMapper::toResponse)
                 .toList();
@@ -76,8 +73,7 @@ public class TrackVersionService {
 
     @Transactional(readOnly = true)
     public TrackVersionResponse findById(UUID projectId, UUID trackId, UUID versionId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveTrack(trackId, projectId, owner.getId());
+        permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
         return trackVersionMapper.toResponse(
                 trackVersionRepository.findByIdAndTrackId(versionId, trackId)
                         .orElseThrow(() -> new TrackVersionNotFoundException("Track version not found"))
@@ -86,18 +82,18 @@ public class TrackVersionService {
 
     private void validateAudioFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "File must not be empty");
+            throw new FileValidationException("File must not be empty");
         }
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "File size must not exceed 70MB");
+            throw new FileValidationException("File size must not exceed 70MB");
         }
         try (InputStream is = file.getInputStream()) {
             String detectedType = TIKA.detect(is, file.getOriginalFilename());
             if (detectedType == null || !detectedType.startsWith("audio/")) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Only audio files are accepted");
+                throw new FileValidationException("Only audio files are accepted");
             }
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Could not read uploaded file");
+            throw new FileValidationException("Could not read uploaded file");
         }
     }
 

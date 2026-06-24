@@ -3,6 +3,8 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.ArgumentCaptor;
@@ -13,14 +15,16 @@ import com.musicworkspace.backend.dto.TaskResponse;
 import com.musicworkspace.backend.dto.UpdateTaskRequest;
 import com.musicworkspace.backend.dto.UserSummary;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectMember;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
-import com.musicworkspace.backend.exception.UserNotFoundException;
+import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -40,13 +44,13 @@ class TaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private ProjectMemberRepository projectMemberRepository;
 
     @Mock
     private TaskMapper taskMapper;
 
     @Mock
-    private ProjectAccessService projectAccessService;
+    private PermissionService permissionService;
 
     @InjectMocks
     private TaskService taskService;
@@ -77,16 +81,16 @@ class TaskServiceTest {
     void create_savesTaskWithDefaultStatusTodo() {
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
+        when(taskRepository.saveAndFlush(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         TaskResponse result = taskService.create(projectId, request, EMAIL);
 
         assertThat(result).isEqualTo(response);
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
-        verify(taskRepository).save(captor.capture());
+        verify(taskRepository).saveAndFlush(captor.capture());
         Task saved = captor.getValue();
         assertThat(saved.getTitle()).isEqualTo("Record guitar");
         assertThat(saved.getStatus()).isEqualTo(TaskStatus.TODO);
@@ -98,40 +102,42 @@ class TaskServiceTest {
     @Test
     void create_assignsUserWhenAssignedToIdProvided() {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
+        ProjectMember assigneeMember = ProjectMember.builder()
+                .id(UUID.randomUUID()).project(project).user(assignee).role(ProjectRole.COLLABORATOR).build();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, assignee.getId());
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
-        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, assignee.getId()))
+                .thenReturn(Optional.of(assigneeMember));
+        when(taskRepository.saveAndFlush(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         taskService.create(projectId, request, EMAIL);
 
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
-        verify(taskRepository).save(captor.capture());
+        verify(taskRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getAssignedTo()).isEqualTo(assignee);
     }
 
     @Test
-    void create_throwsWhenAssignedUserNotFound() {
+    void create_throwsWhenAssignedUserNotMember() {
         UUID fakeUserId = UUID.randomUUID();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, fakeUserId);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
-        when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.create(projectId, request, EMAIL))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test
     void create_throwsWhenProjectNotFound() {
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.create(projectId, request, EMAIL))
@@ -140,8 +146,7 @@ class TaskServiceTest {
 
     @Test
     void findAll_returnsMappedListForProject() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(taskRepository.findByProjectId(projectId)).thenReturn(List.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -152,8 +157,7 @@ class TaskServiceTest {
 
     @Test
     void findAll_throwsWhenProjectNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.findAll(projectId, EMAIL))
@@ -162,8 +166,7 @@ class TaskServiceTest {
 
     @Test
     void findById_returnsTask() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -174,8 +177,7 @@ class TaskServiceTest {
 
     @Test
     void findById_throwsWhenTaskNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.findById(projectId, taskId, EMAIL))
@@ -186,8 +188,7 @@ class TaskServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, TaskStatus.DOING, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -203,8 +204,7 @@ class TaskServiceTest {
         task.setDescription("Old description");
         UpdateTaskRequest request = new UpdateTaskRequest(null, JsonNullable.of(null), null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -219,8 +219,7 @@ class TaskServiceTest {
         task.setAssignedTo(assignee);
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(null));
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -232,12 +231,14 @@ class TaskServiceTest {
     @Test
     void update_assignsNewUserWhenAssignedToIdProvided() {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
+        ProjectMember assigneeMember = ProjectMember.builder()
+                .id(UUID.randomUUID()).project(project).user(assignee).role(ProjectRole.COLLABORATOR).build();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(assignee.getId()));
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, assignee.getId()))
+                .thenReturn(Optional.of(assigneeMember));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         taskService.update(projectId, taskId, request, EMAIL);
@@ -246,25 +247,23 @@ class TaskServiceTest {
     }
 
     @Test
-    void update_throwsWhenAssignedUserNotFound() {
+    void update_throwsWhenAssignedUserNotMember() {
         UUID fakeUserId = UUID.randomUUID();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(fakeUserId));
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test
     void update_throwsWhenProjectNotFound() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId()))
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
@@ -275,8 +274,7 @@ class TaskServiceTest {
     void update_throwsWhenTaskNotFound() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, null, null);
 
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
@@ -285,8 +283,8 @@ class TaskServiceTest {
 
     @Test
     void delete_removesTask() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.OWNER).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
 
         taskService.delete(projectId, taskId, EMAIL);
@@ -296,11 +294,37 @@ class TaskServiceTest {
 
     @Test
     void delete_throwsWhenTaskNotFound() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectAccessService.resolveOwnedProject(projectId, owner.getId())).thenReturn(project);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.delete(projectId, taskId, EMAIL))
                 .isInstanceOf(TaskNotFoundException.class);
+    }
+
+    @Test
+    void delete_throwsWhenCollaboratorDeletesOtherUsersTask() {
+        User otherUser = User.builder().id(UUID.randomUUID()).email("other@test.com").username("other").build();
+        Task otherTask = Task.builder().id(taskId).project(project).createdBy(otherUser).title("Other task").status(TaskStatus.TODO).build();
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
+        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(otherTask));
+        doThrow(new TaskNotFoundException("Task not found"))
+                .when(permissionService).checkTaskDeletePermission(ProjectRole.COLLABORATOR, owner.getId(), otherUser.getId());
+
+        assertThatThrownBy(() -> taskService.delete(projectId, taskId, EMAIL))
+                .isInstanceOf(TaskNotFoundException.class);
+    }
+
+    @Test
+    void delete_succeedsWhenCollaboratorDeletesOwnTask() {
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
+        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
+
+        taskService.delete(projectId, taskId, EMAIL);
+
+        verify(taskRepository).delete(task);
     }
 }

@@ -5,13 +5,15 @@ import com.musicworkspace.backend.dto.TaskMapper;
 import com.musicworkspace.backend.dto.TaskResponse;
 import com.musicworkspace.backend.dto.UpdateTaskRequest;
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectMember;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
-import com.musicworkspace.backend.exception.UserNotFoundException;
+import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +26,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final TaskMapper taskMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
 
     @Transactional
     public TaskResponse create(UUID projectId, CreateTaskRequest request, String email) {
-        User creator = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(projectId, creator.getId());
+        Project project = permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
+        User creator = permissionService.resolveUser(email);
 
         Task task = Task.builder()
                 .title(request.title())
@@ -39,16 +41,15 @@ public class TaskService {
                 .project(project)
                 .createdBy(creator)
                 .status(TaskStatus.TODO)
-                .assignedTo(request.assignedToId() != null ? resolveAssignee(request.assignedToId()) : null)
+                .assignedTo(request.assignedToId() != null ? resolveAssignee(projectId, request.assignedToId()) : null)
                 .build();
 
-        return taskMapper.toResponse(taskRepository.save(task));
+        return taskMapper.toResponse(taskRepository.saveAndFlush(task));
     }
 
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll(UUID projectId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
         return taskRepository.findByProjectId(projectId).stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -56,15 +57,13 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskResponse findById(UUID projectId, UUID taskId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
         return taskMapper.toResponse(resolveTask(taskId, projectId));
     }
 
     @Transactional
     public TaskResponse update(UUID projectId, UUID taskId, UpdateTaskRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        permissionService.checkProjectPermission(projectId, email, ProjectRole.COLLABORATOR);
         Task task = resolveTask(taskId, projectId);
 
         if (request.title() != null) task.setTitle(request.title());
@@ -76,7 +75,7 @@ public class TaskService {
 
         if (isProvided(request.assignedToId())) {
             UUID assigneeId = request.assignedToId().get();
-            task.setAssignedTo(assigneeId != null ? resolveAssignee(assigneeId) : null);
+            task.setAssignedTo(assigneeId != null ? resolveAssignee(projectId, assigneeId) : null);
         }
 
         return taskMapper.toResponse(task);
@@ -84,9 +83,9 @@ public class TaskService {
 
     @Transactional
     public void delete(UUID projectId, UUID taskId, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectAccessService.resolveOwnedProject(projectId, owner.getId());
+        ProjectMember member = permissionService.resolveMembership(projectId, email, ProjectRole.COLLABORATOR);
         Task task = resolveTask(taskId, projectId);
+        permissionService.checkTaskDeletePermission(member.getRole(), member.getUser().getId(), task.getCreatedBy().getId());
         taskRepository.delete(task);
     }
 
@@ -95,9 +94,10 @@ public class TaskService {
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
-    private User resolveAssignee(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Assigned user not found"));
+    private User resolveAssignee(UUID projectId, UUID userId) {
+        return projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new MemberNotFoundException("Assigned user is not a member of this project"))
+                .getUser();
     }
 
     private static boolean isProvided(JsonNullable<?> nullable) {

@@ -9,11 +9,15 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.FileValidationException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,19 +30,22 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMapper projectMapper;
-    private final ProjectAccessService projectAccessService;
+    private final PermissionService permissionService;
     private final CloudinaryService cloudinaryService;
+
+    private static final long MAX_COVER_SIZE = 5 * 1024 * 1024;
+    private static final Tika TIKA = new Tika();
 
     @Value("${cloudinary.folder.cover}")
     private String coverFolder;
 
     @Transactional
     public ProjectResponse create(CreateProjectRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
+        User owner = permissionService.resolveUser(email);
 
         Project project = projectMapper.toEntity(request);
         project.setOwner(owner);
-        Project saved = projectRepository.save(project);
+        Project saved = projectRepository.saveAndFlush(project);
 
         projectMemberRepository.save(ProjectMember.builder()
                 .project(saved)
@@ -51,22 +58,21 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAll(String email) {
-        User owner = projectAccessService.resolveUser(email);
-        return projectRepository.findByOwnerId(owner.getId()).stream()
+        User user = permissionService.resolveUser(email);
+        return projectRepository.findAllByMembership(user.getId()).stream()
                 .map(projectMapper::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ProjectResponse findById(UUID id, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        return projectMapper.toResponse(projectAccessService.resolveOwnedProject(id, owner.getId()));
+        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.VIEWER);
+        return projectMapper.toResponse(project);
     }
 
     @Transactional
     public ProjectResponse update(UUID id, UpdateProjectRequest request, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(id, owner.getId());
+        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.COLLABORATOR);
 
         if (request.name() != null) project.setName(request.name());
         if (request.description() != null) project.setDescription(request.description());
@@ -76,19 +82,36 @@ public class ProjectService {
 
     @Transactional
     public void delete(UUID id, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        projectRepository.delete(projectAccessService.resolveOwnedProject(id, owner.getId()));
+        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
+        projectRepository.delete(project);
     }
 
     @Transactional
     public ProjectResponse uploadCover(UUID id, MultipartFile file, String email) {
-        User owner = projectAccessService.resolveUser(email);
-        Project project = projectAccessService.resolveOwnedProject(id, owner.getId());
+        validateImageFile(file);
+        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.COLLABORATOR);
 
         String coverUrl = cloudinaryService.upload(
                 file, String.format(coverFolder, id), "cover", "image", true);
         project.setCoverUrl(coverUrl);
 
         return projectMapper.toResponse(project);
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new FileValidationException("File must not be empty");
+        }
+        if (file.getSize() > MAX_COVER_SIZE) {
+            throw new FileValidationException("File size must not exceed 5MB");
+        }
+        try (InputStream is = file.getInputStream()) {
+            String detectedType = TIKA.detect(is, file.getOriginalFilename());
+            if (detectedType == null || !detectedType.startsWith("image/")) {
+                throw new FileValidationException("Only image files are accepted");
+            }
+        } catch (IOException e) {
+            throw new FileValidationException("Could not read uploaded file");
+        }
     }
 }
