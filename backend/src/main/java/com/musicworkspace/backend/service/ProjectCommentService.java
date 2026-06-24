@@ -25,11 +25,11 @@ public class ProjectCommentService {
 
     @Transactional
     public CommentResponse create(UUID projectId, CreateCommentRequest request, String email) {
-        Project project = permissionService.checkProjectPermission(projectId, email, ProjectRole.VIEWER);
+        ProjectMember member = permissionService.resolveMembership(projectId, email, ProjectRole.VIEWER);
 
         ProjectComment comment = ProjectComment.builder()
-                .project(project)
-                .author(permissionService.resolveUser(email))
+                .project(member.getProject())
+                .author(member.getUser())
                 .content(request.content())
                 .build();
 

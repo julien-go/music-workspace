@@ -25,11 +25,13 @@ public class TrackVersionCommentService {
 
     @Transactional
     public CommentResponse create(UUID projectId, UUID trackId, UUID versionId, CreateCommentRequest request, String email) {
-        TrackVersion version = permissionService.checkTrackVersionPermission(projectId, trackId, versionId, email, ProjectRole.VIEWER);
+        ProjectMember member = permissionService.resolveMembership(projectId, email, ProjectRole.VIEWER);
+        permissionService.resolveTrack(projectId, trackId);
+        TrackVersion version = permissionService.resolveTrackVersion(trackId, versionId);
 
         TrackVersionComment comment = TrackVersionComment.builder()
                 .trackVersion(version)
-                .author(permissionService.resolveUser(email))
+                .author(member.getUser())
                 .content(request.content())
                 .build();
 
@@ -47,7 +49,8 @@ public class TrackVersionCommentService {
     @Transactional
     public void delete(UUID projectId, UUID trackId, UUID versionId, UUID commentId, String email) {
         ProjectMember member = permissionService.resolveMembership(projectId, email, ProjectRole.VIEWER);
-        permissionService.checkTrackVersionPermission(projectId, trackId, versionId, email, ProjectRole.VIEWER);
+        permissionService.resolveTrack(projectId, trackId);
+        permissionService.resolveTrackVersion(trackId, versionId);
         TrackVersionComment comment = trackVersionCommentRepository.findByIdAndTrackVersionId(commentId, versionId)
                 .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
         permissionService.checkCommentDeletePermission(member.getRole(), member.getUser().getId(), comment.getAuthor().getId());

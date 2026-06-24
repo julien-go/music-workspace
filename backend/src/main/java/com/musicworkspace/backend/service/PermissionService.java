@@ -15,6 +15,7 @@ import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.util.UUID;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -33,25 +34,38 @@ public class PermissionService {
 
     public Track checkTrackPermission(UUID projectId, UUID trackId, String email, ProjectRole requiredRole) {
         checkProjectPermission(projectId, email, requiredRole);
-        return trackRepository.findByIdAndProjectId(trackId, projectId)
-                .orElseThrow(() -> new TrackNotFoundException("Track not found"));
+        return resolveTrack(projectId, trackId);
     }
 
     public TrackVersion checkTrackVersionPermission(UUID projectId, UUID trackId, UUID versionId, String email, ProjectRole requiredRole) {
         checkTrackPermission(projectId, trackId, email, requiredRole);
+        return resolveTrackVersion(trackId, versionId);
+    }
+
+    public Track resolveTrack(UUID projectId, UUID trackId) {
+        return trackRepository.findByIdAndProjectId(trackId, projectId)
+                .orElseThrow(() -> new TrackNotFoundException("Track not found"));
+    }
+
+    public TrackVersion resolveTrackVersion(UUID trackId, UUID versionId) {
         return trackVersionRepository.findByIdAndTrackId(versionId, trackId)
                 .orElseThrow(() -> new TrackVersionNotFoundException("Track version not found"));
     }
 
     public void checkTaskDeletePermission(ProjectRole callerRole, UUID callerUserId, UUID taskCreatorId) {
-        if (callerRole != ProjectRole.OWNER && !taskCreatorId.equals(callerUserId)) {
-            throw new TaskNotFoundException("Task not found");
-        }
+        checkOwnerOrAuthorPermission(callerRole, callerUserId, taskCreatorId,
+                () -> new TaskNotFoundException("Task not found"));
     }
 
     public void checkCommentDeletePermission(ProjectRole callerRole, UUID callerUserId, UUID commentAuthorId) {
-        if (callerRole != ProjectRole.OWNER && !commentAuthorId.equals(callerUserId)) {
-            throw new CommentNotFoundException("Comment not found");
+        checkOwnerOrAuthorPermission(callerRole, callerUserId, commentAuthorId,
+                () -> new CommentNotFoundException("Comment not found"));
+    }
+
+    private void checkOwnerOrAuthorPermission(ProjectRole callerRole, UUID callerUserId, UUID authorId,
+                                              Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (callerRole != ProjectRole.OWNER && !authorId.equals(callerUserId)) {
+            throw exceptionSupplier.get();
         }
     }
 

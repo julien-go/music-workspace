@@ -78,8 +78,10 @@ class TrackVersionCommentServiceTest {
     void create_savesAndReturnsComment() {
         CreateCommentRequest request = new CreateCommentRequest("Tempo is off");
 
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
-        when(permissionService.resolveUser(EMAIL)).thenReturn(author);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.saveAndFlush(any(TrackVersionComment.class))).thenReturn(comment);
         when(commentMapper.toResponse(comment)).thenReturn(response);
 
@@ -96,7 +98,10 @@ class TrackVersionCommentServiceTest {
     void create_throwsWhenVersionNotFound() {
         CreateCommentRequest request = new CreateCommentRequest("Tempo is off");
 
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId))
                 .thenThrow(new TrackVersionNotFoundException("Track version not found"));
 
         assertThatThrownBy(() -> trackVersionCommentService.create(projectId, trackId, versionId, request, EMAIL))
@@ -118,7 +123,8 @@ class TrackVersionCommentServiceTest {
     void delete_removesOwnComment() {
         ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.findByIdAndTrackVersionId(comment.getId(), versionId)).thenReturn(Optional.of(comment));
 
         trackVersionCommentService.delete(projectId, trackId, versionId, comment.getId(), EMAIL);
@@ -133,7 +139,8 @@ class TrackVersionCommentServiceTest {
         ProjectMember ownerMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.OWNER).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(ownerMember);
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.findByIdAndTrackVersionId(otherComment.getId(), versionId)).thenReturn(Optional.of(otherComment));
 
         trackVersionCommentService.delete(projectId, trackId, versionId, otherComment.getId(), EMAIL);
@@ -148,7 +155,8 @@ class TrackVersionCommentServiceTest {
         ProjectMember collabMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(collabMember);
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.findByIdAndTrackVersionId(otherComment.getId(), versionId)).thenReturn(Optional.of(otherComment));
         doThrow(new CommentNotFoundException("Comment not found"))
                 .when(permissionService).checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
@@ -165,7 +173,8 @@ class TrackVersionCommentServiceTest {
         ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.findByIdAndTrackVersionId(fakeCommentId, versionId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trackVersionCommentService.delete(projectId, trackId, versionId, fakeCommentId, EMAIL))

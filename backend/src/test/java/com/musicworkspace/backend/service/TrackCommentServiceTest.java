@@ -73,8 +73,9 @@ class TrackCommentServiceTest {
     void create_savesAndReturnsComment() {
         CreateCommentRequest request = new CreateCommentRequest("Sounds great");
 
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
-        when(permissionService.resolveUser(EMAIL)).thenReturn(author);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.saveAndFlush(any(TrackComment.class))).thenReturn(comment);
         when(commentMapper.toResponse(comment)).thenReturn(response);
 
@@ -91,7 +92,9 @@ class TrackCommentServiceTest {
     void create_throwsWhenTrackNotFound() {
         CreateCommentRequest request = new CreateCommentRequest("Sounds great");
 
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER))
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
+        when(permissionService.resolveTrack(projectId, trackId))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
         assertThatThrownBy(() -> trackCommentService.create(projectId, trackId, request, EMAIL))
@@ -113,7 +116,7 @@ class TrackCommentServiceTest {
     void delete_removesOwnComment() {
         ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.findByIdAndTrackId(comment.getId(), trackId)).thenReturn(Optional.of(comment));
 
         trackCommentService.delete(projectId, trackId, comment.getId(), EMAIL);
@@ -128,7 +131,7 @@ class TrackCommentServiceTest {
         ProjectMember ownerMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.OWNER).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(ownerMember);
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.findByIdAndTrackId(otherComment.getId(), trackId)).thenReturn(Optional.of(otherComment));
 
         trackCommentService.delete(projectId, trackId, otherComment.getId(), EMAIL);
@@ -143,7 +146,7 @@ class TrackCommentServiceTest {
         ProjectMember collabMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(collabMember);
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.findByIdAndTrackId(otherComment.getId(), trackId)).thenReturn(Optional.of(otherComment));
         doThrow(new CommentNotFoundException("Comment not found"))
                 .when(permissionService).checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
@@ -160,7 +163,7 @@ class TrackCommentServiceTest {
         ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
-        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
+        when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.findByIdAndTrackId(fakeCommentId, trackId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trackCommentService.delete(projectId, trackId, fakeCommentId, EMAIL))

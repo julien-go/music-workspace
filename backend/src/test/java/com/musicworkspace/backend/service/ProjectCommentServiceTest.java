@@ -67,8 +67,8 @@ class ProjectCommentServiceTest {
     void create_savesAndReturnsComment() {
         CreateCommentRequest request = new CreateCommentRequest("Great mix!");
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
-        when(permissionService.resolveUser(EMAIL)).thenReturn(author);
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
         when(projectCommentRepository.saveAndFlush(any(ProjectComment.class))).thenReturn(comment);
         when(commentMapper.toResponse(comment)).thenReturn(response);
 
@@ -86,7 +86,7 @@ class ProjectCommentServiceTest {
     void create_throwsWhenNotMember() {
         CreateCommentRequest request = new CreateCommentRequest("Great mix!");
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectCommentService.create(projectId, request, EMAIL))

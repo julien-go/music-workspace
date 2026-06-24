@@ -73,11 +73,8 @@ public class TrackVersionService {
 
     @Transactional(readOnly = true)
     public TrackVersionResponse findById(UUID projectId, UUID trackId, UUID versionId, String email) {
-        permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
-        return trackVersionMapper.toResponse(
-                trackVersionRepository.findByIdAndTrackId(versionId, trackId)
-                        .orElseThrow(() -> new TrackVersionNotFoundException("Track version not found"))
-        );
+        TrackVersion version = permissionService.checkTrackVersionPermission(projectId, trackId, versionId, email, ProjectRole.VIEWER);
+        return trackVersionMapper.toResponse(version);
     }
 
     private void validateAudioFile(MultipartFile file) {
