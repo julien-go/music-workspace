@@ -34,7 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
+import com.musicworkspace.backend.exception.FileValidationException;
 
 @ExtendWith(MockitoExtension.class)
 class TrackVersionServiceTest {
@@ -88,13 +88,13 @@ class TrackVersionServiceTest {
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://cloudinary.com/audio.mp3");
-        when(trackVersionRepository.save(any(TrackVersion.class))).thenReturn(version);
+        when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenReturn(version);
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
         TrackVersionResponse result = trackVersionService.create(projectId, trackId, "First take", file, EMAIL);
 
         assertThat(result).isEqualTo(response);
-        verify(trackVersionRepository).save(any(TrackVersion.class));
+        verify(trackVersionRepository).saveAndFlush(any(TrackVersion.class));
     }
 
     @Test
@@ -107,7 +107,7 @@ class TrackVersionServiceTest {
                 .thenReturn("https://cloudinary.com/v4.mp3");
 
         TrackVersion savedVersion = TrackVersion.builder().id(versionId).track(track).versionNumber(4).audioUrl("https://cloudinary.com/v4.mp3").build();
-        when(trackVersionRepository.save(any(TrackVersion.class))).thenReturn(savedVersion);
+        when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenReturn(savedVersion);
         TrackVersionResponse v4Response = new TrackVersionResponse(versionId, trackId, 4, "https://cloudinary.com/v4.mp3", null, Instant.now());
         when(trackVersionMapper.toResponse(savedVersion)).thenReturn(v4Response);
 
@@ -157,7 +157,7 @@ class TrackVersionServiceTest {
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://cloudinary.com/audio.mp3");
-        when(trackVersionRepository.save(any(TrackVersion.class))).thenThrow(new DataIntegrityViolationException("duplicate"));
+        when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenThrow(new DataIntegrityViolationException("duplicate"));
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
                 .isInstanceOf(VersionConflictException.class);
@@ -248,7 +248,7 @@ class TrackVersionServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", new byte[0]);
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("File must not be empty");
     }
 
@@ -260,7 +260,7 @@ class TrackVersionServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", largeContent);
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("File size must not exceed 70MB");
     }
 
@@ -270,7 +270,7 @@ class TrackVersionServiceTest {
                 new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("Only audio files are accepted");
     }
 }

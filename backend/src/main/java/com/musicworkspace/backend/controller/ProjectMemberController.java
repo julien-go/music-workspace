@@ -43,21 +43,21 @@ public class ProjectMemberController {
         return ResponseEntity.ok(projectMemberService.findAll(projectId, authentication.getName()));
     }
 
-    @PatchMapping("/{memberId}")
+    @PatchMapping("/{userId}")
     public ResponseEntity<ProjectMemberResponse> updateRole(
             @PathVariable UUID projectId,
-            @PathVariable UUID memberId,
+            @PathVariable UUID userId,
             @Valid @RequestBody UpdateMemberRoleRequest request,
             Authentication authentication) {
-        return ResponseEntity.ok(projectMemberService.updateRole(projectId, memberId, request, authentication.getName()));
+        return ResponseEntity.ok(projectMemberService.updateRole(projectId, userId, request, authentication.getName()));
     }
 
-    @DeleteMapping("/{memberId}")
+    @DeleteMapping("/{userId}")
     public ResponseEntity<Void> removeMember(
             @PathVariable UUID projectId,
-            @PathVariable UUID memberId,
+            @PathVariable UUID userId,
             Authentication authentication) {
-        projectMemberService.removeMember(projectId, memberId, authentication.getName());
+        projectMemberService.removeMember(projectId, userId, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

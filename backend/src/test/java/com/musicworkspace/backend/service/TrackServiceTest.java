@@ -64,7 +64,7 @@ class TrackServiceTest {
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
-        when(trackRepository.save(mapped)).thenReturn(track);
+        when(trackRepository.saveAndFlush(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         TrackResponse result = trackService.create(projectId, request, EMAIL);
@@ -81,7 +81,7 @@ class TrackServiceTest {
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
-        when(trackRepository.save(mapped)).thenReturn(track);
+        when(trackRepository.saveAndFlush(mapped)).thenReturn(track);
         when(trackMapper.toResponse(track)).thenReturn(response);
 
         trackService.create(projectId, request, EMAIL);

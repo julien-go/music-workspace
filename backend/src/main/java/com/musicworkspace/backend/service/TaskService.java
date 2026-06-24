@@ -10,10 +10,10 @@ import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
-import com.musicworkspace.backend.exception.UserNotFoundException;
+import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final TaskMapper taskMapper;
     private final PermissionService permissionService;
 
@@ -41,7 +41,7 @@ public class TaskService {
                 .project(project)
                 .createdBy(creator)
                 .status(TaskStatus.TODO)
-                .assignedTo(request.assignedToId() != null ? resolveAssignee(request.assignedToId()) : null)
+                .assignedTo(request.assignedToId() != null ? resolveAssignee(projectId, request.assignedToId()) : null)
                 .build();
 
         return taskMapper.toResponse(taskRepository.saveAndFlush(task));
@@ -75,7 +75,7 @@ public class TaskService {
 
         if (isProvided(request.assignedToId())) {
             UUID assigneeId = request.assignedToId().get();
-            task.setAssignedTo(assigneeId != null ? resolveAssignee(assigneeId) : null);
+            task.setAssignedTo(assigneeId != null ? resolveAssignee(projectId, assigneeId) : null);
         }
 
         return taskMapper.toResponse(task);
@@ -94,9 +94,10 @@ public class TaskService {
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
-    private User resolveAssignee(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Assigned user not found"));
+    private User resolveAssignee(UUID projectId, UUID userId) {
+        return projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new MemberNotFoundException("Assigned user is not a member of this project"))
+                .getUser();
     }
 
     private static boolean isProvided(JsonNullable<?> nullable) {

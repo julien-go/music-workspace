@@ -84,14 +84,14 @@ class ProjectMemberServiceTest {
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
         when(projectMemberRepository.existsByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(false);
         when(userRepository.findById(collaborator.getId())).thenReturn(Optional.of(collaborator));
-        when(projectMemberRepository.save(any(ProjectMember.class))).thenReturn(collabMember);
+        when(projectMemberRepository.saveAndFlush(any(ProjectMember.class))).thenReturn(collabMember);
         when(projectMemberMapper.toResponse(collabMember)).thenReturn(collabResponse);
 
         ProjectMemberResponse result = projectMemberService.addMember(projectId, request, OWNER_EMAIL);
 
         assertThat(result).isEqualTo(collabResponse);
         ArgumentCaptor<ProjectMember> captor = ArgumentCaptor.forClass(ProjectMember.class);
-        verify(projectMemberRepository).save(captor.capture());
+        verify(projectMemberRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getRole()).isEqualTo(ProjectRole.COLLABORATOR);
         assertThat(captor.getValue().getUser()).isEqualTo(collaborator);
     }
@@ -165,11 +165,11 @@ class ProjectMemberServiceTest {
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.VIEWER);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(collabMember));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(Optional.of(collabMember));
         when(projectMemberRepository.save(collabMember)).thenReturn(collabMember);
         when(projectMemberMapper.toResponse(collabMember)).thenReturn(collabResponse);
 
-        projectMemberService.updateRole(projectId, memberId, request, OWNER_EMAIL);
+        projectMemberService.updateRole(projectId, collaborator.getId(), request, OWNER_EMAIL);
 
         assertThat(collabMember.getRole()).isEqualTo(ProjectRole.VIEWER);
         verify(projectMemberRepository).save(collabMember);
@@ -181,7 +181,7 @@ class ProjectMemberServiceTest {
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
 
-        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, memberId, request, OWNER_EMAIL))
+        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, collaborator.getId(), request, OWNER_EMAIL))
                 .isInstanceOf(OwnerRoleException.class);
     }
 
@@ -190,30 +190,30 @@ class ProjectMemberServiceTest {
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.VIEWER);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(ownerMember.getId(), projectId)).thenReturn(Optional.of(ownerMember));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, owner.getId())).thenReturn(Optional.of(ownerMember));
 
-        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, ownerMember.getId(), request, OWNER_EMAIL))
+        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, owner.getId(), request, OWNER_EMAIL))
                 .isInstanceOf(OwnerRoleException.class);
     }
 
     @Test
     void updateRole_throwsWhenMemberNotFound() {
-        UUID fakeMemberId = UUID.randomUUID();
+        UUID fakeUserId = UUID.randomUUID();
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.VIEWER);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(fakeMemberId, projectId)).thenReturn(Optional.empty());
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, fakeMemberId, request, OWNER_EMAIL))
+        assertThatThrownBy(() -> projectMemberService.updateRole(projectId, fakeUserId, request, OWNER_EMAIL))
                 .isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test
     void removeMember_deletesCollaborator() {
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(collabMember));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(Optional.of(collabMember));
 
-        projectMemberService.removeMember(projectId, memberId, OWNER_EMAIL);
+        projectMemberService.removeMember(projectId, collaborator.getId(), OWNER_EMAIL);
 
         verify(projectMemberRepository).delete(collabMember);
     }
@@ -221,9 +221,9 @@ class ProjectMemberServiceTest {
     @Test
     void removeMember_throwsWhenTargetIsOwner() {
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(ownerMember.getId(), projectId)).thenReturn(Optional.of(ownerMember));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, owner.getId())).thenReturn(Optional.of(ownerMember));
 
-        assertThatThrownBy(() -> projectMemberService.removeMember(projectId, ownerMember.getId(), OWNER_EMAIL))
+        assertThatThrownBy(() -> projectMemberService.removeMember(projectId, owner.getId(), OWNER_EMAIL))
                 .isInstanceOf(OwnerRoleException.class);
 
         verify(projectMemberRepository, never()).delete(any());
@@ -231,12 +231,12 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_throwsWhenMemberNotFound() {
-        UUID fakeMemberId = UUID.randomUUID();
+        UUID fakeUserId = UUID.randomUUID();
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.findByIdAndProjectId(fakeMemberId, projectId)).thenReturn(Optional.empty());
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectMemberService.removeMember(projectId, fakeMemberId, OWNER_EMAIL))
+        assertThatThrownBy(() -> projectMemberService.removeMember(projectId, fakeUserId, OWNER_EMAIL))
                 .isInstanceOf(MemberNotFoundException.class);
     }
 }

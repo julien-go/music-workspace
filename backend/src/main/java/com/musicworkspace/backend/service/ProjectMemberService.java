@@ -17,6 +17,7 @@ import com.musicworkspace.backend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,7 +49,11 @@ public class ProjectMemberService {
                 .role(request.role())
                 .build();
 
-        return projectMemberMapper.toResponse(projectMemberRepository.saveAndFlush(member));
+        try {
+            return projectMemberMapper.toResponse(projectMemberRepository.saveAndFlush(member));
+        } catch (DataIntegrityViolationException e) {
+            throw new MemberAlreadyExistsException("User is already a member of this project");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -60,12 +65,12 @@ public class ProjectMemberService {
     }
 
     @Transactional
-    public ProjectMemberResponse updateRole(UUID projectId, UUID memberId, UpdateMemberRoleRequest request, String email) {
+    public ProjectMemberResponse updateRole(UUID projectId, UUID userId, UpdateMemberRoleRequest request, String email) {
         permissionService.checkProjectPermission(projectId, email, ProjectRole.OWNER);
 
         rejectOwnerRole(request.role());
 
-        ProjectMember member = resolveMember(memberId, projectId);
+        ProjectMember member = resolveMember(projectId, userId);
 
         if (member.getRole() == ProjectRole.OWNER) {
             throw new OwnerRoleException("Cannot modify the project owner's role");
@@ -76,10 +81,10 @@ public class ProjectMemberService {
     }
 
     @Transactional
-    public void removeMember(UUID projectId, UUID memberId, String email) {
+    public void removeMember(UUID projectId, UUID userId, String email) {
         permissionService.checkProjectPermission(projectId, email, ProjectRole.OWNER);
 
-        ProjectMember member = resolveMember(memberId, projectId);
+        ProjectMember member = resolveMember(projectId, userId);
 
         if (member.getRole() == ProjectRole.OWNER) {
             throw new OwnerRoleException("Cannot remove the project owner");
@@ -88,8 +93,8 @@ public class ProjectMemberService {
         projectMemberRepository.delete(member);
     }
 
-    private ProjectMember resolveMember(UUID memberId, UUID projectId) {
-        return projectMemberRepository.findByIdAndProjectId(memberId, projectId)
+    private ProjectMember resolveMember(UUID projectId, UUID userId) {
+        return projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new MemberNotFoundException("Member not found"));
     }
 

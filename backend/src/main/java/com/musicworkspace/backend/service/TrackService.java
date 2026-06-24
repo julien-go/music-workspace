@@ -54,6 +54,10 @@ public class TrackService {
     public TrackResponse update(UUID projectId, UUID trackId, UpdateTrackRequest request, String email) {
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
 
+        if (track.isArchived()) {
+            throw new TrackAlreadyArchivedException("Cannot update an archived track");
+        }
+
         if (request.name() != null) track.setName(request.name());
         if (request.description() != null) track.setDescription(request.description());
         if (request.status() != null) track.setStatus(request.status());

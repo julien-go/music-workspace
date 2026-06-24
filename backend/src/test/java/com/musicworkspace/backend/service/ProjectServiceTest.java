@@ -16,6 +16,7 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.FileValidationException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
@@ -75,7 +76,7 @@ class ProjectServiceTest {
 
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectMapper.toEntity(request)).thenReturn(mapped);
-        when(projectRepository.save(mapped)).thenReturn(project);
+        when(projectRepository.saveAndFlush(mapped)).thenReturn(project);
         when(projectMapper.toResponse(project)).thenReturn(response);
 
         ProjectResponse result = projectService.create(request, EMAIL);
@@ -161,7 +162,8 @@ class ProjectServiceTest {
 
     @Test
     void uploadCover_uploadsToCloudinaryAndUpdatesCoverUrl() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "cover.png", "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -176,12 +178,42 @@ class ProjectServiceTest {
 
     @Test
     void uploadCover_throwsNotFoundWhenNotMember() {
-        MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", "img".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "cover.png", "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
+    }
+
+    @Test
+    void uploadCover_throwsWhenFileIsEmpty() {
+        MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", new byte[0]);
+
+        assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))
+                .isInstanceOf(FileValidationException.class)
+                .hasMessageContaining("File must not be empty");
+    }
+
+    @Test
+    void uploadCover_throwsWhenFileTooLarge() {
+        byte[] largeContent = new byte[6 * 1024 * 1024];
+        MockMultipartFile file = new MockMultipartFile("file", "cover.jpg", "image/jpeg", largeContent);
+
+        assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))
+                .isInstanceOf(FileValidationException.class)
+                .hasMessageContaining("File size must not exceed 5MB");
+    }
+
+    @Test
+    void uploadCover_throwsWhenFileIsNotImage() {
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg",
+                new byte[]{(byte) 0xFF, (byte) 0xFB, (byte) 0x90, 0x00});
+
+        assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))
+                .isInstanceOf(FileValidationException.class)
+                .hasMessageContaining("Only image files are accepted");
     }
 }

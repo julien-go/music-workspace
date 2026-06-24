@@ -20,11 +20,11 @@ import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Task;
 import com.musicworkspace.backend.entity.TaskStatus;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TaskNotFoundException;
-import com.musicworkspace.backend.exception.UserNotFoundException;
+import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TaskRepository;
-import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +44,7 @@ class TaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private ProjectMemberRepository projectMemberRepository;
 
     @Mock
     private TaskMapper taskMapper;
@@ -83,14 +83,14 @@ class TaskServiceTest {
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
-        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskRepository.saveAndFlush(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         TaskResponse result = taskService.create(projectId, request, EMAIL);
 
         assertThat(result).isEqualTo(response);
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
-        verify(taskRepository).save(captor.capture());
+        verify(taskRepository).saveAndFlush(captor.capture());
         Task saved = captor.getValue();
         assertThat(saved.getTitle()).isEqualTo("Record guitar");
         assertThat(saved.getStatus()).isEqualTo(TaskStatus.TODO);
@@ -102,32 +102,35 @@ class TaskServiceTest {
     @Test
     void create_assignsUserWhenAssignedToIdProvided() {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
+        ProjectMember assigneeMember = ProjectMember.builder()
+                .id(UUID.randomUUID()).project(project).user(assignee).role(ProjectRole.COLLABORATOR).build();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, assignee.getId());
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
-        when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
-        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, assignee.getId()))
+                .thenReturn(Optional.of(assigneeMember));
+        when(taskRepository.saveAndFlush(any(Task.class))).thenReturn(task);
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         taskService.create(projectId, request, EMAIL);
 
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
-        verify(taskRepository).save(captor.capture());
+        verify(taskRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getAssignedTo()).isEqualTo(assignee);
     }
 
     @Test
-    void create_throwsWhenAssignedUserNotFound() {
+    void create_throwsWhenAssignedUserNotMember() {
         UUID fakeUserId = UUID.randomUUID();
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, fakeUserId);
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
-        when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.create(projectId, request, EMAIL))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test
@@ -228,11 +231,14 @@ class TaskServiceTest {
     @Test
     void update_assignsNewUserWhenAssignedToIdProvided() {
         User assignee = User.builder().id(UUID.randomUUID()).email("other@example.com").username("other").build();
+        ProjectMember assigneeMember = ProjectMember.builder()
+                .id(UUID.randomUUID()).project(project).user(assignee).role(ProjectRole.COLLABORATOR).build();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(assignee.getId()));
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(userRepository.findById(assignee.getId())).thenReturn(Optional.of(assignee));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, assignee.getId()))
+                .thenReturn(Optional.of(assigneeMember));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
         taskService.update(projectId, taskId, request, EMAIL);
@@ -241,16 +247,16 @@ class TaskServiceTest {
     }
 
     @Test
-    void update_throwsWhenAssignedUserNotFound() {
+    void update_throwsWhenAssignedUserNotMember() {
         UUID fakeUserId = UUID.randomUUID();
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(fakeUserId));
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.update(projectId, taskId, request, EMAIL))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test

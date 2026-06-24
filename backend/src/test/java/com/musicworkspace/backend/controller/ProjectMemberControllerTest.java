@@ -55,14 +55,14 @@ class ProjectMemberControllerTest {
     private UserDetailsService userDetailsService;
 
     private UUID projectId;
-    private UUID memberId;
+    private UUID userId;
     private ProjectMemberResponse response;
 
     @BeforeEach
     void setUp() {
         projectId = UUID.randomUUID();
-        memberId = UUID.randomUUID();
-        response = new ProjectMemberResponse(memberId,
+        userId = UUID.randomUUID();
+        response = new ProjectMemberResponse(userId,
                 new UserSummary(UUID.randomUUID(), "collab"),
                 ProjectRole.COLLABORATOR, Instant.now());
     }
@@ -105,9 +105,9 @@ class ProjectMemberControllerTest {
     @Test
     void updateRole_returns200() throws Exception {
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.VIEWER);
-        when(projectMemberService.updateRole(eq(projectId), eq(memberId), any(), any())).thenReturn(response);
+        when(projectMemberService.updateRole(eq(projectId), eq(userId), any(), any())).thenReturn(response);
 
-        mockMvc.perform(patch("/api/v1/projects/{projectId}/members/{memberId}", projectId, memberId)
+        mockMvc.perform(patch("/api/v1/projects/{projectId}/members/{userId}", projectId, userId)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -117,10 +117,10 @@ class ProjectMemberControllerTest {
     @Test
     void updateRole_returns404WhenMemberNotFound() throws Exception {
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.VIEWER);
-        when(projectMemberService.updateRole(eq(projectId), eq(memberId), any(), any()))
+        when(projectMemberService.updateRole(eq(projectId), eq(userId), any(), any()))
                 .thenThrow(new MemberNotFoundException("Member not found"));
 
-        mockMvc.perform(patch("/api/v1/projects/{projectId}/members/{memberId}", projectId, memberId)
+        mockMvc.perform(patch("/api/v1/projects/{projectId}/members/{userId}", projectId, userId)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -129,9 +129,9 @@ class ProjectMemberControllerTest {
 
     @Test
     void removeMember_returns204() throws Exception {
-        doNothing().when(projectMemberService).removeMember(eq(projectId), eq(memberId), any());
+        doNothing().when(projectMemberService).removeMember(eq(projectId), eq(userId), any());
 
-        mockMvc.perform(delete("/api/v1/projects/{projectId}/members/{memberId}", projectId, memberId)
+        mockMvc.perform(delete("/api/v1/projects/{projectId}/members/{userId}", projectId, userId)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
