@@ -1,6 +1,6 @@
 # API Design
 
-Base URL: `/api/v1` · Auth: `Authorization: Bearer <token>` · Responses: JSON
+Base URL: `/api/v1` · Auth: httpOnly cookie `jwt` (set by server on login/register) · Fallback: `Authorization: Bearer <token>` (Swagger UI) · Responses: JSON
 
 ---
 
@@ -62,7 +62,7 @@ Validation errors (422):
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
 | POST | `/auth/register` | Register | No |
-| POST | `/auth/login` | Login → returns JWT | No |
+| POST | `/auth/login` | Login → sets JWT cookie | No |
 | GET | `/auth/me` | Authenticated user profile | Yes |
 
 ### Projects
@@ -149,8 +149,8 @@ Validation errors (422):
 }
 
 // AuthResponse (register + login)
+// JWT is set as httpOnly cookie — not returned in body
 {
-  "token": "eyJhbGc...",
   "user": {
     "id": "uuid",
     "email": "john@example.com",
@@ -189,6 +189,7 @@ Validation errors (422):
   "description": "Description",
   "coverUrl": null,
   "owner": { "id": "uuid", "username": "john" },
+  "currentUserRole": "OWNER",
   "createdAt": "2024-01-01T00:00:00Z",
   "updatedAt": "2024-01-01T00:00:00Z"
 }

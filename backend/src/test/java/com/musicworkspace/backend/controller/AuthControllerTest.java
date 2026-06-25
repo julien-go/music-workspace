@@ -69,7 +69,7 @@ class AuthControllerTest {
 
     @Test
     void register_returnsCreatedWithCookieAndAuthResponse() throws Exception {
-        RegisterRequest request = new RegisterRequest("test@example.com", "testuser", "password123");
+        RegisterRequest request = new RegisterRequest("test@example.com", "testuser", "Password1!");
         when(authService.register(any(RegisterRequest.class))).thenReturn(authResult);
 
         mockMvc.perform(post("/api/v1/auth/register")
@@ -86,7 +86,7 @@ class AuthControllerTest {
 
     @Test
     void register_returnsValidationErrorOnInvalidEmail() throws Exception {
-        RegisterRequest request = new RegisterRequest("not-an-email", "testuser", "password123");
+        RegisterRequest request = new RegisterRequest("not-an-email", "testuser", "Password1!");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,7 +98,7 @@ class AuthControllerTest {
 
     @Test
     void register_returnsConflictWhenEmailAlreadyExists() throws Exception {
-        RegisterRequest request = new RegisterRequest("test@example.com", "testuser", "password123");
+        RegisterRequest request = new RegisterRequest("test@example.com", "testuser", "Password1!");
         when(authService.register(any(RegisterRequest.class)))
                 .thenThrow(new EmailAlreadyExistsException("Email already in use: test@example.com"));
 
@@ -112,7 +112,7 @@ class AuthControllerTest {
 
     @Test
     void login_returnsOkWithCookieAndAuthResponse() throws Exception {
-        LoginRequest request = new LoginRequest("test@example.com", "password123");
+        LoginRequest request = new LoginRequest("test@example.com", "Password1!");
         when(authService.login(any(LoginRequest.class))).thenReturn(authResult);
 
         mockMvc.perform(post("/api/v1/auth/login")
