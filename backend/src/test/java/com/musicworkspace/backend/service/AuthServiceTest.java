@@ -13,6 +13,7 @@ import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserMapper;
 import com.musicworkspace.backend.dto.UserResponse;
+import com.musicworkspace.backend.security.CustomUserDetails;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.exception.UsernameAlreadyExistsException;
@@ -33,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -125,7 +127,10 @@ class AuthServiceTest {
                 .username("testuser")
                 .build();
 
-        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.of(user));
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        when(authenticationManager.authenticate(any())).thenReturn(authToken);
         when(jwtService.generateToken(loginRequest.email())).thenReturn("jwt-token");
         when(userMapper.toAuthUser(user)).thenReturn(new AuthUser(userId, "test@example.com", "testuser"));
 

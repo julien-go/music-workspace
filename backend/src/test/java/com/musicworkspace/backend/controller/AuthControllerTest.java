@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.musicworkspace.backend.config.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
 import com.musicworkspace.backend.dto.LoginRequest;
@@ -21,20 +22,20 @@ import com.musicworkspace.backend.service.AuthService.AuthResult;
 import java.time.Instant;
 import java.util.UUID;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(properties = {"app.cookie.secure=false", "jwt.expiration-ms=86400000"})
 class AuthControllerTest {
 
     @Autowired
@@ -47,6 +48,9 @@ class AuthControllerTest {
     private AuthService authService;
 
     @MockitoBean
+    private CookieService cookieService;
+
+    @MockitoBean
     private JwtService jwtService;
 
     @MockitoBean
@@ -54,6 +58,14 @@ class AuthControllerTest {
 
     private final AuthResult authResult = new AuthResult("jwt-token",
             new AuthResponse(new AuthUser(UUID.randomUUID(), "test@example.com", "testuser")));
+
+    @BeforeEach
+    void setUp() {
+        when(cookieService.buildJwtCookie("jwt-token")).thenReturn(
+                ResponseCookie.from("jwt", "jwt-token").httpOnly(true).sameSite("Lax").path("/").build());
+        when(cookieService.buildLogoutCookie()).thenReturn(
+                ResponseCookie.from("jwt", "").httpOnly(true).sameSite("Lax").path("/").maxAge(0).build());
+    }
 
     @Test
     void register_returnsCreatedWithCookieAndAuthResponse() throws Exception {
@@ -137,6 +149,14 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void logout_returnsNoContentAndClearsCookie() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("jwt=")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("Max-Age=0")));
     }
 
     @Test

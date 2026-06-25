@@ -1,5 +1,6 @@
 package com.musicworkspace.backend.security;
 
+import com.musicworkspace.backend.config.CookieService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,7 +8,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,13 +18,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final String JWT_COOKIE = "jwt";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -64,14 +64,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) {
-            return null;
-        }
-        return Arrays.stream(request.getCookies())
-                .filter(c -> JWT_COOKIE.equals(c.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(null);
+        Cookie cookie = WebUtils.getCookie(request, CookieService.JWT_COOKIE);
+        return cookie != null ? cookie.getValue() : null;
     }
 
     private String extractTokenFromHeader(HttpServletRequest request) {

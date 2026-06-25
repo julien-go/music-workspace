@@ -98,7 +98,6 @@ class ProjectServiceTest {
                 .project(project).user(owner).role(ProjectRole.OWNER).build();
 
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
-        when(projectRepository.findAllByMembership(owner.getId())).thenReturn(List.of(project));
         when(projectMemberRepository.findByUserId(owner.getId())).thenReturn(List.of(membership));
         when(projectMapper.toResponse(project, ProjectRole.OWNER)).thenReturn(response);
 

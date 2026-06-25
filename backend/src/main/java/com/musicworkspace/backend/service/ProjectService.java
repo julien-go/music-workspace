@@ -15,9 +15,7 @@ import com.musicworkspace.backend.repository.ProjectRepository;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,14 +59,8 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAll(String email) {
         User user = permissionService.resolveUser(email);
-        List<Project> projects = projectRepository.findAllByMembership(user.getId());
-
-        Map<UUID, ProjectRole> rolesByProjectId = projectMemberRepository.findByUserId(user.getId())
-                .stream()
-                .collect(Collectors.toMap(pm -> pm.getProject().getId(), ProjectMember::getRole));
-
-        return projects.stream()
-                .map(p -> projectMapper.toResponse(p, rolesByProjectId.get(p.getId())))
+        return projectMemberRepository.findByUserId(user.getId()).stream()
+                .map(pm -> projectMapper.toResponse(pm.getProject(), pm.getRole()))
                 .toList();
     }
 

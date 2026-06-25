@@ -9,6 +9,7 @@ import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.exception.UsernameAlreadyExistsException;
 import com.musicworkspace.backend.repository.UserRepository;
+import com.musicworkspace.backend.security.CustomUserDetails;
 import com.musicworkspace.backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
@@ -58,12 +59,10 @@ public class AuthService {
     }
 
     public AuthResult login(LoginRequest request) {
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.email()));
-
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         return buildAuthResult(user);
     }
 
