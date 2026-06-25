@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@tanstack/react-router";
 import { useLogin } from "./hooks/useLogin";
+import { loginSchema, type LoginFormData } from "./validation";
 import { ApiException } from "@/lib/api";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const login = useLogin();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    login.mutate({ email, password });
+  function onSubmit(data: LoginFormData) {
+    login.mutate(data);
   }
 
-  const errorMessage =
+  const serverError =
     login.error instanceof ApiException
       ? login.error.apiError.message
       : login.error?.message;
@@ -21,24 +25,30 @@ export default function LoginPage() {
   return (
     <div className="mx-auto mt-20 max-w-sm space-y-6">
       <h1 className="text-2xl font-bold">Login</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full rounded border px-3 py-2"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full rounded border px-3 py-2"
-        />
-        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <input
+            type="email"
+            placeholder="Email"
+            {...register("email")}
+            className="w-full rounded border px-3 py-2"
+          />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+          )}
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            {...register("password")}
+            className="w-full rounded border px-3 py-2"
+          />
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+          )}
+        </div>
+        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
         <button
           type="submit"
           disabled={login.isPending}
@@ -48,7 +58,10 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="text-sm text-neutral-500">
-        No account? <Link to="/register" className="underline">Register</Link>
+        No account?{" "}
+        <Link to="/register" className="underline">
+          Register
+        </Link>
       </p>
     </div>
   );

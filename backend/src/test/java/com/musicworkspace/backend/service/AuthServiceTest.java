@@ -67,8 +67,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        registerRequest = new RegisterRequest("test@example.com", "testuser", "password123");
-        loginRequest = new LoginRequest("test@example.com", "password123");
+        registerRequest = new RegisterRequest("test@example.com", "testuser", "Password1!");
+        loginRequest = new LoginRequest("test@example.com", "Password1!");
     }
 
     @Test
