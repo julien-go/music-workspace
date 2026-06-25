@@ -18,6 +18,7 @@ import com.musicworkspace.backend.dto.CreateProjectRequest;
 import com.musicworkspace.backend.dto.ProjectResponse;
 import com.musicworkspace.backend.dto.UpdateProjectRequest;
 import com.musicworkspace.backend.dto.UserSummary;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.security.JwtService;
 import com.musicworkspace.backend.service.ProjectService;
@@ -63,7 +64,7 @@ class ProjectControllerTest {
         projectResponse = new ProjectResponse(
                 projectId, "My Album", "A description", null,
                 new UserSummary(UUID.randomUUID(), "testuser"),
-                Instant.now(), Instant.now());
+                ProjectRole.OWNER, Instant.now(), Instant.now());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.musicworkspace.backend.dto;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.musicworkspace.backend.entity.Project;
+import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ class ProjectMapperTest {
     }
 
     @Test
-    void toResponse_mapsOwnerToUserSummary() {
+    void toResponse_mapsOwnerAndRole() {
         User owner = User.builder()
                 .id(UUID.randomUUID())
                 .username("alice")
@@ -34,7 +35,7 @@ class ProjectMapperTest {
                 .owner(owner)
                 .build();
 
-        ProjectResponse response = mapper.toResponse(project);
+        ProjectResponse response = mapper.toResponse(project, ProjectRole.COLLABORATOR);
 
         assertThat(response.id()).isEqualTo(project.getId());
         assertThat(response.name()).isEqualTo("My Album");
@@ -42,17 +43,19 @@ class ProjectMapperTest {
         assertThat(response.owner()).isNotNull();
         assertThat(response.owner().id()).isEqualTo(owner.getId());
         assertThat(response.owner().username()).isEqualTo("alice");
+        assertThat(response.currentUserRole()).isEqualTo(ProjectRole.COLLABORATOR);
     }
 
     @Test
-    void toResponse_handlesNullOwner() {
+    void toResponse_handlesNullOwnerAndNullRole() {
         Project project = Project.builder()
                 .id(UUID.randomUUID())
                 .name("No Owner")
                 .build();
 
-        ProjectResponse response = mapper.toResponse(project);
+        ProjectResponse response = mapper.toResponse(project, null);
 
         assertThat(response.owner()).isNull();
+        assertThat(response.currentUserRole()).isNull();
     }
 }

@@ -3,6 +3,7 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +59,7 @@ class ProjectServiceTest {
     private UUID projectId;
     private Project project;
     private ProjectResponse response;
+    private ProjectMember ownerMember;
 
     @BeforeEach
     void setUp() {
@@ -66,7 +68,10 @@ class ProjectServiceTest {
         projectId = UUID.randomUUID();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
         response = new ProjectResponse(projectId, "My Album", null, null,
-                new UserSummary(owner.getId(), "testuser"), Instant.now(), Instant.now());
+                new UserSummary(owner.getId(), "testuser"),
+                ProjectRole.OWNER, Instant.now(), Instant.now());
+        ownerMember = ProjectMember.builder()
+                .project(project).user(owner).role(ProjectRole.OWNER).build();
     }
 
     @Test
@@ -77,20 +82,25 @@ class ProjectServiceTest {
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectMapper.toEntity(request)).thenReturn(mapped);
         when(projectRepository.saveAndFlush(mapped)).thenReturn(project);
-        when(projectMapper.toResponse(project)).thenReturn(response);
+        when(projectMapper.toResponse(project, ProjectRole.OWNER)).thenReturn(response);
 
         ProjectResponse result = projectService.create(request, EMAIL);
 
         assertThat(result).isEqualTo(response);
+        assertThat(result.currentUserRole()).isEqualTo(ProjectRole.OWNER);
         assertThat(mapped.getOwner()).isEqualTo(owner);
         verify(projectMemberRepository).save(any(ProjectMember.class));
     }
 
     @Test
-    void findAll_returnsMappedList() {
+    void findAll_returnsMappedListWithRoles() {
+        ProjectMember membership = ProjectMember.builder()
+                .project(project).user(owner).role(ProjectRole.OWNER).build();
+
         when(permissionService.resolveUser(EMAIL)).thenReturn(owner);
         when(projectRepository.findAllByMembership(owner.getId())).thenReturn(List.of(project));
-        when(projectMapper.toResponse(project)).thenReturn(response);
+        when(projectMemberRepository.findByUserId(owner.getId())).thenReturn(List.of(membership));
+        when(projectMapper.toResponse(project, ProjectRole.OWNER)).thenReturn(response);
 
         List<ProjectResponse> result = projectService.findAll(EMAIL);
 
@@ -98,9 +108,10 @@ class ProjectServiceTest {
     }
 
     @Test
-    void findById_returnsProjectWhenMember() {
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
-        when(projectMapper.toResponse(project)).thenReturn(response);
+    void findById_returnsProjectWithRole() {
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER))
+                .thenReturn(ownerMember);
+        when(projectMapper.toResponse(project, ProjectRole.OWNER)).thenReturn(response);
 
         ProjectResponse result = projectService.findById(projectId, EMAIL);
 
@@ -109,7 +120,7 @@ class ProjectServiceTest {
 
     @Test
     void findById_throwsNotFoundWhenNotMember() {
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.findById(projectId, EMAIL))
@@ -119,9 +130,12 @@ class ProjectServiceTest {
     @Test
     void update_updatesOnlyProvidedFields() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
+        ProjectMember collaboratorMember = ProjectMember.builder()
+                .project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
-        when(projectMapper.toResponse(project)).thenReturn(response);
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
+                .thenReturn(collaboratorMember);
+        when(projectMapper.toResponse(project, ProjectRole.COLLABORATOR)).thenReturn(response);
 
         projectService.update(projectId, request, EMAIL);
 
@@ -133,7 +147,7 @@ class ProjectServiceTest {
     void update_throwsNotFoundWhenNotMember() {
         UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.update(projectId, request, EMAIL))
@@ -164,11 +178,14 @@ class ProjectServiceTest {
     void uploadCover_uploadsToCloudinaryAndUpdatesCoverUrl() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "cover.png", "image/png",
                 new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
+        ProjectMember collaboratorMember = ProjectMember.builder()
+                .project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
+                .thenReturn(collaboratorMember);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenReturn("https://res.cloudinary.com/cover.jpg");
-        when(projectMapper.toResponse(project)).thenReturn(response);
+        when(projectMapper.toResponse(project, ProjectRole.COLLABORATOR)).thenReturn(response);
 
         ProjectResponse result = projectService.uploadCover(projectId, file, EMAIL);
 
@@ -181,7 +198,7 @@ class ProjectServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "cover.png", "image/png",
                 new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR))
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
         assertThatThrownBy(() -> projectService.uploadCover(projectId, file, EMAIL))

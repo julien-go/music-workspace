@@ -34,8 +34,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
+    public record AuthResult(String token, AuthResponse response) {}
+
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResult register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new EmailAlreadyExistsException("Email already in use: " + request.email());
         }
@@ -52,14 +54,17 @@ public class AuthService {
             throw mapConstraintViolation(ex, request);
         }
 
-        return buildAuthResponse(user.getEmail());
+        return buildAuthResult(user);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResult login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
-        return buildAuthResponse(request.email());
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.email()));
+
+        return buildAuthResult(user);
     }
 
     public UserResponse getCurrentUser(Authentication authentication) {
@@ -82,8 +87,9 @@ public class AuthService {
         return ex;
     }
 
-    private AuthResponse buildAuthResponse(String email) {
-        String token = jwtService.generateToken(email);
-        return new AuthResponse(token, "Bearer", jwtService.getExpirationMs());
+    private AuthResult buildAuthResult(User user) {
+        String token = jwtService.generateToken(user.getEmail());
+        AuthResponse response = new AuthResponse(userMapper.toAuthUser(user));
+        return new AuthResult(token, response);
     }
 }

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.musicworkspace.backend.dto.AuthResponse;
+import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserMapper;
@@ -18,6 +18,7 @@ import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.exception.UsernameAlreadyExistsException;
 import com.musicworkspace.backend.repository.UserRepository;
 import com.musicworkspace.backend.security.JwtService;
+import com.musicworkspace.backend.service.AuthService.AuthResult;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
@@ -69,8 +70,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_savesUserAndReturnsToken() {
+    void register_savesUserAndReturnsAuthResult() {
+        UUID userId = UUID.randomUUID();
         User mappedUser = User.builder()
+                .id(userId)
                 .email(registerRequest.email())
                 .username(registerRequest.username())
                 .build();
@@ -80,13 +83,14 @@ class AuthServiceTest {
         when(userMapper.toEntity(registerRequest)).thenReturn(mappedUser);
         when(passwordEncoder.encode(registerRequest.password())).thenReturn("hashed-password");
         when(jwtService.generateToken(registerRequest.email())).thenReturn("jwt-token");
-        when(jwtService.getExpirationMs()).thenReturn(86_400_000L);
+        when(userMapper.toAuthUser(mappedUser)).thenReturn(new AuthUser(userId, "test@example.com", "testuser"));
 
-        AuthResponse response = authService.register(registerRequest);
+        AuthResult result = authService.register(registerRequest);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
-        assertThat(response.type()).isEqualTo("Bearer");
-        assertThat(response.expiresIn()).isEqualTo(86_400_000L);
+        assertThat(result.token()).isEqualTo("jwt-token");
+        assertThat(result.response().user().id()).isEqualTo(userId);
+        assertThat(result.response().user().email()).isEqualTo("test@example.com");
+        assertThat(result.response().user().username()).isEqualTo("testuser");
         assertThat(mappedUser.getPassword()).isEqualTo("hashed-password");
         verify(userRepository).save(mappedUser);
     }
@@ -113,15 +117,24 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_returnsTokenOnValidCredentials() {
+    void login_returnsAuthResult() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .email(loginRequest.email())
+                .username("testuser")
+                .build();
+
+        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.of(user));
         when(jwtService.generateToken(loginRequest.email())).thenReturn("jwt-token");
-        when(jwtService.getExpirationMs()).thenReturn(86_400_000L);
+        when(userMapper.toAuthUser(user)).thenReturn(new AuthUser(userId, "test@example.com", "testuser"));
 
-        AuthResponse response = authService.login(loginRequest);
+        AuthResult result = authService.login(loginRequest);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
-        assertThat(response.type()).isEqualTo("Bearer");
-        assertThat(response.expiresIn()).isEqualTo(86_400_000L);
+        assertThat(result.token()).isEqualTo("jwt-token");
+        assertThat(result.response().user().id()).isEqualTo(userId);
+        assertThat(result.response().user().email()).isEqualTo("test@example.com");
+        assertThat(result.response().user().username()).isEqualTo("testuser");
     }
 
     @Test

@@ -1,9 +1,8 @@
 package com.musicworkspace.backend.dto;
 
-public record AuthResponse(
-        String token,
-        String type,
-        // milliseconds, matches jwt.expiration-ms
-        long expiresIn
-) {
+import java.util.UUID;
+
+public record AuthResponse(AuthUser user) {
+
+    public record AuthUser(UUID id, String email, String username) {}
 }
