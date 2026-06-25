@@ -1,5 +1,6 @@
 package com.musicworkspace.backend.dto;
 
+import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
 import com.musicworkspace.backend.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,4 +14,6 @@ public interface UserMapper {
     User toEntity(RegisterRequest request);
 
     UserResponse toResponse(User user);
+
+    AuthUser toAuthUser(User user);
 }

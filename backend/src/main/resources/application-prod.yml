@@ -15,3 +15,7 @@ cloudinary:
 
 jwt:
   secret: ${JWT_SECRET}
+
+app:
+  cookie:
+    secure: true

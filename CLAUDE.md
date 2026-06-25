@@ -152,6 +152,13 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 ## Current focus
 🎨 Phase 4 — Frontend
 
+**Step 11 — Commentaires**
+- [ ] Entité Comment (projet / track / version)
+- [ ] CRUD commentaires
+- [ ] DTOs + tests
+
+  On travaille sur la branche `feature/comments`. Crée-la depuis develop si elle n'existe pas
+
 **Step 12 — Frontend setup** (branch: `feature/frontend-setup`)
 - [ ] Vite + React + TypeScript
 - [ ] Tailwind CSS + shadcn/ui
@@ -163,5 +170,5 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 - [ ] Connect to backend (auth endpoints)
 
 **Backend — before starting frontend**
-- [ ] Adapt `/auth/login` to set httpOnly cookie instead of returning token in response body
-- [ ] Add `currentUserRole` to `ProjectResponse`
+- [x] Adapt `/auth/login` to set httpOnly cookie instead of returning token in response body
+- [x] Add `currentUserRole` to `ProjectResponse`

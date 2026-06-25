@@ -16,6 +16,10 @@ cloudinary:
 jwt:
   secret: ${JWT_SECRET}
 
+app:
+  cookie:
+    secure: false
+
 logging:
   level:
     org.hibernate.SQL: debug

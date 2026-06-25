@@ -4,24 +4,31 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.musicworkspace.backend.config.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
+import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.security.JwtService;
 import com.musicworkspace.backend.service.AuthService;
+import com.musicworkspace.backend.service.AuthService.AuthResult;
 import java.time.Instant;
 import java.util.UUID;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -40,27 +47,41 @@ class AuthControllerTest {
     @MockitoBean
     private AuthService authService;
 
-    // Required to satisfy JwtAuthenticationFilter's constructor, even though
-    // addFilters = false means the filter never actually runs in these tests.
+    @MockitoBean
+    private CookieService cookieService;
+
     @MockitoBean
     private JwtService jwtService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    private final AuthResult authResult = new AuthResult("jwt-token",
+            new AuthResponse(new AuthUser(UUID.randomUUID(), "test@example.com", "testuser")));
+
+    @BeforeEach
+    void setUp() {
+        when(cookieService.buildJwtCookie("jwt-token")).thenReturn(
+                ResponseCookie.from("jwt", "jwt-token").httpOnly(true).sameSite("Lax").path("/").build());
+        when(cookieService.buildLogoutCookie()).thenReturn(
+                ResponseCookie.from("jwt", "").httpOnly(true).sameSite("Lax").path("/").maxAge(0).build());
+    }
+
     @Test
-    void register_returnsCreatedAndToken() throws Exception {
+    void register_returnsCreatedWithCookieAndAuthResponse() throws Exception {
         RegisterRequest request = new RegisterRequest("test@example.com", "testuser", "password123");
-        AuthResponse response = new AuthResponse("jwt-token", "Bearer", 86_400_000L);
-        when(authService.register(any(RegisterRequest.class))).thenReturn(response);
+        when(authService.register(any(RegisterRequest.class))).thenReturn(authResult);
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value("jwt-token"))
-                .andExpect(jsonPath("$.type").value("Bearer"))
-                .andExpect(jsonPath("$.expiresIn").value(86_400_000));
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("jwt=jwt-token")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("SameSite=Lax")))
+                .andExpect(jsonPath("$.user.email").value("test@example.com"))
+                .andExpect(jsonPath("$.user.username").value("testuser"))
+                .andExpect(jsonPath("$.token").doesNotExist());
     }
 
     @Test
@@ -90,17 +111,19 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_returnsOkAndToken() throws Exception {
+    void login_returnsOkWithCookieAndAuthResponse() throws Exception {
         LoginRequest request = new LoginRequest("test@example.com", "password123");
-        AuthResponse response = new AuthResponse("jwt-token", "Bearer", 86_400_000L);
-        when(authService.login(any(LoginRequest.class))).thenReturn(response);
+        when(authService.login(any(LoginRequest.class))).thenReturn(authResult);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("jwt-token"))
-                .andExpect(jsonPath("$.type").value("Bearer"));
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("jwt=jwt-token")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("HttpOnly")))
+                .andExpect(jsonPath("$.user.email").value("test@example.com"))
+                .andExpect(jsonPath("$.user.username").value("testuser"))
+                .andExpect(jsonPath("$.token").doesNotExist());
     }
 
     @Test
@@ -129,9 +152,17 @@ class AuthControllerTest {
     }
 
     @Test
+    void logout_returnsNoContentAndClearsCookie() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("jwt=")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("Max-Age=0")));
+    }
+
+    @Test
     void me_returnsCurrentUserProfile() throws Exception {
-        UserResponse response = new UserResponse(UUID.randomUUID(), "test@example.com", "testuser", Instant.now());
-        when(authService.getCurrentUser(any())).thenReturn(response);
+        UserResponse userResponse = new UserResponse(UUID.randomUUID(), "test@example.com", "testuser", Instant.now());
+        when(authService.getCurrentUser(any())).thenReturn(userResponse);
 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
