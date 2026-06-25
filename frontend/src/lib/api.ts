@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -28,6 +29,7 @@ export async function fetchApi<T>(
   });
 
   if (response.status === 401) {
+    useAuthStore.getState().clearUser();
     window.location.href = "/login";
     throw new ApiException({
       status: 401,
