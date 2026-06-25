@@ -19,9 +19,9 @@ export default function RegisterPage() {
 
   const error = registerMutation.error;
   const apiError = error instanceof ApiException ? error.apiError : null;
-  const fieldErrors = apiError?.errors ?? [];
+  const serverErrors = apiError?.errors ?? [];
   const serverMessage =
-    apiError && !fieldErrors.length ? apiError.message : error && !apiError ? error.message : null;
+    apiError && !serverErrors.length ? apiError.message : error && !apiError ? error.message : null;
 
   return (
     <div className="mx-auto mt-20 max-w-sm space-y-6">
@@ -31,6 +31,7 @@ export default function RegisterPage() {
           <input
             type="email"
             placeholder="Email"
+            required
             {...register("email")}
             className="w-full rounded border px-3 py-2"
           />
@@ -42,6 +43,7 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Username"
+            required
             {...register("username")}
             className="w-full rounded border px-3 py-2"
           />
@@ -53,6 +55,7 @@ export default function RegisterPage() {
           <input
             type="password"
             placeholder="Password"
+            required
             {...register("password")}
             className="w-full rounded border px-3 py-2"
           />
@@ -61,10 +64,8 @@ export default function RegisterPage() {
           )}
         </div>
         {serverMessage && <p className="text-sm text-red-600">{serverMessage}</p>}
-        {fieldErrors.map((fe) => (
-          <p key={fe.field} className="text-sm text-red-600">
-            {fe.field}: {fe.message}
-          </p>
+        {serverErrors.map((err, i) => (
+          <p key={i} className="text-sm text-red-600">{err}</p>
         ))}
         <button
           type="submit"

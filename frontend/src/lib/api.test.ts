@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fetchApi, ApiException } from "./api";
 import { useAuthStore } from "@/store/authStore";
+import { router } from "@/routes";
 
 describe("fetchApi", () => {
   beforeEach(() => {
@@ -82,20 +83,41 @@ describe("fetchApi", () => {
     }
   });
 
-  it("clears auth store and redirects on 401", async () => {
+  it("clears auth store and navigates to /login on 401", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(null, { status: 401 }),
     );
-
-    const originalLocation = window.location.href;
-    Object.defineProperty(window, "location", {
-      value: { href: originalLocation },
-      writable: true,
-      configurable: true,
-    });
+    const navigateSpy = vi.spyOn(router, "navigate").mockResolvedValue(undefined as never);
 
     await expect(fetchApi("/test")).rejects.toThrow(ApiException);
     expect(useAuthStore.getState().user).toBeNull();
-    expect(window.location.href).toBe("/login");
+    expect(navigateSpy).toHaveBeenCalledWith({ to: "/login" });
+  });
+
+  it("skips 401 redirect when skipAuthRedirect is true", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ status: 401, error: "UNAUTHORIZED", message: "Bad credentials", errors: [] }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const navigateSpy = vi.spyOn(router, "navigate").mockResolvedValue(undefined as never);
+
+    await expect(fetchApi("/test", { skipAuthRedirect: true })).rejects.toThrow(ApiException);
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
+  it("handles non-JSON error body gracefully", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response("<html>502 Bad Gateway</html>", { status: 502 }),
+    );
+
+    try {
+      await fetchApi("/test");
+      expect.fail("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ApiException);
+      expect((e as ApiException).apiError.status).toBe(502);
+    }
   });
 });

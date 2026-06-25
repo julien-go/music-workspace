@@ -30,6 +30,7 @@ export default function LoginPage() {
           <input
             type="email"
             placeholder="Email"
+            required
             {...register("email")}
             className="w-full rounded border px-3 py-2"
           />
@@ -41,6 +42,7 @@ export default function LoginPage() {
           <input
             type="password"
             placeholder="Password"
+            required
             {...register("password")}
             className="w-full rounded border px-3 py-2"
           />

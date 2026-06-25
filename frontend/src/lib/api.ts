@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/authStore";
+import { router } from "@/routes";
 import type { ApiError } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -12,25 +13,30 @@ export class ApiException extends Error {
   }
 }
 
+interface FetchApiOptions extends RequestInit {
+  skipAuthRedirect?: boolean;
+}
+
 export async function fetchApi<T>(
   endpoint: string,
-  options?: RequestInit,
+  options?: FetchApiOptions,
 ): Promise<T> {
+  const { skipAuthRedirect, ...requestInit } = options ?? {};
   const headers: Record<string, string> = {};
 
-  if (!(options?.body instanceof FormData)) {
+  if (!(requestInit.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: { ...headers, ...(options?.headers as Record<string, string>) },
+    ...requestInit,
+    headers: { ...headers, ...(requestInit.headers as Record<string, string>) },
     credentials: "include",
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && !skipAuthRedirect) {
     useAuthStore.getState().clearUser();
-    window.location.href = "/login";
+    router.navigate({ to: "/login" });
     throw new ApiException({
       status: 401,
       error: "UNAUTHORIZED",
@@ -40,8 +46,18 @@ export async function fetchApi<T>(
   }
 
   if (!response.ok) {
-    const apiError: ApiError = await response.json();
-    throw new ApiException(apiError);
+    try {
+      const apiError: ApiError = await response.json();
+      throw new ApiException(apiError);
+    } catch (e) {
+      if (e instanceof ApiException) throw e;
+      throw new ApiException({
+        status: response.status,
+        error: response.statusText || "ERROR",
+        message: `Request failed with status ${response.status}`,
+        errors: [],
+      });
+    }
   }
 
   if (response.status === 204) {
