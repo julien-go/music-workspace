@@ -183,13 +183,11 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 
 🎨 Phase 4 — Frontend
 
-**Step 12 — Frontend setup** (branch: `feature/frontend-setup`)
+** Étape 13 — UI MVP **
 
-- [ ] Vite + React + TypeScript
-- [ ] Tailwind CSS + shadcn/ui
-- [ ] TanStack Router (manual config)
-- [ ] TanStack Query
-- [ ] Zustand
-- [ ] Fetch wrapper with httpOnly cookie + 401 redirect
-- [ ] Route structure
-- [ ] Connect to backend (auth endpoints)
+- [ ] Design system & visual direction (palette, typo, variables CSS shadcn, références visuelles)
+- [ ] Auth (login / register)
+- [ ] Dashboard projets
+- [ ] Vue projet (tracks + tâches)
+- [ ] Vue track (versions + player audio)
+- [ ] Player audio : tester shadcn/ui custom vs wavesurfer.js (waveform) — trancher selon le rendu
