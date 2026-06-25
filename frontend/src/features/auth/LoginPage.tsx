@@ -4,6 +4,10 @@ import { Link } from "@tanstack/react-router";
 import { useLogin } from "./hooks/useLogin";
 import { loginSchema, type LoginFormData } from "./validation";
 import { ApiException } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+
+const inputClass =
+  "w-full rounded-lg border border-border bg-input px-3 py-2 text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors";
 
 export default function LoginPage() {
   const login = useLogin();
@@ -23,48 +27,52 @@ export default function LoginPage() {
       : login.error?.message;
 
   return (
-    <div className="mx-auto mt-20 max-w-sm space-y-6">
-      <h1 className="text-2xl font-bold">Login</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            {...register("email")}
-            className="w-full rounded border px-3 py-2"
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-          )}
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-foreground">Connexion</h1>
+          <p className="text-sm text-muted-foreground">
+            Pas encore de compte ?{" "}
+            <Link to="/register" className="text-foreground underline underline-offset-4">
+              S'inscrire
+            </Link>
+          </p>
         </div>
-        <div>
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            {...register("password")}
-            className="w-full rounded border px-3 py-2"
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-1">
+            <input
+              type="email"
+              placeholder="Email"
+              {...register("email")}
+              className={inputClass}
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              {...register("password")}
+              className={inputClass}
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password.message}</p>
+            )}
+          </div>
+
+          {serverError && (
+            <p className="text-sm text-destructive">{serverError}</p>
           )}
-        </div>
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
-        <button
-          type="submit"
-          disabled={login.isPending}
-          className="w-full rounded bg-neutral-900 py-2 text-white disabled:opacity-50"
-        >
-          {login.isPending ? "Logging in…" : "Log in"}
-        </button>
-      </form>
-      <p className="text-sm text-neutral-500">
-        No account?{" "}
-        <Link to="/register" className="underline">
-          Register
-        </Link>
-      </p>
+
+          <Button type="submit" className="w-full" disabled={login.isPending}>
+            {login.isPending ? "Connexion…" : "Se connecter"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -185,7 +185,8 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 
 ** Étape 13 — UI MVP **
 
-- [ ] Design system & visual direction (palette, typo, variables CSS shadcn, références visuelles)
+- [x] Design system & visual direction (palette, typo, variables CSS shadcn, références visuelles)
+- [ ] Homepage + layout global (nav, structure des pages, routing visuel)
 - [ ] Auth (login / register)
 - [ ] Dashboard projets
 - [ ] Vue projet (tracks + tâches)

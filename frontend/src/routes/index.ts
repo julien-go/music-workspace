@@ -7,6 +7,8 @@ import {
 } from "@tanstack/react-router";
 import { useAuthStore } from "@/store/authStore";
 import { fetchMe } from "@/features/auth/api";
+import { PublicLayout } from "@/components/layout/PublicLayout";
+import { AuthLayout } from "@/components/layout/AuthLayout";
 import HomePage from "@/features/home/HomePage";
 import NotFoundPage from "@/features/not-found/NotFoundPage";
 import LoginPage from "@/features/auth/LoginPage";
@@ -45,12 +47,57 @@ const rootRoute = createRootRoute({
   beforeLoad: rehydrateAuth,
 });
 
-const homeRoute = createRoute({
+// Public layout — topbar with Login / Register
+const publicLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
-  component: HomePage,
+  id: "public-layout",
+  component: PublicLayout,
 });
 
+const homeRoute = createRoute({
+  getParentRoute: () => publicLayoutRoute,
+  path: "/",
+  component: HomePage,
+  beforeLoad: () => {
+    if (useAuthStore.getState().user) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
+});
+
+const publicProjectRoute = createRoute({
+  getParentRoute: () => publicLayoutRoute,
+  path: "/p/$projectId",
+  component: PublicProjectPage,
+});
+
+// Auth layout — topbar with Dashboard / username / Logout; redirects if not authenticated
+const authLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "auth-layout",
+  component: AuthLayout,
+  beforeLoad: requireAuth,
+});
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => authLayoutRoute,
+  path: "/dashboard",
+  component: DashboardPage,
+});
+
+const projectDetailRoute = createRoute({
+  getParentRoute: () => authLayoutRoute,
+  path: "/projects/$projectId",
+  component: ProjectDetailPage,
+});
+
+const trackDetailRoute = createRoute({
+  getParentRoute: () => projectDetailRoute,
+  path: "/tracks/$trackId",
+  component: TrackDetailPage,
+});
+
+// Auth pages without layout
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
@@ -63,39 +110,14 @@ const registerRoute = createRoute({
   component: RegisterPage,
 });
 
-const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/dashboard",
-  component: DashboardPage,
-  beforeLoad: requireAuth,
-});
-
-const projectDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/projects/$projectId",
-  component: ProjectDetailPage,
-  beforeLoad: requireAuth,
-});
-
-const trackDetailRoute = createRoute({
-  getParentRoute: () => projectDetailRoute,
-  path: "/tracks/$trackId",
-  component: TrackDetailPage,
-});
-
-const publicProjectRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/p/$projectId",
-  component: PublicProjectPage,
-});
-
 const routeTree = rootRoute.addChildren([
-  homeRoute,
+  publicLayoutRoute.addChildren([homeRoute, publicProjectRoute]),
+  authLayoutRoute.addChildren([
+    dashboardRoute,
+    projectDetailRoute.addChildren([trackDetailRoute]),
+  ]),
   loginRoute,
   registerRoute,
-  dashboardRoute,
-  projectDetailRoute.addChildren([trackDetailRoute]),
-  publicProjectRoute,
 ]);
 
 export const router = createRouter({ routeTree });

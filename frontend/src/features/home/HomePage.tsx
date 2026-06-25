@@ -1,37 +1,92 @@
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { WaveformCanvas } from "./WaveformCanvas";
+
+const features = [
+  {
+    number: "01",
+    title: "Projets centralisés",
+    description:
+      "Regroupez pistes, versions et tâches dans un seul espace de travail partagé.",
+  },
+  {
+    number: "02",
+    title: "Versioning audio",
+    description:
+      "Uploadez et historisez chaque version de vos pistes. Rien ne se perd.",
+  },
+  {
+    number: "03",
+    title: "Collaboration par rôles",
+    description:
+      "Owner, Collaborateur, Viewer — le bon niveau d'accès pour chaque membre.",
+  },
+  {
+    number: "04",
+    title: "Suivi des tâches",
+    description:
+      "Créez, assignez et suivez l'avancement des tâches de production.",
+  },
+];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background p-12 space-y-10">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold text-foreground">Music Workspace</h1>
-        <h2 className="text-2xl text-foreground">Design system — Syne heading</h2>
-        <h3 className="text-xl text-foreground">h3 heading</h3>
-        <h4 className="text-lg text-foreground">h4 heading</h4>
-        <p className="text-foreground">Corps de texte en DM Sans — regular 400</p>
-        <p className="font-medium text-muted-foreground">Muted foreground — medium 500</p>
-      </div>
-
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Buttons — shadcn variants</p>
-        <div className="flex flex-wrap gap-3">
-          <Button>Primary (accent)</Button>
-          <Button variant="outline">Outline</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
-          <Button variant="link">Link</Button>
+    <div className="flex flex-col">
+      {/* Hero */}
+      <section className="bg-background border-b border-border pt-28 pb-0">
+        <div className="max-w-2xl mx-auto text-center space-y-7 px-6 pb-14">
+          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-foreground">
+            Créez. Versionnez.{" "}
+            <span className="text-accent">Collaborez.</span>
+          </h1>
+          <p className="text-lg text-foreground max-w-lg mx-auto leading-relaxed">
+            La plateforme de gestion de projets musicaux pensée pour les équipes
+            créatives.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Button size="lg" asChild>
+              <Link to="/register">Créer un compte</Link>
+            </Button>
+            <Button variant="secondary" size="lg" asChild>
+              <Link to="/login">Se connecter</Link>
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">Surfaces</p>
-        <div className="flex gap-4">
-          <div className="bg-surface rounded-card border border-border p-4 text-foreground text-sm">surface</div>
-          <div className="bg-surface-elevated rounded-card border border-border p-4 text-foreground text-sm">surface-elevated</div>
-          <div className="bg-accent rounded-card p-4 text-foreground text-sm">accent</div>
+        <div className="max-w-3xl mx-auto px-6">
+          <WaveformCanvas />
         </div>
-      </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-background px-6 py-8">
+        <div className="max-w-5xl mx-auto">
+          {features.map(({ number, title, description }, index) => {
+            const isOdd = index % 2 === 0;
+            return (
+              <div
+                key={number}
+                className={`group border-t border-border py-7 flex items-center gap-12 ${isOdd ? "" : "flex-row-reverse"}`}
+              >
+                <span className="w-24 shrink-0 text-5xl font-bold font-heading text-muted-foreground transition-colors duration-300 ease group-hover:text-accent">
+                  {number}
+                </span>
+                <div className={`flex-1 ${isOdd ? "" : "text-right"}`}>
+                  <h3 className="font-semibold text-foreground text-base mb-1">{title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+                </div>
+              </div>
+            );
+          })}
+          <div className="border-t border-border" />
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-10 text-center">
+        <p className="text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Music Workspace
+        </p>
+      </footer>
     </div>
   );
 }
