@@ -1,12 +1,15 @@
 package com.musicworkspace.backend.controller;
 
+import com.musicworkspace.backend.config.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.service.AuthService;
+import com.musicworkspace.backend.service.AuthService.AuthResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,15 +25,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final CookieService cookieService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+        AuthResult result = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookieService.buildJwtCookie(result.token()).toString())
+                .body(result.response());
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        AuthResult result = authService.login(request);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieService.buildJwtCookie(result.token()).toString())
+                .body(result.response());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookieService.buildLogoutCookie().toString())
+                .build();
     }
 
     @GetMapping("/me")
