@@ -40,8 +40,14 @@ export default function ProjectDetailPage() {
 
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [editFocusField, setEditFocusField] = useState<"name" | "description">("name");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+
+  const openEditDialog = (field: "name" | "description") => {
+    setEditFocusField(field);
+    setEditProjectOpen(true);
+  };
 
   const { data: archivedTracks = [], isLoading: archivedLoading } = useArchivedTracks(projectId, showArchived);
 
@@ -78,7 +84,7 @@ export default function ProjectDetailPage() {
               </h1>
               {canEdit && (
                 <button
-                  onClick={() => setEditProjectOpen(true)}
+                  onClick={() => openEditDialog("name")}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
                   title="Modifier le titre"
                 >
@@ -102,7 +108,7 @@ export default function ProjectDetailPage() {
               <p className="text-sm text-muted-foreground">{project.description}</p>
               {canEdit && (
                 <button
-                  onClick={() => setEditProjectOpen(true)}
+                  onClick={() => openEditDialog("description")}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   title="Modifier la description"
                 >
@@ -112,7 +118,7 @@ export default function ProjectDetailPage() {
             </div>
           ) : canEdit ? (
             <button
-              onClick={() => setEditProjectOpen(true)}
+              onClick={() => openEditDialog("description")}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 flex items-center gap-1.5"
             >
               <Pencil className="w-4 h-4" />
@@ -240,6 +246,7 @@ export default function ProjectDetailPage() {
         <EditProjectDialog
           project={project}
           open={editProjectOpen}
+          focusField={editFocusField}
           onClose={() => setEditProjectOpen(false)}
         />
       )}

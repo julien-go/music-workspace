@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,21 @@ import type { ProjectResponse, UpdateProjectRequest } from "../types";
 interface Props {
   project: ProjectResponse;
   open: boolean;
+  focusField?: "name" | "description";
   onClose: () => void;
 }
 
-export function EditProjectDialog({ project, open, onClose }: Props) {
+export function EditProjectDialog({ project, open, focusField = "name", onClose }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UpdateProjectRequest>({
     defaultValues: { name: project.name, description: project.description ?? "" },
   });
   const updateProject = useUpdateProject(project.id);
   const [serverError, setServerError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const { ref: nameFormRef, ...nameRest } = register("name", { required: "Le nom est requis" });
+  const { ref: descriptionFormRef, ...descriptionRest } = register("description");
 
   const handleClose = () => {
     reset({ name: project.name, description: project.description ?? "" });
@@ -36,7 +42,17 @@ export function EditProjectDialog({ project, open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="bg-surface ring-border sm:max-w-md p-8 gap-6">
+      <DialogContent
+        className="bg-surface ring-border sm:max-w-md p-8 gap-6"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          if (focusField === "description") {
+            descriptionRef.current?.focus();
+          } else {
+            nameRef.current?.focus();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-heading font-bold">Modifier le projet</DialogTitle>
         </DialogHeader>
@@ -44,7 +60,8 @@ export function EditProjectDialog({ project, open, onClose }: Props) {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-foreground">Nom *</label>
             <input
-              {...register("name", { required: "Le nom est requis" })}
+              {...nameRest}
+              ref={(el) => { nameRef.current = el; nameFormRef(el); }}
               className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
             />
             {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
@@ -52,7 +69,8 @@ export function EditProjectDialog({ project, open, onClose }: Props) {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-foreground">Description</label>
             <textarea
-              {...register("description")}
+              {...descriptionRest}
+              ref={(el) => { descriptionRef.current = el; descriptionFormRef(el); }}
               rows={3}
               className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent resize-none"
             />
