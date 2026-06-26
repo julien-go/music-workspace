@@ -39,7 +39,7 @@ export async function fetchApi<T>(
     throw new ApiException({
       status: 0,
       error: "NETWORK_ERROR",
-      message: "Impossible de joindre le serveur. Vérifiez votre connexion.",
+      message: "Le serveur est momentanément indisponible.",
       errors: [],
     });
   }
@@ -60,7 +60,7 @@ export async function fetchApi<T>(
       throw new ApiException({
         status: response.status,
         error: "SERVICE_UNAVAILABLE",
-        message: "Le serveur est inaccessible. Réessayez dans un instant.",
+        message: "Le serveur est momentanément indisponible.",
         errors: [],
       });
     }
