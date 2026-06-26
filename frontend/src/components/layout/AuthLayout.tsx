@@ -2,6 +2,7 @@ import { Outlet, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
+import { PersistentPlayer } from "@/components/PersistentPlayer";
 
 export function AuthLayout() {
   const user = useAuthStore((s) => s.user);
@@ -35,9 +36,10 @@ export function AuthLayout() {
           </nav>
         </div>
       </header>
-      <main className="flex-1">
+      <main className="flex-1 pb-28">
         <Outlet />
       </main>
+      <PersistentPlayer />
     </div>
   );
 }

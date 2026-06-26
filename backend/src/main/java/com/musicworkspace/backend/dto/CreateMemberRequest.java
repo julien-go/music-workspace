@@ -1,11 +1,12 @@
 package com.musicworkspace.backend.dto;
 
 import com.musicworkspace.backend.entity.ProjectRole;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
 
 public record CreateMemberRequest(
-        @NotNull UUID userId,
+        @NotBlank @Email String email,
         @NotNull ProjectRole role
 ) {
 }

@@ -11,6 +11,9 @@ public record TrackResponse(
         TrackStatus status,
         boolean archived,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        int versionCount,
+        String lastVersionNote,
+        CommentResponse lastComment
 ) {
 }

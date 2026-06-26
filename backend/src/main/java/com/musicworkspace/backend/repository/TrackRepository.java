@@ -10,5 +10,7 @@ public interface TrackRepository extends JpaRepository<Track, UUID> {
 
     List<Track> findByProjectIdAndArchivedFalse(UUID projectId);
 
+    List<Track> findByProjectIdAndArchivedTrue(UUID projectId);
+
     Optional<Track> findByIdAndProjectId(UUID id, UUID projectId);
 }

@@ -1,6 +1,7 @@
 package com.musicworkspace.backend.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -59,12 +60,12 @@ class TrackControllerTest {
     void setUp() {
         projectId = UUID.randomUUID();
         trackId = UUID.randomUUID();
-        response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now());
+        response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
     }
 
     @Test
     void list_returns200WithTracks() throws Exception {
-        when(trackService.findAll(eq(projectId), any())).thenReturn(List.of(response));
+        when(trackService.findAll(eq(projectId), any(), anyBoolean())).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/projects/{projectId}/tracks", projectId))
                 .andExpect(status().isOk())
@@ -74,7 +75,7 @@ class TrackControllerTest {
 
     @Test
     void list_returns404WhenProjectNotOwned() throws Exception {
-        when(trackService.findAll(eq(projectId), any())).thenThrow(new ProjectNotFoundException("Project not found"));
+        when(trackService.findAll(eq(projectId), any(), anyBoolean())).thenThrow(new ProjectNotFoundException("Project not found"));
 
         mockMvc.perform(get("/api/v1/projects/{projectId}/tracks", projectId))
                 .andExpect(status().isNotFound());

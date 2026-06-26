@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -38,8 +39,9 @@ public class TrackController {
     @GetMapping
     public ResponseEntity<List<TrackResponse>> list(
             @PathVariable UUID projectId,
+            @RequestParam(defaultValue = "false") boolean archived,
             Authentication authentication) {
-        return ResponseEntity.ok(trackService.findAll(projectId, authentication.getName()));
+        return ResponseEntity.ok(trackService.findAll(projectId, authentication.getName(), archived));
     }
 
     @GetMapping("/{trackId}")
@@ -65,5 +67,13 @@ public class TrackController {
             @PathVariable UUID trackId,
             Authentication authentication) {
         return ResponseEntity.ok(trackService.archive(projectId, trackId, authentication.getName()));
+    }
+
+    @PatchMapping("/{trackId}/unarchive")
+    public ResponseEntity<TrackResponse> unarchive(
+            @PathVariable UUID projectId,
+            @PathVariable UUID trackId,
+            Authentication authentication) {
+        return ResponseEntity.ok(trackService.unarchive(projectId, trackId, authentication.getName()));
     }
 }

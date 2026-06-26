@@ -36,12 +36,12 @@ public class ProjectMemberService {
 
         rejectOwnerRole(request.role());
 
-        if (projectMemberRepository.existsByProjectIdAndUserId(projectId, request.userId())) {
-            throw new MemberAlreadyExistsException("User is already a member of this project");
-        }
-
-        User newMember = userRepository.findById(request.userId())
+        User newMember = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (projectMemberRepository.existsByProjectIdAndUserId(projectId, newMember.getId())) {
+            throw new UserNotFoundException("User not found");
+        }
 
         ProjectMember member = ProjectMember.builder()
                 .project(project)

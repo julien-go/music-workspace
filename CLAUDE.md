@@ -188,7 +188,7 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 - [x] Design system & visual direction (palette, typo, variables CSS shadcn, références visuelles)
 - [x] Homepage + layout global (nav, structure des pages, routing visuel)
 - [x] Auth (login / register)
-- [ ] Dashboard projets
+- [x] Dashboard projets
 - [ ] Vue projet (tracks + tâches)
 - [ ] Vue track (versions + player audio)
-- [ ] Player audio : tester shadcn/ui custom vs wavesurfer.js (waveform) — trancher selon le rendu
+- [ ] Ajouter `originalFileName` sur `TrackVersion` (backend)

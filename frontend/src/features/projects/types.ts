@@ -12,8 +12,6 @@ export interface ProjectResponse {
   coverUrl: string | null;
   owner: ProjectOwner;
   currentUserRole: ProjectRole;
-  trackCount?: number;
-  taskCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,4 +19,26 @@ export interface ProjectResponse {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+}
+
+export interface ProjectMemberUser {
+  id: string;
+  username: string;
+}
+
+export interface ProjectMemberResponse {
+  id: string;
+  user: ProjectMemberUser;
+  role: ProjectRole;
+  joinedAt: string;
+}
+
+export interface InviteMemberRequest {
+  email: string;
+  role: Exclude<ProjectRole, "OWNER">;
 }

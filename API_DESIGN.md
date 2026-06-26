@@ -80,11 +80,13 @@ Validation errors (422):
 
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| GET | `/projects/{id}/tracks` | List tracks of a project | Yes |
+| GET | `/projects/{id}/tracks` | List active tracks of a project | Yes |
+| GET | `/projects/{id}/tracks?archived=true` | List archived tracks of a project | Yes |
 | POST | `/projects/{id}/tracks` | Create a track | Yes |
 | GET | `/projects/{id}/tracks/{trackId}` | Track detail | Yes |
 | PATCH | `/projects/{id}/tracks/{trackId}` | Update a track | Yes |
 | PATCH | `/projects/{id}/tracks/{trackId}/archive` | Archive a track | Yes |
+| PATCH | `/projects/{id}/tracks/{trackId}/unarchive` | Unarchive a track | Yes |
 
 ### Track Versions
 
@@ -220,8 +222,17 @@ Validation errors (422):
   "status": "DRAFT",
   "archived": false,
   "createdAt": "2024-01-01T00:00:00Z",
-  "updatedAt": "2024-01-01T00:00:00Z"
+  "updatedAt": "2024-01-01T00:00:00Z",
+  "versionCount": 3,
+  "lastVersionNote": "Tempo légèrement réduit",
+  "lastComment": {
+    "id": "uuid",
+    "content": "La basse est trop forte",
+    "author": { "id": "uuid", "username": "john" },
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
 }
+// lastVersionNote and lastComment are nullable (null if no versions / no comments)
 ```
 
 ### Track Versions
@@ -279,7 +290,7 @@ Validation errors (422):
 ```json
 // AddMemberRequest
 {
-  "userId": "uuid",
+  "email": "collaborateur@example.com",
   "role": "COLLABORATOR"
 }
 
@@ -290,6 +301,7 @@ Validation errors (422):
 
 // ProjectMemberResponse
 {
+  "id": "uuid",
   "user": { "id": "uuid", "username": "john" },
   "role": "COLLABORATOR",
   "joinedAt": "2024-01-01T00:00:00Z"

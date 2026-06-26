@@ -14,5 +14,12 @@ public interface TrackMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Track toEntity(CreateTrackRequest request);
 
-    TrackResponse toResponse(Track track);
+    @Mapping(source = "track.id", target = "id")
+    @Mapping(source = "track.name", target = "name")
+    @Mapping(source = "track.description", target = "description")
+    @Mapping(source = "track.status", target = "status")
+    @Mapping(source = "track.archived", target = "archived")
+    @Mapping(source = "track.createdAt", target = "createdAt")
+    @Mapping(source = "track.updatedAt", target = "updatedAt")
+    TrackResponse toResponse(Track track, int versionCount, String lastVersionNote, CommentResponse lastComment);
 }
