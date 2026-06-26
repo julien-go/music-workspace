@@ -83,8 +83,8 @@ public class ProjectService {
 
     @Transactional
     public void delete(UUID id, String email) {
-        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
-        projectRepository.delete(project);
+        permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
+        projectRepository.deleteProjectById(id);
     }
 
     @Transactional
