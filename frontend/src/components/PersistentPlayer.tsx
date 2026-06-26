@@ -89,10 +89,12 @@ export function PersistentPlayer() {
 
         {/* Ligne 1 — texte x2 */}
         <div className="flex items-center gap-3">
+          <span className="text-lg text-muted-foreground">{current.projectName}</span>
+          <span className="text-muted-foreground/40">—</span>
           <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
           <span className="text-xl font-mono text-accent">v{current.versionNumber}</span>
           {current.notes && (
-            <span className="text-lg text-muted-foreground italic max-w-80 truncate">— {current.notes}</span>
+            <span className="text-lg text-muted-foreground italic max-w-80 truncate">· {current.notes}</span>
           )}
         </div>
 

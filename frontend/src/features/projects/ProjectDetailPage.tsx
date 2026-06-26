@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "@tanstack/react-router";
+import { usePlayerStore } from "@/store/playerStore";
 import { Pencil, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useProject } from "./hooks/useProject";
@@ -48,6 +49,13 @@ export default function ProjectDetailPage() {
   if (!project) return null;
 
   const canEdit = project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
+
+  useEffect(() => {
+    const current = usePlayerStore.getState().current;
+    if (current && current.projectId !== projectId) {
+      usePlayerStore.getState().stop();
+    }
+  }, [projectId]);
   const isOwner = project.currentUserRole === "OWNER";
 
   return (
@@ -154,6 +162,7 @@ export default function ProjectDetailPage() {
                     key={track.id}
                     track={track}
                     projectId={projectId}
+                    projectName={project.name}
                     canEdit={canEdit}
                   />
                 ))}
@@ -193,6 +202,7 @@ export default function ProjectDetailPage() {
                           key={track.id}
                           track={track}
                           projectId={projectId}
+                          projectName={project.name}
                           canEdit={canEdit}
                         />
                       ))}

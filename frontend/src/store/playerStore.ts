@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 export interface PlayingVersion {
+  projectId: string;
+  projectName: string;
   trackId: string;
   trackName: string;
   versionId: string;

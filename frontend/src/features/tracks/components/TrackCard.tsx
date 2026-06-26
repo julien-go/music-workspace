@@ -14,6 +14,7 @@ import type { TrackResponse } from "../types";
 interface Props {
   track: TrackResponse;
   projectId: string;
+  projectName: string;
   canEdit: boolean;
 }
 
@@ -29,7 +30,7 @@ const statusClass: Record<string, string> = {
   DONE: "text-emerald-400 border-emerald-400/40",
 };
 
-export function TrackCard({ track, projectId, canEdit }: Props) {
+export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const navigate = useNavigate();
   const play = usePlayerStore((s) => s.play);
   const pause = usePlayerStore((s) => s.pause);
@@ -68,6 +69,8 @@ export function TrackCard({ track, projectId, canEdit }: Props) {
       const latest = versions.sort((a, b) => b.versionNumber - a.versionNumber)[0];
       if (latest) {
         play({
+          projectId,
+          projectName,
           trackId: track.id,
           trackName: track.name,
           versionId: latest.id,
