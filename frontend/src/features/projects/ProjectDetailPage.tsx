@@ -45,17 +45,17 @@ export default function ProjectDetailPage() {
 
   const { data: archivedTracks = [], isLoading: archivedLoading } = useArchivedTracks(projectId, showArchived);
 
-  if (projectLoading) return <ProjectDetailSkeleton />;
-  if (!project) return null;
-
-  const canEdit = project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
-
   useEffect(() => {
     const current = usePlayerStore.getState().current;
     if (current && current.projectId !== projectId) {
       usePlayerStore.getState().stop();
     }
   }, [projectId]);
+
+  if (projectLoading) return <ProjectDetailSkeleton />;
+  if (!project) return null;
+
+  const canEdit = project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
 
   return (
