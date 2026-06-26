@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const { data: projects, isLoading, isError } = useProjects();
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
+    <div className="max-w-[1200px] mx-auto px-6 py-10">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-foreground">Mes projets</h1>

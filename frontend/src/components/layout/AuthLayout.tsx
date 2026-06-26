@@ -11,7 +11,7 @@ export function AuthLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-surface border-b border-border h-20 shrink-0">
-        <div className="max-w-5xl mx-auto h-full px-6 flex items-center justify-between">
+        <div className="max-w-[1200px] mx-auto h-full px-6 flex items-center justify-between">
           <Link to="/dashboard" className="font-heading font-bold text-xl">
             <span className="text-accent">Music</span>
             <span className="text-foreground"> Workspace</span>
