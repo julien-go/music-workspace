@@ -105,7 +105,7 @@ export default function ProjectDetailPage() {
 
           {project.description ? (
             <div className="flex items-center gap-1.5 mb-8">
-              <p className="text-sm text-muted-foreground">{project.description}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
               {canEdit && (
                 <button
                   onClick={() => openEditDialog("description")}
