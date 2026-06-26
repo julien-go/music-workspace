@@ -1,5 +1,6 @@
 import { Outlet, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/authStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
@@ -23,8 +24,16 @@ export function AuthLayout() {
             >
               Dashboard
             </Link>
+            <Separator orientation="vertical" className="h-5" />
             {user && (
-              <span className="text-base text-muted-foreground">{user.username}</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-surface-elevated border border-border flex items-center justify-center shrink-0">
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    {user.username.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-base text-muted-foreground">{user.username}</span>
+              </div>
             )}
             <Button
               variant="ghost"
