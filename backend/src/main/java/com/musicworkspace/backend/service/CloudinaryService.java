@@ -33,4 +33,12 @@ public class CloudinaryService {
             throw new CloudinaryUploadException("Failed to upload file", e);
         }
     }
+
+    public void delete(String publicId, String resourceType) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
+        } catch (IOException ignored) {
+            // best-effort cleanup — failure here does not affect the caller's error path
+        }
+    }
 }

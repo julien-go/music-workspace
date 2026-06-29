@@ -59,6 +59,9 @@ public class TrackVersionService {
         try {
             return trackVersionMapper.toResponse(trackVersionRepository.saveAndFlush(version));
         } catch (DataIntegrityViolationException e) {
+            // Two concurrent uploads raced to the same version slot — clean up the orphaned file.
+            cloudinaryService.delete(
+                    String.format(audioFolder, projectId, trackId) + "/v" + nextVersion, "video");
             throw new VersionConflictException("Version number conflict, please retry");
         }
     }
@@ -85,7 +88,7 @@ public class TrackVersionService {
             throw new FileValidationException("File size must not exceed 70MB");
         }
         try (InputStream is = file.getInputStream()) {
-            String detectedType = TIKA.detect(is, file.getOriginalFilename());
+            String detectedType = TIKA.detect(is);
             if (detectedType == null || !detectedType.startsWith("audio/")) {
                 throw new FileValidationException("Only audio files are accepted");
             }

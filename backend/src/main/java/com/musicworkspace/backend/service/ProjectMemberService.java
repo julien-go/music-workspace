@@ -40,7 +40,7 @@ public class ProjectMemberService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, newMember.getId())) {
-            throw new UserNotFoundException("User not found");
+            throw new MemberAlreadyExistsException("User is already a member of this project");
         }
 
         ProjectMember member = ProjectMember.builder()

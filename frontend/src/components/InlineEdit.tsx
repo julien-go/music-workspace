@@ -83,7 +83,7 @@ export function InlineEdit({
             placeholder={emptyLabel}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
-            onBlur={cancel}
+            onBlur={() => { if (!isPending) cancel(); }}
             className={fieldClassName}
           />
         ) : (
@@ -97,7 +97,7 @@ export function InlineEdit({
               if (e.key === "Escape") cancel();
               if (e.key === "Enter") { e.preventDefault(); save(); }
             }}
-            onBlur={cancel}
+            onBlur={() => { if (!isPending) cancel(); }}
             className={fieldClassName}
           />
         )}
