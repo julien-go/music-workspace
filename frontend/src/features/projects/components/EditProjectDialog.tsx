@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useUpdateProject } from "../hooks/useUpdateProject";
 import type { ProjectResponse, UpdateProjectRequest } from "../types";
+import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
 
 interface Props {
   project: ProjectResponse;
@@ -62,7 +63,7 @@ export function EditProjectDialog({ project, open, focusField = "name", onClose 
             <input
               {...nameRest}
               ref={(el) => { nameRef.current = el; nameFormRef(el); }}
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              className={dialogInputClass}
             />
             {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
           </div>
@@ -72,7 +73,7 @@ export function EditProjectDialog({ project, open, focusField = "name", onClose 
               {...descriptionRest}
               ref={(el) => { descriptionRef.current = el; descriptionFormRef(el); }}
               rows={3}
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              className={dialogTextareaClass}
             />
           </div>
           {serverError && <p className="text-xs text-red-400">{serverError}</p>}

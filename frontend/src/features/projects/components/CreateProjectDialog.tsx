@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateProject } from "../hooks/useCreateProject";
+import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
 
 const schema = z.object({
   name: z.string().min(1, "Le nom est requis").max(100, "100 caractères max"),
@@ -17,9 +18,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors";
 
 interface Props {
   open: boolean;
@@ -67,7 +65,7 @@ export function CreateProjectDialog({ open, onClose }: Props) {
             <input
               placeholder="Mon album, EP Printemps…"
               {...register("name")}
-              className={inputClass}
+              className={dialogInputClass}
               autoFocus
             />
             {errors.name && (
@@ -83,7 +81,7 @@ export function CreateProjectDialog({ open, onClose }: Props) {
               placeholder="Décrivez votre projet…"
               rows={4}
               {...register("description")}
-              className={`${inputClass} resize-none`}
+              className={dialogTextareaClass}
             />
             {errors.description && (
               <p className="text-xs text-destructive">{errors.description.message}</p>

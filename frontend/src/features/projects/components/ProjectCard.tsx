@@ -1,18 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { Music } from "lucide-react";
-import type { ProjectResponse, ProjectRole } from "../types";
-
-const roleLabel: Record<ProjectRole, string> = {
-  OWNER: "Owner",
-  COLLABORATOR: "Collaborateur",
-  VIEWER: "Viewer",
-};
-
-const roleClass: Record<ProjectRole, string> = {
-  OWNER: "text-accent border-accent/40",
-  COLLABORATOR: "text-foreground border-border",
-  VIEWER: "text-muted-foreground border-border",
-};
+import { type ProjectResponse, ROLE_LABEL, ROLE_CLASS } from "../types";
 
 function formatDate(iso: string) {
   const date = new Date(iso);
@@ -76,20 +64,10 @@ export function ProjectCard({ project }: { project: ProjectResponse }) {
       </div>
 
       <div className="flex items-center gap-4 shrink-0 text-right">
-        {project.trackCount !== undefined && (
-          <span className="text-xs text-muted-foreground hidden sm:block">
-            {project.trackCount} piste{project.trackCount !== 1 ? "s" : ""}
-          </span>
-        )}
-        {project.taskCount !== undefined && (
-          <span className="text-xs text-muted-foreground hidden sm:block">
-            {project.taskCount} tâche{project.taskCount !== 1 ? "s" : ""}
-          </span>
-        )}
         <span
-          className={`text-xs border rounded px-2 py-0.5 ${roleClass[project.currentUserRole]}`}
+          className={`text-xs border rounded px-2 py-0.5 ${ROLE_CLASS[project.currentUserRole]}`}
         >
-          {roleLabel[project.currentUserRole]}
+          {ROLE_LABEL[project.currentUserRole]}
         </span>
         <span className="text-xs text-muted-foreground hidden md:block w-24 text-right">
           {formatDate(project.updatedAt)}

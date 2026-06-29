@@ -9,6 +9,7 @@ export function useUpdateMemberRole(projectId: string) {
       updateMemberRole(projectId, userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
     },
   });
 }

@@ -42,3 +42,15 @@ export interface InviteMemberRequest {
   email: string;
   role: Exclude<ProjectRole, "OWNER">;
 }
+
+export const ROLE_LABEL: Record<ProjectRole, string> = {
+  OWNER: "Propriétaire",
+  COLLABORATOR: "Collaborateur",
+  VIEWER: "Lecteur",
+};
+
+export const ROLE_CLASS: Record<ProjectRole, string> = {
+  OWNER: "text-accent border-accent/40",
+  COLLABORATOR: "text-foreground border-border",
+  VIEWER: "text-muted-foreground border-border",
+};

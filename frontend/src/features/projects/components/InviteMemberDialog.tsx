@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useInviteMember } from "../hooks/useInviteMember";
 import type { InviteMemberRequest, ProjectRole } from "../types";
+import { dialogInputClass } from "./dialogStyles";
 
 interface Props {
   projectId: string;
@@ -52,7 +53,7 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
                 pattern: { value: /\S+@\S+\.\S+/, message: "Email invalide" },
               })}
               type="email"
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              className={dialogInputClass}
               placeholder="collaborateur@example.com"
             />
             {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
@@ -61,7 +62,7 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
             <label className="text-sm font-medium text-foreground">Rôle</label>
             <select
               {...register("role")}
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              className={dialogInputClass}
             >
               <option value="COLLABORATOR">Collaborateur</option>
               <option value="VIEWER">Lecteur</option>

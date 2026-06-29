@@ -7,7 +7,6 @@ export function useUpdateProject(projectId: string) {
   return useMutation({
     mutationFn: (data: UpdateProjectRequest) => updateProject(projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });

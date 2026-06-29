@@ -7,24 +7,13 @@ import { useUpdateMemberRole } from "../hooks/useUpdateMemberRole";
 import { useRemoveMember } from "../hooks/useRemoveMember";
 import { InviteMemberDialog } from "./InviteMemberDialog";
 import { useAuthStore } from "@/store/authStore";
-import type { ProjectRole } from "../types";
+import { type ProjectRole, ROLE_LABEL, ROLE_CLASS } from "../types";
 
 interface Props {
   projectId: string;
   isOwner: boolean;
 }
 
-const roleLabel: Record<ProjectRole, string> = {
-  OWNER: "Propriétaire",
-  COLLABORATOR: "Collaborateur",
-  VIEWER: "Lecteur",
-};
-
-const roleClass: Record<ProjectRole, string> = {
-  OWNER: "text-accent border-accent/40",
-  COLLABORATOR: "text-foreground border-border",
-  VIEWER: "text-muted-foreground border-border",
-};
 
 function MemberAvatar({ username }: { username: string }) {
   return (
@@ -37,6 +26,7 @@ function MemberAvatar({ username }: { username: string }) {
 export function MembersSidebar({ projectId, isOwner }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   const { data: members, isLoading } = useMembers(projectId);
   const updateRole = useUpdateMemberRole(projectId);
   const removeMember = useRemoveMember(projectId);
@@ -51,8 +41,13 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
     : [];
 
   const handleRemoveConfirm = (userId: string) => {
+    setPendingRemoveId(userId);
     removeMember.mutate(userId, {
-      onSuccess: () => setConfirmingRemoveId(null),
+      onSuccess: () => {
+        setConfirmingRemoveId(null);
+        setPendingRemoveId(null);
+      },
+      onError: () => setPendingRemoveId(null),
     });
   };
 
@@ -112,14 +107,15 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                             role: e.target.value as Exclude<ProjectRole, "OWNER">,
                           })
                         }
-                        className="text-sm text-muted-foreground bg-transparent border-none focus:outline-none cursor-pointer mt-0.5"
+                        disabled={updateRole.isPending}
+                        className="text-sm text-muted-foreground bg-transparent border-none focus:outline-none cursor-pointer mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="COLLABORATOR">Collaborateur</option>
                         <option value="VIEWER">Lecteur</option>
                       </select>
                     ) : (
-                      <Badge variant="outline" className={`text-sm mt-0.5 ${roleClass[member.role]}`}>
-                        {roleLabel[member.role]}
+                      <Badge variant="outline" className={`text-sm mt-0.5 ${ROLE_CLASS[member.role]}`}>
+                        {ROLE_LABEL[member.role]}
                       </Badge>
                     )}
                   </div>
@@ -146,10 +142,10 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                       </button>
                       <button
                         onClick={() => handleRemoveConfirm(member.user.id)}
-                        disabled={removeMember.isPending}
+                        disabled={pendingRemoveId === member.user.id}
                         className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium"
                       >
-                        {removeMember.isPending ? "…" : "Confirmer"}
+                        {pendingRemoveId === member.user.id ? "…" : "Confirmer"}
                       </button>
                     </div>
                   </div>
