@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
-import { Music, Pencil, Settings } from "lucide-react";
+import { Music, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { InlineEdit } from "@/components/InlineEdit";
 import { useProject } from "./hooks/useProject";
+import { useUpdateProject } from "./hooks/useUpdateProject";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
 import { useArchivedTracks } from "@/features/tracks/hooks/useArchivedTracks";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { CreateTrackDialog } from "@/features/tracks/components/CreateTrackDialog";
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
 import { MembersSidebar } from "./components/MembersSidebar";
-import { EditProjectDialog } from "./components/EditProjectDialog";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -74,17 +75,11 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams({ strict: false }) as { projectId: string };
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
   const { data: tracks = [], isLoading: tracksLoading, isError: isTracksError } = useTracks(projectId);
+  const updateProject = useUpdateProject(projectId);
 
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
-  const [editProjectOpen, setEditProjectOpen] = useState(false);
-  const [editFocusField, setEditFocusField] = useState<"name" | "description">("name");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-
-  const openEditDialog = (field: "name" | "description") => {
-    setEditFocusField(field);
-    setEditProjectOpen(true);
-  };
 
   const { data: archivedTracks = [], isLoading: archivedLoading, isError: isArchivedError } = useArchivedTracks(projectId, showArchived);
 
@@ -119,20 +114,11 @@ export default function ProjectDetailPage() {
             <ProjectCover name={project.name} coverUrl={project.coverUrl} />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <h1 className="text-2xl font-bold font-heading text-foreground leading-tight truncate">
-                    {project.name}
-                  </h1>
-                  {canEdit && (
-                    <button
-                      onClick={() => openEditDialog("name")}
-                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
-                      title="Modifier le titre"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                <InlineEdit
+                  value={project.name}
+                  onSave={canEdit ? (name) => updateProject.mutateAsync({ name }) : undefined}
+                  className="text-2xl font-bold font-heading text-foreground leading-tight"
+                />
                 {isOwner && (
                   <button
                     onClick={() => setSettingsOpen(true)}
@@ -144,28 +130,13 @@ export default function ProjectDetailPage() {
                 )}
               </div>
 
-              {project.description ? (
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
-                  {canEdit && (
-                    <button
-                      onClick={() => openEditDialog("description")}
-                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                      title="Modifier la description"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ) : canEdit ? (
-                <button
-                  onClick={() => openEditDialog("description")}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Ajouter une description
-                </button>
-              ) : null}
+              <InlineEdit
+                value={project.description ?? ""}
+                onSave={canEdit ? (description) => updateProject.mutateAsync({ description }) : undefined}
+                multiline
+                className="text-sm text-muted-foreground whitespace-pre-wrap"
+                emptyLabel={canEdit ? "Ajouter une description" : undefined}
+              />
             </div>
           </div>
 
@@ -290,14 +261,6 @@ export default function ProjectDetailPage() {
           projectId={projectId}
           open={createTrackOpen}
           onClose={() => setCreateTrackOpen(false)}
-        />
-      )}
-      {canEdit && (
-        <EditProjectDialog
-          project={project}
-          open={editProjectOpen}
-          focusField={editFocusField}
-          onClose={() => setEditProjectOpen(false)}
         />
       )}
       {isOwner && (

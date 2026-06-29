@@ -3,11 +3,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { InlineEdit } from "@/components/InlineEdit";
 import { usePlayerStore } from "@/store/playerStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { getTrackVersions } from "../api";
 import { useArchiveTrack } from "../hooks/useArchiveTrack";
 import { useUnarchiveTrack } from "../hooks/useUnarchiveTrack";
+import { useUpdateTrack } from "../hooks/useUpdateTrack";
 import { formatRelativeTime } from "@/lib/utils";
 import type { TrackResponse } from "../types";
 
@@ -45,6 +47,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   const archiveTrack = useArchiveTrack(projectId);
   const unarchiveTrack = useUnarchiveTrack(projectId);
+  const updateTrack = useUpdateTrack(projectId, track.id);
 
   const handleNavigate = () => {
     navigate({
@@ -92,7 +95,11 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       onClick={handleNavigate}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="font-semibold text-foreground text-lg leading-tight">{track.name}</h3>
+        <InlineEdit
+          value={track.name}
+          onSave={canEdit ? (name) => updateTrack.mutateAsync({ name }) : undefined}
+          className="font-semibold text-foreground text-lg leading-tight"
+        />
         <div className="flex items-center gap-2 shrink-0">
           {track.archived && (
             <Badge variant="outline" className="text-sm text-muted-foreground border-border">
@@ -106,9 +113,16 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         </div>
       </div>
 
-      {track.description && (
-        <p className="text-base text-muted-foreground mb-3 line-clamp-2">{track.description}</p>
-      )}
+      <div className="mb-3">
+        <InlineEdit
+          value={track.description ?? ""}
+          onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
+          multiline
+          className="text-base text-muted-foreground"
+          displayClassName="line-clamp-2"
+          emptyLabel={canEdit ? "Ajouter une description" : undefined}
+        />
+      </div>
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
         <span>{track.versionCount} version{track.versionCount !== 1 ? "s" : ""}</span>
