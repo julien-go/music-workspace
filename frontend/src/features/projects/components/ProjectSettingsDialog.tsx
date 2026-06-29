@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
+import { Music } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useUpdateProject } from "../hooks/useUpdateProject";
 import { useDeleteProject } from "../hooks/useDeleteProject";
+import { useUploadCover } from "../hooks/useUploadCover";
+import { CoverCropDialog } from "./CoverCropDialog";
 import type { ProjectResponse, UpdateProjectRequest } from "../types";
+import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
 
 interface Props {
   project: ProjectResponse;
@@ -20,13 +24,19 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
   });
   const updateProject = useUpdateProject(project.id);
   const deleteProject = useDeleteProject();
+  const uploadCover = useUploadCover(project.id);
   const navigate = useNavigate();
 
   const [confirming, setConfirming] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const handleClose = () => {
+    if (cropImageSrc) {
+      URL.revokeObjectURL(cropImageSrc);
+      setCropImageSrc(null);
+    }
     reset({ name: project.name, description: project.description ?? "" });
     updateProject.reset();
     setConfirming(false);
@@ -57,6 +67,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="bg-surface ring-border sm:max-w-md p-8 gap-0">
         <DialogHeader className="mb-6">
@@ -70,7 +81,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
             <label className="text-sm font-medium text-foreground">Nom *</label>
             <input
               {...register("name", { required: "Le nom est requis" })}
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              className={dialogInputClass}
             />
             {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
           </div>
@@ -79,7 +90,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
             <textarea
               {...register("description")}
               rows={2}
-              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              className={dialogTextareaClass}
             />
           </div>
           {editError && <p className="text-xs text-red-400">{editError}</p>}
@@ -93,11 +104,43 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
 
         <Separator className="mb-6" />
 
-        {/* Cover image — placeholder */}
+        {/* Cover image */}
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Image de couverture</p>
-          <div className="border border-dashed border-border rounded-md px-4 py-4 text-center">
-            <p className="text-xs text-muted-foreground">Upload de cover — disponible prochainement.</p>
+          <div className="flex items-center gap-4">
+            {project.coverUrl ? (
+              <img
+                src={project.coverUrl}
+                alt={project.name}
+                className="w-16 h-16 rounded-md object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-md bg-surface border border-dashed border-border flex items-center justify-center shrink-0">
+                <Music className="w-6 h-6 text-muted-foreground/50" />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={uploadCover.isPending}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setCropImageSrc(URL.createObjectURL(file));
+                    e.target.value = "";
+                  }}
+                />
+                <span className="text-sm text-accent hover:text-accent/80 transition-colors">
+                  {uploadCover.isPending ? "Upload…" : project.coverUrl ? "Changer l'image" : "Choisir une image"}
+                </span>
+              </label>
+              {uploadCover.isError && (
+                <p className="text-xs text-red-400">Erreur lors de l'upload.</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -134,5 +177,22 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+
+    {cropImageSrc && (
+      <CoverCropDialog
+        imageSrc={cropImageSrc}
+        open={true}
+        onClose={() => {
+          URL.revokeObjectURL(cropImageSrc);
+          setCropImageSrc(null);
+        }}
+        onCrop={(file) => {
+          URL.revokeObjectURL(cropImageSrc);
+          setCropImageSrc(null);
+          uploadCover.mutate(file);
+        }}
+      />
+    )}
+    </>
   );
 }

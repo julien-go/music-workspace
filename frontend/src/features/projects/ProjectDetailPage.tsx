@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
-import { usePlayerStore } from "@/store/playerStore";
-import { Pencil, Settings } from "lucide-react";
+import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
+import { Music, Pencil, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useProject } from "./hooks/useProject";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
@@ -13,6 +13,43 @@ import { MembersSidebar } from "./components/MembersSidebar";
 import { EditProjectDialog } from "./components/EditProjectDialog";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+
+function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | null }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  if (coverUrl) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="shrink-0 rounded-lg overflow-hidden hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+          title="Voir en grand"
+        >
+          <img src={coverUrl} alt={name} className="w-32 h-32 object-cover" />
+        </button>
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogContent className="bg-surface p-3 sm:max-w-md">
+            <DialogTitle className="sr-only">{name}</DialogTitle>
+            <img src={coverUrl} alt={name} className="w-full aspect-square object-cover rounded-md" />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  return (
+    <div className="w-32 h-32 rounded-lg bg-surface border border-border flex items-center justify-center shrink-0">
+      {initials ? (
+        <span className="text-2xl font-semibold text-muted-foreground">{initials}</span>
+      ) : (
+        <Music className="w-8 h-8 text-muted-foreground" />
+      )}
+    </div>
+  );
+}
 
 function ProjectDetailSkeleton() {
   return (
@@ -35,8 +72,8 @@ function ProjectDetailSkeleton() {
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams({ strict: false }) as { projectId: string };
-  const { data: project, isLoading: projectLoading } = useProject(projectId);
-  const { data: tracks = [], isLoading: tracksLoading } = useTracks(projectId);
+  const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
+  const { data: tracks = [], isLoading: tracksLoading, isError: isTracksError } = useTracks(projectId);
 
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
@@ -49,16 +86,17 @@ export default function ProjectDetailPage() {
     setEditProjectOpen(true);
   };
 
-  const { data: archivedTracks = [], isLoading: archivedLoading } = useArchivedTracks(projectId, showArchived);
+  const { data: archivedTracks = [], isLoading: archivedLoading, isError: isArchivedError } = useArchivedTracks(projectId, showArchived);
 
-  useEffect(() => {
-    const current = usePlayerStore.getState().current;
-    if (current && current.projectId !== projectId) {
-      usePlayerStore.getState().stop();
-    }
-  }, [projectId]);
+  useStopPlayerOnProjectChange(projectId);
 
   if (projectLoading) return <ProjectDetailSkeleton />;
+  if (projectError) return (
+    <div className="max-w-[1200px] mx-auto px-6 py-8 text-center space-y-3">
+      <p className="text-sm text-muted-foreground">Ce projet est introuvable ou vous n'y avez pas accès.</p>
+      <Link to="/dashboard" className="text-sm text-accent hover:underline">Retour au dashboard</Link>
+    </div>
+  );
   if (!project) return null;
 
   const canEdit = project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
@@ -77,56 +115,59 @@ export default function ProjectDetailPage() {
           </div>
 
           {/* Header */}
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-2xl font-bold font-heading text-foreground leading-tight truncate">
-                {project.name}
-              </h1>
-              {canEdit && (
-                <button
-                  onClick={() => openEditDialog("name")}
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
-                  title="Modifier le titre"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            {isOwner && (
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-1"
-                title="Paramètres du projet"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+          <div className="flex items-start gap-4 mb-8">
+            <ProjectCover name={project.name} coverUrl={project.coverUrl} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h1 className="text-2xl font-bold font-heading text-foreground leading-tight truncate">
+                    {project.name}
+                  </h1>
+                  {canEdit && (
+                    <button
+                      onClick={() => openEditDialog("name")}
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
+                      title="Modifier le titre"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {isOwner && (
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-1"
+                    title="Paramètres du projet"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
 
-          {project.description ? (
-            <div className="flex items-center gap-1.5 mb-8">
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
-              {canEdit && (
+              {project.description ? (
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
+                  {canEdit && (
+                    <button
+                      onClick={() => openEditDialog("description")}
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      title="Modifier la description"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ) : canEdit ? (
                 <button
                   onClick={() => openEditDialog("description")}
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  title="Modifier la description"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
                 >
                   <Pencil className="w-4 h-4" />
+                  Ajouter une description
                 </button>
-              )}
+              ) : null}
             </div>
-          ) : canEdit ? (
-            <button
-              onClick={() => openEditDialog("description")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 flex items-center gap-1.5"
-            >
-              <Pencil className="w-4 h-4" />
-              Ajouter une description
-            </button>
-          ) : (
-            <div className="mb-8" />
-          )}
+          </div>
 
           {/* Tracks section */}
           <div className="mb-10">
@@ -152,7 +193,11 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {!tracksLoading && tracks.length === 0 && !showArchived && (
+            {!tracksLoading && isTracksError && (
+              <p className="text-sm text-destructive">Impossible de charger les tracks.</p>
+            )}
+
+            {!tracksLoading && !isTracksError && tracks.length === 0 && !showArchived && (
               <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
                 <p className="text-base">Aucune track pour le moment.</p>
                 {canEdit && (
@@ -161,7 +206,7 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {!tracksLoading && tracks.length > 0 && (
+            {!tracksLoading && !isTracksError && tracks.length > 0 && (
               <div className="space-y-3">
                 {tracks.map((track) => (
                   <TrackCard
@@ -198,10 +243,13 @@ export default function ProjectDetailPage() {
                       ))}
                     </div>
                   )}
-                  {!archivedLoading && archivedTracks.length === 0 && (
+                  {!archivedLoading && isArchivedError && (
+                    <p className="text-sm text-destructive">Impossible de charger les tracks archivées.</p>
+                  )}
+                  {!archivedLoading && !isArchivedError && archivedTracks.length === 0 && (
                     <p className="text-sm text-muted-foreground py-4">Aucune track archivée.</p>
                   )}
-                  {!archivedLoading && archivedTracks.length > 0 && (
+                  {!archivedLoading && !isArchivedError && archivedTracks.length > 0 && (
                     <div className="space-y-3 opacity-70">
                       {archivedTracks.map((track) => (
                         <TrackCard
@@ -237,11 +285,13 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Modals */}
-      <CreateTrackDialog
-        projectId={projectId}
-        open={createTrackOpen}
-        onClose={() => setCreateTrackOpen(false)}
-      />
+      {canEdit && (
+        <CreateTrackDialog
+          projectId={projectId}
+          open={createTrackOpen}
+          onClose={() => setCreateTrackOpen(false)}
+        />
+      )}
       {canEdit && (
         <EditProjectDialog
           project={project}

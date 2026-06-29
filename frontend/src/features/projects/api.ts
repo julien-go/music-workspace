@@ -59,3 +59,12 @@ export function removeMember(projectId: string, userId: string) {
     method: "DELETE",
   });
 }
+
+export function uploadCover(projectId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return fetchApi<ProjectResponse>(`/projects/${projectId}/cover`, {
+    method: "POST",
+    body: formData,
+  });
+}
