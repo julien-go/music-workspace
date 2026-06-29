@@ -4,6 +4,7 @@ export type TrackStatus = "DRAFT" | "IN_PROGRESS" | "DONE";
 
 export interface TrackResponse {
   id: string;
+  position: number;
   name: string;
   description: string | null;
   status: TrackStatus;

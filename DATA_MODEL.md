@@ -45,6 +45,7 @@
 | name | VARCHAR(255) | NOT NULL |
 | description | TEXT | nullable |
 | status | VARCHAR(50) | NOT NULL — `DRAFT` / `IN_PROGRESS` / `DONE` |
+| position | INTEGER | NOT NULL, default 0 — display order among non-archived tracks |
 | archived | BOOLEAN | NOT NULL, default false |
 | created_at | TIMESTAMP | NOT NULL |
 | updated_at | TIMESTAMP | NOT NULL |

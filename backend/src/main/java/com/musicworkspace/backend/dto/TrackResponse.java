@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record TrackResponse(
         UUID id,
+        int position,
         String name,
         String description,
         TrackStatus status,

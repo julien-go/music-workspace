@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { getTrackVersions } from "../api";
 import { useArchiveTrack } from "../hooks/useArchiveTrack";
 import { useUnarchiveTrack } from "../hooks/useUnarchiveTrack";
 import { useUpdateTrack } from "../hooks/useUpdateTrack";
+import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
 import { formatRelativeTime } from "@/lib/utils";
 import type { TrackResponse } from "../types";
 
@@ -44,10 +45,13 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const queryClient = useQueryClient();
 
   const [isLoadingPlay, setIsLoadingPlay] = useState(false);
+  const [playError, setPlayError] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const archiveTrack = useArchiveTrack(projectId);
   const unarchiveTrack = useUnarchiveTrack(projectId);
   const updateTrack = useUpdateTrack(projectId, track.id);
+  const createVersion = useCreateTrackVersion(projectId, track.id);
 
   const handleNavigate = () => {
     navigate({
@@ -83,7 +87,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         });
       }
     } catch {
-      // silent fail
+      setPlayError(true);
     } finally {
       setIsLoadingPlay(false);
     }
@@ -113,7 +117,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         </div>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-3" onClick={(e) => e.stopPropagation()}>
         <InlineEdit
           value={track.description ?? ""}
           onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
@@ -140,15 +144,48 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       )}
 
       <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handlePlay}
-          disabled={track.versionCount === 0 || isLoadingPlay}
-          className={`text-sm h-8 px-3 ${isCurrentlyPlaying ? "text-accent" : ""}`}
-        >
-          {isLoadingPlay ? "…" : isCurrentlyPlaying ? "⏸ En lecture" : isCurrentTrack ? "▶ Reprendre" : "▶ Écouter dernière version"}
-        </Button>
+        {track.versionCount === 0 && canEdit ? (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) createVersion.mutate({ file });
+                e.target.value = "";
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={createVersion.isPending || createVersion.isSuccess}
+              className="text-sm h-8 px-3"
+            >
+              {createVersion.isPending ? "Upload…" : "+ Ajouter une version"}
+            </Button>
+            {createVersion.isError && (
+              <span className="text-xs text-destructive">Échec de l'upload, réessayer.</span>
+            )}
+          </>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handlePlay}
+              disabled={track.versionCount === 0 || isLoadingPlay}
+              className={`text-sm h-8 px-3 ${isCurrentlyPlaying ? "text-accent" : ""}`}
+            >
+              {isLoadingPlay ? "…" : isCurrentlyPlaying ? "⏸ En lecture" : isCurrentTrack ? "▶ Reprendre" : "▶ Écouter dernière version"}
+            </Button>
+            {playError && (
+              <span className="text-xs text-destructive">Impossible de charger l'audio.</span>
+            )}
+          </>
+        )}
 
         {canEdit && !track.archived && !confirmArchive && (
           <Button
@@ -170,7 +207,10 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
               Annuler
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); archiveTrack.mutate(track.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                archiveTrack.mutate(track.id, { onError: () => setConfirmArchive(false) });
+              }}
               disabled={archiveTrack.isPending}
               className="text-sm text-amber-400 hover:text-amber-300 transition-colors font-medium"
             >

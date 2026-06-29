@@ -87,6 +87,7 @@ Validation errors (422):
 | PATCH | `/projects/{id}/tracks/{trackId}` | Update a track | Yes |
 | PATCH | `/projects/{id}/tracks/{trackId}/archive` | Archive a track | Yes |
 | PATCH | `/projects/{id}/tracks/{trackId}/unarchive` | Unarchive a track | Yes |
+| PATCH | `/projects/{id}/tracks/reorder` | Reorder non-archived tracks | Yes |
 
 ### Track Versions
 
@@ -214,9 +215,15 @@ Validation errors (422):
   "status": "IN_PROGRESS"
 }
 
+// ReorderTracksRequest
+{
+  "trackIds": ["uuid1", "uuid2", "uuid3"]
+}
+
 // TrackResponse
 {
   "id": "uuid",
+  "position": 0,
   "name": "Intro",
   "description": "Description",
   "status": "DRAFT",

@@ -31,6 +31,13 @@ export function unarchiveTrack(projectId: string, trackId: string) {
   });
 }
 
+export function reorderTracks(projectId: string, trackIds: string[]) {
+  return fetchApi<TrackResponse[]>(`/projects/${projectId}/tracks/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ trackIds }),
+  });
+}
+
 export function getArchivedTracks(projectId: string) {
   return fetchApi<TrackResponse[]>(`/projects/${projectId}/tracks?archived=true`);
 }

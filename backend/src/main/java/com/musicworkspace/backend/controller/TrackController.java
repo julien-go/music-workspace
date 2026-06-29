@@ -1,6 +1,7 @@
 package com.musicworkspace.backend.controller;
 
 import com.musicworkspace.backend.dto.CreateTrackRequest;
+import com.musicworkspace.backend.dto.ReorderTracksRequest;
 import com.musicworkspace.backend.dto.TrackResponse;
 import com.musicworkspace.backend.dto.UpdateTrackRequest;
 import com.musicworkspace.backend.service.TrackService;
@@ -50,6 +51,14 @@ public class TrackController {
             @PathVariable UUID trackId,
             Authentication authentication) {
         return ResponseEntity.ok(trackService.findById(projectId, trackId, authentication.getName()));
+    }
+
+    @PatchMapping("/reorder")
+    public ResponseEntity<List<TrackResponse>> reorder(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody ReorderTracksRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(trackService.reorder(projectId, request, authentication.getName()));
     }
 
     @PatchMapping("/{trackId}")

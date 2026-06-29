@@ -1,20 +1,92 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link } from "@tanstack/react-router";
-import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
-import { Music, Settings } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDndContext,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Music, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { InlineEdit } from "@/components/InlineEdit";
 import { useProject } from "./hooks/useProject";
 import { useUpdateProject } from "./hooks/useUpdateProject";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
 import { useArchivedTracks } from "@/features/tracks/hooks/useArchivedTracks";
+import { useReorderTracks } from "@/features/tracks/hooks/useReorderTracks";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { CreateTrackDialog } from "@/features/tracks/components/CreateTrackDialog";
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
 import { MembersSidebar } from "./components/MembersSidebar";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
+import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import type { TrackResponse } from "@/features/tracks/types";
+
+function SortableTrackCard({
+  track,
+  projectId,
+  projectName,
+  canEdit,
+  reorderPending,
+}: {
+  track: TrackResponse;
+  projectId: string;
+  projectName: string;
+  canEdit: boolean;
+  reorderPending: boolean;
+}) {
+  const { active } = useDndContext();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: track.id,
+    disabled: !canEdit || reorderPending,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        // Transition uniquement pendant le drag actif — évite l'animation
+        // des transforms résiduels au moment où le DOM se réordonne au drop.
+        transition: active ? transition : undefined,
+      }}
+      className={`flex items-center gap-2 group/sort ${
+        isDragging ? "relative z-50 opacity-80 shadow-2xl scale-[1.01]" : ""
+      }`}
+    >
+      {canEdit && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="shrink-0 p-0.5 opacity-40 group-hover/sort:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground focus-visible:outline-none"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      )}
+      <div className="flex-1 min-w-0">
+        <TrackCard
+          track={track}
+          projectId={projectId}
+          projectName={projectName}
+          canEdit={canEdit}
+        />
+      </div>
+    </div>
+  );
+}
 
 function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | null }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -76,25 +148,67 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
   const { data: tracks = [], isLoading: tracksLoading, isError: isTracksError } = useTracks(projectId);
   const updateProject = useUpdateProject(projectId);
+  const reorderTracks = useReorderTracks(projectId);
 
+  // useState (not setQueryData) so the update batches synchronously with dnd-kit's own state cleanup.
+  const [orderedIds, setOrderedIds] = useState<string[]>(() => tracks.map((t) => t.id));
+  const prevServerIdsRef = useRef<string[]>(tracks.map((t) => t.id));
+  useEffect(() => {
+    const serverIds = tracks.map((t) => t.id);
+    const prev = new Set(prevServerIdsRef.current);
+    const next = new Set(serverIds);
+    prevServerIdsRef.current = serverIds;
+    // Only reset local order when the *set* of IDs changes (track added or archived).
+    // A refetch with same IDs but server-side order must not clobber the user's drag order.
+    const setsMatch = prev.size === next.size && [...next].every((id) => prev.has(id));
+    if (!setsMatch) setOrderedIds(serverIds);
+  }, [tracks]);
+  const orderedTracks = useMemo(
+    () => orderedIds.map((id) => tracks.find((t) => t.id === id)).filter((t): t is TrackResponse => t !== undefined),
+    [orderedIds, tracks],
+  );
+
+  const sensors = useSensors(useSensor(PointerSensor));
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: archivedTracks = [], isLoading: archivedLoading, isError: isArchivedError } = useArchivedTracks(projectId, showArchived);
+  const { data: archivedTracks = [], isLoading: archivedLoading, isError: isArchivedError } =
+    useArchivedTracks(projectId, showArchived);
 
   useStopPlayerOnProjectChange(projectId);
 
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const oldIndex = orderedIds.indexOf(active.id as string);
+    const newIndex = orderedIds.indexOf(over.id as string);
+    const newIds = arrayMove(orderedIds, oldIndex, newIndex);
+    const previousIds = orderedIds;
+
+    setOrderedIds(newIds);
+
+    reorderTracks.mutate(
+      { trackIds: newIds },
+      { onError: () => setOrderedIds(previousIds) },
+    );
+  };
+
   if (projectLoading) return <ProjectDetailSkeleton />;
-  if (projectError) return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8 text-center space-y-3">
-      <p className="text-sm text-muted-foreground">Ce projet est introuvable ou vous n'y avez pas accès.</p>
-      <Link to="/dashboard" className="text-sm text-accent hover:underline">Retour au dashboard</Link>
-    </div>
-  );
+  if (projectError)
+    return (
+      <div className="max-w-[1200px] mx-auto px-6 py-8 text-center space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Ce projet est introuvable ou vous n'y avez pas accès.
+        </p>
+        <Link to="/dashboard" className="text-sm text-accent hover:underline">
+          Retour au dashboard
+        </Link>
+      </div>
+    );
   if (!project) return null;
 
-  const canEdit = project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
+  const canEdit =
+    project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
 
   return (
@@ -104,7 +218,9 @@ export default function ProjectDetailPage() {
         <div className="flex-1 min-w-0">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-            <Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
+            <Link to="/dashboard" className="hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
             <span>/</span>
             <span className="text-foreground">{project.name}</span>
           </div>
@@ -129,10 +245,11 @@ export default function ProjectDetailPage() {
                   </button>
                 )}
               </div>
-
               <InlineEdit
                 value={project.description ?? ""}
-                onSave={canEdit ? (description) => updateProject.mutateAsync({ description }) : undefined}
+                onSave={
+                  canEdit ? (description) => updateProject.mutateAsync({ description }) : undefined
+                }
                 multiline
                 className="text-sm text-muted-foreground whitespace-pre-wrap"
                 emptyLabel={canEdit ? "Ajouter une description" : undefined}
@@ -146,13 +263,13 @@ export default function ProjectDetailPage() {
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest">
                 Tracks
                 {tracks.length > 0 && (
-                  <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">{tracks.length}</span>
+                  <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">
+                    {tracks.length}
+                  </span>
                 )}
               </h2>
               {canEdit && (
-                <Button onClick={() => setCreateTrackOpen(true)}>
-                  + Nouvelle track
-                </Button>
+                <Button onClick={() => setCreateTrackOpen(true)}>+ Nouvelle track</Button>
               )}
             </div>
 
@@ -178,17 +295,29 @@ export default function ProjectDetailPage() {
             )}
 
             {!tracksLoading && !isTracksError && tracks.length > 0 && (
-              <div className="space-y-3">
-                {tracks.map((track) => (
-                  <TrackCard
-                    key={track.id}
-                    track={track}
-                    projectId={projectId}
-                    projectName={project.name}
-                    canEdit={canEdit}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={orderedIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex flex-col gap-3">
+                    {orderedTracks.map((track) => (
+                      <SortableTrackCard
+                        key={track.id}
+                        track={track}
+                        projectId={projectId}
+                        projectName={project.name}
+                        canEdit={canEdit}
+                        reorderPending={reorderTracks.isPending}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {/* Archived tracks toggle */}
@@ -215,7 +344,9 @@ export default function ProjectDetailPage() {
                     </div>
                   )}
                   {!archivedLoading && isArchivedError && (
-                    <p className="text-sm text-destructive">Impossible de charger les tracks archivées.</p>
+                    <p className="text-sm text-destructive">
+                      Impossible de charger les tracks archivées.
+                    </p>
                   )}
                   {!archivedLoading && !isArchivedError && archivedTracks.length === 0 && (
                     <p className="text-sm text-muted-foreground py-4">Aucune track archivée.</p>
