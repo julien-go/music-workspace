@@ -168,7 +168,7 @@ export default function ProjectDetailPage() {
     [orderedIds, tracks],
   );
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);

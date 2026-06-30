@@ -143,7 +143,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2 mt-1">
         {track.versionCount === 0 && canEdit ? (
           <>
             <input
@@ -160,7 +160,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
               disabled={createVersion.isPending || createVersion.isSuccess}
               className="text-sm h-8 px-3"
             >

@@ -91,9 +91,11 @@ const projectDetailRoute = createRoute({
   component: ProjectDetailPage,
 });
 
+// Intentional sibling of projectDetailRoute (not a child) — ProjectDetailPage has no <Outlet />.
+// Any project-level beforeLoad/loader guards must be added at authLayoutRoute or page level.
 const trackDetailRoute = createRoute({
-  getParentRoute: () => projectDetailRoute,
-  path: "/tracks/$trackId",
+  getParentRoute: () => authLayoutRoute,
+  path: "/projects/$projectId/tracks/$trackId",
   component: TrackDetailPage,
 });
 
@@ -112,10 +114,7 @@ const registerRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   publicLayoutRoute.addChildren([homeRoute, publicProjectRoute]),
-  authLayoutRoute.addChildren([
-    dashboardRoute,
-    projectDetailRoute.addChildren([trackDetailRoute]),
-  ]),
+  authLayoutRoute.addChildren([dashboardRoute, projectDetailRoute, trackDetailRoute]),
   loginRoute,
   registerRoute,
 ]);

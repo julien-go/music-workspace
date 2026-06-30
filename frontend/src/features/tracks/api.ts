@@ -1,5 +1,6 @@
 import { fetchApi } from "@/lib/api";
 import type { TrackResponse, TrackVersionResponse, CreateTrackRequest, UpdateTrackRequest } from "./types";
+import type { CommentResponse } from "@/features/comments/types";
 
 export function getTracks(projectId: string) {
   return fetchApi<TrackResponse[]>(`/projects/${projectId}/tracks`);
@@ -42,8 +43,52 @@ export function getArchivedTracks(projectId: string) {
   return fetchApi<TrackResponse[]>(`/projects/${projectId}/tracks?archived=true`);
 }
 
+export function getTrack(projectId: string, trackId: string) {
+  return fetchApi<TrackResponse>(`/projects/${projectId}/tracks/${trackId}`);
+}
+
 export function getTrackVersions(projectId: string, trackId: string) {
   return fetchApi<TrackVersionResponse[]>(`/projects/${projectId}/tracks/${trackId}/versions`);
+}
+
+export function getTrackComments(projectId: string, trackId: string) {
+  return fetchApi<CommentResponse[]>(`/projects/${projectId}/tracks/${trackId}/comments`);
+}
+
+export function addTrackComment(projectId: string, trackId: string, content: string) {
+  return fetchApi<CommentResponse>(`/projects/${projectId}/tracks/${trackId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function deleteTrackComment(projectId: string, trackId: string, commentId: string) {
+  return fetchApi<void>(`/projects/${projectId}/tracks/${trackId}/comments/${commentId}`, {
+    method: "DELETE",
+  });
+}
+
+export function getVersionComments(projectId: string, trackId: string, versionId: string) {
+  return fetchApi<CommentResponse[]>(`/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`);
+}
+
+export function addVersionComment(projectId: string, trackId: string, versionId: string, content: string) {
+  return fetchApi<CommentResponse>(`/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function deleteVersionComment(
+  projectId: string,
+  trackId: string,
+  versionId: string,
+  commentId: string,
+) {
+  return fetchApi<void>(
+    `/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments/${commentId}`,
+    { method: "DELETE" },
+  );
 }
 
 export function createTrackVersion(projectId: string, trackId: string, file: File, notes?: string) {
