@@ -19,6 +19,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Music, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { InlineEdit } from "@/components/InlineEdit";
+import { ErrorState } from "@/components/ErrorState";
+import { SkeletonProjectDetail } from "@/components/SkeletonProjectDetail";
+import { toastError } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 import { useProject } from "./hooks/useProject";
 import { useUpdateProject } from "./hooks/useUpdateProject";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
@@ -124,28 +128,15 @@ function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | nul
   );
 }
 
-function ProjectDetailSkeleton() {
-  return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8 animate-pulse">
-      <div className="flex gap-8">
-        <div className="flex-1 space-y-6">
-          <div className="h-8 w-64 bg-surface rounded" />
-          <div className="h-4 w-96 bg-surface rounded" />
-          <div className="space-y-3 mt-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-28 bg-surface rounded-lg" />
-            ))}
-          </div>
-        </div>
-        <div className="w-72 shrink-0 h-64 bg-surface rounded-lg" />
-      </div>
-    </div>
-  );
-}
-
 export default function ProjectDetailPage() {
   const { projectId } = useParams({ strict: false }) as { projectId: string };
-  const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
+  const {
+    data: project,
+    isLoading: projectLoading,
+    isError: projectError,
+    error: projectErrorObj,
+    refetch: refetchProject,
+  } = useProject(projectId);
   const { data: tracks = [], isLoading: tracksLoading, isError: isTracksError } = useTracks(projectId);
   const updateProject = useUpdateProject(projectId);
   const reorderTracks = useReorderTracks(projectId);
@@ -189,21 +180,24 @@ export default function ProjectDetailPage() {
 
     reorderTracks.mutate(
       { trackIds: newIds },
-      { onError: () => setOrderedIds(previousIds) },
+      {
+        onError: (err) => {
+          setOrderedIds(previousIds);
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de réordonner les tracks."));
+          }
+        },
+      },
     );
   };
 
-  if (projectLoading) return <ProjectDetailSkeleton />;
+  if (projectLoading) return <SkeletonProjectDetail />;
   if (projectError)
     return (
-      <div className="max-w-[1200px] mx-auto px-6 py-8 text-center space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Ce projet est introuvable ou vous n'y avez pas accès.
-        </p>
-        <Link to="/dashboard" className="text-sm text-accent hover:underline">
-          Retour au dashboard
-        </Link>
-      </div>
+      <ErrorState
+        message={describeError(projectErrorObj, "Impossible de charger ce projet.")}
+        onRetry={() => refetchProject()}
+      />
     );
   if (!project) return null;
 

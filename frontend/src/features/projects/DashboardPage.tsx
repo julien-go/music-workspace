@@ -1,29 +1,16 @@
 import { useState } from "react";
 import { FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/ErrorState";
+import { SkeletonProjectList } from "@/components/SkeletonProjectList";
+import { describeError } from "@/lib/api";
 import { useProjects } from "./hooks/useProjects";
 import { ProjectCard } from "./components/ProjectCard";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 
-function SkeletonCard() {
-  return (
-    <div className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card animate-pulse">
-      <div className="w-12 h-12 rounded-md bg-surface-elevated shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-40 rounded bg-surface-elevated" />
-        <div className="h-3 w-24 rounded bg-surface-elevated" />
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="h-5 w-16 rounded bg-surface-elevated" />
-        <div className="h-3 w-20 rounded bg-surface-elevated hidden md:block" />
-      </div>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: projects, isLoading, isError } = useProjects();
+  const { data: projects, isLoading, isError, error, refetch } = useProjects();
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10">
@@ -34,19 +21,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Loading */}
-      {isLoading && (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      )}
+      {isLoading && <SkeletonProjectList />}
 
       {/* Error */}
       {isError && (
-        <p className="text-sm text-destructive">
-          Impossible de charger les projets. Réessayez plus tard.
-        </p>
+        <ErrorState
+          message={describeError(error, "Impossible de charger les projets.")}
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* Empty state */}
