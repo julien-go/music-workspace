@@ -60,7 +60,7 @@ class TrackControllerTest {
     void setUp() {
         projectId = UUID.randomUUID();
         trackId = UUID.randomUUID();
-        response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
+        response = new TrackResponse(trackId, 0, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
     }
 
     @Test

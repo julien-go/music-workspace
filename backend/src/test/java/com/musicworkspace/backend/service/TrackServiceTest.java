@@ -67,7 +67,7 @@ class TrackServiceTest {
         trackId = UUID.randomUUID();
         project = Project.builder().id(projectId).name("My Album").build();
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
-        response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
+        response = new TrackResponse(trackId, 0, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
     }
 
     private void stubEnrichment(UUID id) {
@@ -113,7 +113,7 @@ class TrackServiceTest {
     @Test
     void findAll_returnsMappedListForProjectOwner() {
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
-        when(trackRepository.findByProjectIdAndArchivedFalse(projectId)).thenReturn(List.of(track));
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track));
         when(trackVersionRepository.countsByTrackIds(List.of(trackId))).thenReturn(List.of());
         when(trackVersionRepository.findLatestNotesByTrackIds(List.of(trackId))).thenReturn(List.of());
         when(trackCommentRepository.findLatestByTrackIds(List.of(trackId))).thenReturn(List.of());
@@ -130,7 +130,7 @@ class TrackServiceTest {
                 .status(TrackStatus.DRAFT).archived(true).build();
 
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
-        when(trackRepository.findByProjectIdAndArchivedTrue(projectId)).thenReturn(List.of(archivedTrack));
+        when(trackRepository.findByProjectIdAndArchivedTrueOrderByPositionAsc(projectId)).thenReturn(List.of(archivedTrack));
         when(trackVersionRepository.countsByTrackIds(List.of(trackId))).thenReturn(List.of());
         when(trackVersionRepository.findLatestNotesByTrackIds(List.of(trackId))).thenReturn(List.of());
         when(trackCommentRepository.findLatestByTrackIds(List.of(trackId))).thenReturn(List.of());

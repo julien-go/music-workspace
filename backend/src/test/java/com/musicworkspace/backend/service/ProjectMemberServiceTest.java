@@ -16,6 +16,7 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.MemberAlreadyExistsException;
 import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.OwnerRoleException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
@@ -109,7 +110,7 @@ class ProjectMemberServiceTest {
     }
 
     @Test
-    void addMember_throwsNotFoundWhenUserAlreadyMember() {
+    void addMember_throwsConflictWhenUserAlreadyMember() {
         CreateMemberRequest request = new CreateMemberRequest(COLLAB_EMAIL, ProjectRole.COLLABORATOR);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
@@ -117,7 +118,7 @@ class ProjectMemberServiceTest {
         when(projectMemberRepository.existsByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, request, OWNER_EMAIL))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(MemberAlreadyExistsException.class);
     }
 
     @Test
