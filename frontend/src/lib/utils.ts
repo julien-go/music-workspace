@@ -18,3 +18,19 @@ export function formatRelativeTime(isoDate: string): string {
   if (diffDays < 7) return `il y a ${diffDays}j`;
   return new Date(isoDate).toLocaleDateString("fr-FR");
 }
+
+/** Extracts the file extension (with leading dot, lowercased) from a file name, or null if none. */
+export function getFileExtension(fileName: string | null | undefined): string | null {
+  if (!fileName) return null;
+  const lastDot = fileName.lastIndexOf(".");
+  // Ignore leading-dot dotfiles and trailing dots — those have no usable extension.
+  if (lastDot <= 0 || lastDot === fileName.length - 1) return null;
+  return fileName.slice(lastDot).toLowerCase();
+}
+
+/** Removes the file extension from a file name, keeping the base name intact. */
+export function stripFileExtension(fileName: string): string {
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot <= 0) return fileName;
+  return fileName.slice(0, lastDot);
+}

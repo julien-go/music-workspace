@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
-import { dialogTextareaClass } from "@/features/projects/components/dialogStyles";
+import { dialogInputClass, dialogTextareaClass } from "@/features/projects/components/dialogStyles";
 
 interface Props {
   projectId: string;
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
+  const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
   const createVersion = useCreateTrackVersion(projectId, trackId);
 
   const handleClose = () => {
+    setLabel("");
     setNotes("");
     setAudioFile(null);
     setError(null);
@@ -34,7 +36,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
     }
     setError(null);
     createVersion.mutate(
-      { file: audioFile, notes: notes.trim() || undefined },
+      { file: audioFile, notes: notes.trim() || undefined, label: label.trim() || undefined },
       {
         onSuccess: handleClose,
         onError: (err) =>
@@ -86,6 +88,17 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
               accept="audio/*"
               className="hidden"
               onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Nom de la version</label>
+            <input
+              type="text"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Nommer cette version…"
+              className={dialogInputClass}
             />
           </div>
 

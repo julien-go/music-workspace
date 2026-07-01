@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Play, Pause, Volume1, Volume2, VolumeX, X } from "lucide-react";
 import { usePlayerStore } from "@/store/playerStore";
+import { getFileExtension, stripFileExtension } from "@/lib/utils";
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds) || isNaN(seconds)) return "0:00";
@@ -76,6 +77,11 @@ export function PersistentPlayer() {
 
   if (!current) return null;
 
+  const versionTitle =
+    current.label ??
+    (current.originalFileName ? stripFileExtension(current.originalFileName) : null);
+  const versionExt = getFileExtension(current.originalFileName);
+
   return (
     <div className="fixed bottom-0 left-0 right-0 h-28 bg-surface border-t border-border z-50 flex items-center justify-center px-8">
       <audio
@@ -92,6 +98,14 @@ export function PersistentPlayer() {
           <div className="flex items-center gap-3">
             <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
             <span className="text-xl font-mono text-accent">v{current.versionNumber}</span>
+            {versionTitle && (
+              <span className="text-lg text-foreground/80 max-w-60 truncate">{versionTitle}</span>
+            )}
+            {versionExt && (
+              <span className="text-xs font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                {versionExt}
+              </span>
+            )}
             {current.notes && (
               <span className="text-lg text-muted-foreground italic max-w-80 truncate">· {current.notes}</span>
             )}

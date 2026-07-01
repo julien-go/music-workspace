@@ -1,5 +1,11 @@
 import { fetchApi } from "@/lib/api";
-import type { TrackResponse, TrackVersionResponse, CreateTrackRequest, UpdateTrackRequest } from "./types";
+import type {
+  TrackResponse,
+  TrackVersionResponse,
+  CreateTrackRequest,
+  UpdateTrackRequest,
+  UpdateTrackVersionRequest,
+} from "./types";
 import type { CommentResponse } from "@/features/comments/types";
 
 export function getTracks(projectId: string) {
@@ -51,6 +57,18 @@ export function getTrackVersions(projectId: string, trackId: string) {
   return fetchApi<TrackVersionResponse[]>(`/projects/${projectId}/tracks/${trackId}/versions`);
 }
 
+export function updateTrackVersion(
+  projectId: string,
+  trackId: string,
+  versionId: string,
+  data: UpdateTrackVersionRequest,
+) {
+  return fetchApi<TrackVersionResponse>(
+    `/projects/${projectId}/tracks/${trackId}/versions/${versionId}`,
+    { method: "PATCH", body: JSON.stringify(data) },
+  );
+}
+
 export function getTrackComments(projectId: string, trackId: string) {
   return fetchApi<CommentResponse[]>(`/projects/${projectId}/tracks/${trackId}/comments`);
 }
@@ -91,10 +109,17 @@ export function deleteVersionComment(
   );
 }
 
-export function createTrackVersion(projectId: string, trackId: string, file: File, notes?: string) {
+export function createTrackVersion(
+  projectId: string,
+  trackId: string,
+  file: File,
+  notes?: string,
+  label?: string,
+) {
   const formData = new FormData();
   formData.append("file", file);
   if (notes) formData.append("notes", notes);
+  if (label) formData.append("label", label);
   return fetchApi<TrackVersionResponse>(`/projects/${projectId}/tracks/${trackId}/versions`, {
     method: "POST",
     body: formData,

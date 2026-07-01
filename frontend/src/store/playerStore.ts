@@ -9,6 +9,8 @@ export interface PlayingVersion {
   versionNumber: number;
   audioUrl: string;
   notes?: string | null;
+  label?: string | null;
+  originalFileName?: string | null;
 }
 
 interface PlayerState {

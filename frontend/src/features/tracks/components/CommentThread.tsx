@@ -7,7 +7,7 @@ interface Props {
   isLoading: boolean;
   currentUserId?: string;
   isOwner: boolean;
-  onAdd: (content: string) => Promise<void>;
+  onAdd: (content: string) => Promise<unknown>;
   isAdding: boolean;
   onDelete: (commentId: string) => void;
   deletingId?: string | null;

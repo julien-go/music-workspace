@@ -33,7 +33,7 @@ const statusClass: Record<TrackStatus, string> = {
 
 function TrackDetailSkeleton() {
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8 animate-pulse">
+    <div className="max-w-300 mx-auto px-6 py-8 animate-pulse">
       <div className="flex gap-8">
         <div className="flex-1 space-y-6">
           <div className="h-4 w-72 bg-surface rounded" />
@@ -57,16 +57,32 @@ export default function TrackDetailPage() {
   };
   const currentUser = useAuthStore((s) => s.user);
 
-  const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
-  const { data: track, isLoading: trackLoading, isError: trackError } = useTrack(projectId, trackId);
-  const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(projectId, trackId);
-  const { data: trackComments = [], isLoading: commentsLoading } = useTrackComments(projectId, trackId);
+  const {
+    data: project,
+    isLoading: projectLoading,
+    isError: projectError,
+  } = useProject(projectId);
+  const {
+    data: track,
+    isLoading: trackLoading,
+    isError: trackError,
+  } = useTrack(projectId, trackId);
+  const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(
+    projectId,
+    trackId,
+  );
+  const { data: trackComments = [], isLoading: commentsLoading } =
+    useTrackComments(projectId, trackId);
 
   const updateTrack = useUpdateTrack(projectId, trackId);
   const addTrackComment = useAddTrackComment(projectId, trackId);
   const deleteTrackComment = useDeleteTrackComment(projectId, trackId);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null,
+  );
+  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(
+    null,
+  );
   const [addVersionOpen, setAddVersionOpen] = useState(false);
 
   const sortedVersions = useMemo(
@@ -78,7 +94,7 @@ export default function TrackDetailPage() {
 
   if (projectError || trackError) {
     return (
-      <div className="max-w-[1200px] mx-auto px-6 py-8 text-center space-y-3">
+      <div className="max-w-300 mx-auto px-6 py-8 text-center space-y-3">
         <p className="text-sm text-muted-foreground">
           Cette track est introuvable ou vous n'y avez pas accès.
         </p>
@@ -96,7 +112,8 @@ export default function TrackDetailPage() {
   if (!project || !track) return null;
 
   const canEdit =
-    project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
+    project.currentUserRole === "OWNER" ||
+    project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
 
   const handleDeleteTrackComment = (commentId: string) => {
@@ -104,18 +121,22 @@ export default function TrackDetailPage() {
     setDeleteCommentError(null);
     deleteTrackComment.mutate(commentId, {
       onSettled: () => setDeletingCommentId(null),
-      onError: () => setDeleteCommentError("Impossible de supprimer ce commentaire."),
+      onError: () =>
+        setDeleteCommentError("Impossible de supprimer ce commentaire."),
     });
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
+    <div className="max-w-300 mx-auto px-6 py-8">
       <div className="flex gap-8 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
-            <Link to="/dashboard" className="hover:text-foreground transition-colors">
+            <Link
+              to="/dashboard"
+              className="hover:text-foreground transition-colors"
+            >
               Dashboard
             </Link>
             <span>/</span>
@@ -135,7 +156,11 @@ export default function TrackDetailPage() {
             <div className="flex items-start justify-between gap-4 mb-3">
               <InlineEdit
                 value={track.name}
-                onSave={canEdit ? (name) => updateTrack.mutateAsync({ name }) : undefined}
+                onSave={
+                  canEdit
+                    ? (name) => updateTrack.mutateAsync({ name })
+                    : undefined
+                }
                 className="text-2xl font-bold font-heading text-foreground leading-tight"
               />
               <div className="flex items-center gap-2 shrink-0">
@@ -143,7 +168,9 @@ export default function TrackDetailPage() {
                   <select
                     value={track.status}
                     onChange={(e) =>
-                      updateTrack.mutate({ status: e.target.value as TrackStatus })
+                      updateTrack.mutate({
+                        status: e.target.value as TrackStatus,
+                      })
                     }
                     disabled={updateTrack.isPending}
                     className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${statusClass[track.status]}`}
@@ -153,7 +180,10 @@ export default function TrackDetailPage() {
                     <option value="DONE">Terminé</option>
                   </select>
                 ) : (
-                  <Badge variant="outline" className={`text-sm ${statusClass[track.status]}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-sm ${statusClass[track.status]}`}
+                  >
                     {statusLabel[track.status]}
                   </Badge>
                 )}
@@ -166,7 +196,11 @@ export default function TrackDetailPage() {
             </div>
             <InlineEdit
               value={track.description ?? ""}
-              onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
+              onSave={
+                canEdit
+                  ? (description) => updateTrack.mutateAsync({ description })
+                  : undefined
+              }
               multiline
               className="text-base text-foreground/70 whitespace-pre-wrap"
               emptyLabel={canEdit ? "Ajouter une description" : undefined}
@@ -196,7 +230,9 @@ export default function TrackDetailPage() {
               <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
                 <p className="text-base">Aucune version pour le moment.</p>
                 {canEdit && (
-                  <p className="text-sm mt-1">Ajoutez une première version pour commencer.</p>
+                  <p className="text-sm mt-1">
+                    Ajoutez une première version pour commencer.
+                  </p>
                 )}
               </div>
             )}
@@ -212,6 +248,7 @@ export default function TrackDetailPage() {
                     trackName={track.name}
                     projectName={project.name}
                     isOwner={isOwner}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>
@@ -245,13 +282,18 @@ export default function TrackDetailPage() {
 
           {/* Track info */}
           <div className="bg-surface border border-border rounded-lg p-5">
-            <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
+            <h2 className="font-semibold text-foreground text-base mb-4">
+              Infos
+            </h2>
             <Separator className="mb-4" />
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between items-center gap-2">
                 <dt className="text-muted-foreground">Statut</dt>
                 <dd>
-                  <Badge variant="outline" className={`text-xs ${statusClass[track.status]}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${statusClass[track.status]}`}
+                  >
                     {statusLabel[track.status]}
                   </Badge>
                 </dd>
@@ -262,7 +304,9 @@ export default function TrackDetailPage() {
               </div>
               <div className="flex justify-between items-center gap-2">
                 <dt className="text-muted-foreground">Créée</dt>
-                <dd className="text-foreground">{formatRelativeTime(track.createdAt)}</dd>
+                <dd className="text-foreground">
+                  {formatRelativeTime(track.createdAt)}
+                </dd>
               </div>
             </dl>
             {track.archived && (

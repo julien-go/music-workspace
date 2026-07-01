@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { getTrackVersions } from "../api";
 import { useArchiveTrack } from "../hooks/useArchiveTrack";
 import { useUnarchiveTrack } from "../hooks/useUnarchiveTrack";
 import { useUpdateTrack } from "../hooks/useUpdateTrack";
-import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
+import { AddVersionDialog } from "./AddVersionDialog";
 import { formatRelativeTime } from "@/lib/utils";
 import type { TrackResponse } from "../types";
 
@@ -47,11 +47,10 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const [isLoadingPlay, setIsLoadingPlay] = useState(false);
   const [playError, setPlayError] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [addVersionOpen, setAddVersionOpen] = useState(false);
   const archiveTrack = useArchiveTrack(projectId);
   const unarchiveTrack = useUnarchiveTrack(projectId);
   const updateTrack = useUpdateTrack(projectId, track.id);
-  const createVersion = useCreateTrackVersion(projectId, track.id);
 
   const handleNavigate = () => {
     navigate({
@@ -84,6 +83,8 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           versionNumber: latest.versionNumber,
           audioUrl: latest.audioUrl,
           notes: latest.notes,
+          label: latest.label,
+          originalFileName: latest.originalFileName,
         });
       }
     } catch {
@@ -145,31 +146,14 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
 
       <div className="flex items-center gap-2 mt-1">
         {track.versionCount === 0 && canEdit ? (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) createVersion.mutate({ file });
-                e.target.value = "";
-              }}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              disabled={createVersion.isPending || createVersion.isSuccess}
-              className="text-sm h-8 px-3"
-            >
-              {createVersion.isPending ? "Upload…" : "+ Ajouter une version"}
-            </Button>
-            {createVersion.isError && (
-              <span className="text-xs text-destructive">Échec de l'upload, réessayer.</span>
-            )}
-          </>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setAddVersionOpen(true); }}
+            className="text-sm h-8 px-3"
+          >
+            + Ajouter une version
+          </Button>
         ) : (
           <>
             <Button
@@ -230,6 +214,13 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           </Button>
         )}
       </div>
+
+      <AddVersionDialog
+        projectId={projectId}
+        trackId={track.id}
+        open={addVersionOpen}
+        onClose={() => setAddVersionOpen(false)}
+      />
     </div>
   );
 }

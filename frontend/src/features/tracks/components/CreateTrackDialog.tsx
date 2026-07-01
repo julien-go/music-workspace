@@ -14,6 +14,7 @@ interface Props {
 type FormData = {
   name: string;
   description?: string;
+  versionLabel?: string;
 };
 
 export function CreateTrackDialog({ projectId, open, onClose }: Props) {
@@ -44,7 +45,7 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
         setCreatedTrackId(trackId);
       }
       if (audioFile) {
-        await createTrackVersion(projectId, trackId, audioFile);
+        await createTrackVersion(projectId, trackId, audioFile, undefined, data.versionLabel?.trim() || undefined);
       }
       queryClient.invalidateQueries({ queryKey: ["tracks", projectId] });
       handleClose();
@@ -114,6 +115,16 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
             />
             <p className="text-xs text-muted-foreground">Optionnel — une première version sera créée automatiquement.</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Nom de la version</label>
+            <input
+              {...register("versionLabel")}
+              disabled={!audioFile}
+              className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Nommer cette version…"
+            />
           </div>
 
           {serverError && <p className="text-xs text-red-400">{serverError}</p>}

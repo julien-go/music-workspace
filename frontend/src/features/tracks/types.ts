@@ -21,7 +21,15 @@ export interface TrackVersionResponse {
   versionNumber: number;
   audioUrl: string;
   notes: string | null;
+  label: string | null;
+  originalFileName: string | null;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateTrackVersionRequest {
+  label?: string;
+  notes?: string;
 }
 
 export interface CreateTrackRequest {
