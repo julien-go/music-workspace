@@ -3,7 +3,6 @@ package com.musicworkspace.backend.service;
 import com.musicworkspace.backend.dto.CommentMapper;
 import com.musicworkspace.backend.dto.CommentResponse;
 import com.musicworkspace.backend.dto.CreateCommentRequest;
-import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectComment;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
