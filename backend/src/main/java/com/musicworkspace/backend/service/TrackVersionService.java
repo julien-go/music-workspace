@@ -2,12 +2,12 @@ package com.musicworkspace.backend.service;
 
 import com.musicworkspace.backend.dto.TrackVersionMapper;
 import com.musicworkspace.backend.dto.TrackVersionResponse;
+import com.musicworkspace.backend.dto.UpdateTrackVersionRequest;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackVersion;
 import com.musicworkspace.backend.exception.FileValidationException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
-import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.exception.VersionConflictException;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class TrackVersionService {
     private String audioFolder;
 
     @Transactional
-    public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, MultipartFile file, String email) {
+    public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, String label, MultipartFile file, String email) {
         validateAudioFile(file);
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
 
@@ -54,6 +54,8 @@ public class TrackVersionService {
                 .versionNumber(nextVersion)
                 .audioUrl(audioUrl)
                 .notes(notes)
+                .label(label)
+                .originalFileName(file.getOriginalFilename())
                 .build();
 
         try {
@@ -64,6 +66,27 @@ public class TrackVersionService {
                     String.format(audioFolder, projectId, trackId) + "/v" + nextVersion, "video");
             throw new VersionConflictException("Version number conflict, please retry");
         }
+    }
+
+    @Transactional
+    public TrackVersionResponse update(UUID projectId, UUID trackId, UUID versionId,
+                                       UpdateTrackVersionRequest request, String email) {
+        Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
+
+        if (track.isArchived()) {
+            throw new TrackAlreadyArchivedException("Cannot update a version of an archived track");
+        }
+
+        TrackVersion version = permissionService.resolveTrackVersion(trackId, versionId);
+
+        if (request.label() != null) {
+            version.setLabel(request.label().isBlank() ? null : request.label());
+        }
+        if (request.notes() != null) {
+            version.setNotes(request.notes().isBlank() ? null : request.notes());
+        }
+
+        return trackVersionMapper.toResponse(trackVersionRepository.saveAndFlush(version));
     }
 
     @Transactional(readOnly = true)

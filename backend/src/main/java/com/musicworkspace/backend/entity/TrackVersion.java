@@ -15,7 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "track_versions")
@@ -39,10 +41,22 @@ public class TrackVersion {
     @Column(name = "audio_url", nullable = false, length = 500)
     private String audioUrl;
 
+    @Setter
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Setter
+    @Column(length = 255)
+    private String label;
+
+    @Column(name = "original_file_name", length = 255)
+    private String originalFileName;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 }
