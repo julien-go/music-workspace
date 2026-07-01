@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+import com.musicworkspace.backend.dto.CommentMapper;
 import com.musicworkspace.backend.dto.CreateTrackRequest;
 import com.musicworkspace.backend.dto.TrackMapper;
 import com.musicworkspace.backend.dto.TrackResponse;
@@ -15,9 +16,12 @@ import com.musicworkspace.backend.entity.TrackStatus;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
+import com.musicworkspace.backend.repository.TrackCommentRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +37,16 @@ class TrackServiceTest {
     private TrackRepository trackRepository;
 
     @Mock
+    private TrackVersionRepository trackVersionRepository;
+
+    @Mock
+    private TrackCommentRepository trackCommentRepository;
+
+    @Mock
     private TrackMapper trackMapper;
+
+    @Mock
+    private CommentMapper commentMapper;
 
     @Mock
     private PermissionService permissionService;
@@ -54,7 +67,13 @@ class TrackServiceTest {
         trackId = UUID.randomUUID();
         project = Project.builder().id(projectId).name("My Album").build();
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
-        response = new TrackResponse(trackId, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now());
+        response = new TrackResponse(trackId, 0, "Intro", null, TrackStatus.DRAFT, false, Instant.now(), Instant.now(), 0, null, null);
+    }
+
+    private void stubEnrichment(UUID id) {
+        when(trackVersionRepository.countByTrackId(id)).thenReturn(0L);
+        when(trackVersionRepository.findTopByTrackIdOrderByVersionNumberDesc(id)).thenReturn(Optional.empty());
+        when(trackCommentRepository.findTopByTrackIdOrderByCreatedAtDescIdDesc(id)).thenReturn(Optional.empty());
     }
 
     @Test
@@ -65,7 +84,8 @@ class TrackServiceTest {
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.saveAndFlush(mapped)).thenReturn(track);
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
         TrackResponse result = trackService.create(projectId, request, EMAIL);
 
@@ -82,7 +102,8 @@ class TrackServiceTest {
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
         when(trackMapper.toEntity(request)).thenReturn(mapped);
         when(trackRepository.saveAndFlush(mapped)).thenReturn(track);
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
         trackService.create(projectId, request, EMAIL);
 
@@ -92,10 +113,30 @@ class TrackServiceTest {
     @Test
     void findAll_returnsMappedListForProjectOwner() {
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
-        when(trackRepository.findByProjectIdAndArchivedFalse(projectId)).thenReturn(List.of(track));
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track));
+        when(trackVersionRepository.countsByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackVersionRepository.findLatestNotesByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackCommentRepository.findLatestByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
-        List<TrackResponse> result = trackService.findAll(projectId, EMAIL);
+        List<TrackResponse> result = trackService.findAll(projectId, EMAIL, false);
+
+        assertThat(result).containsExactly(response);
+    }
+
+    @Test
+    void findAll_archived_returnsMappedArchivedList() {
+        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro")
+                .status(TrackStatus.DRAFT).archived(true).build();
+
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(project);
+        when(trackRepository.findByProjectIdAndArchivedTrueOrderByPositionAsc(projectId)).thenReturn(List.of(archivedTrack));
+        when(trackVersionRepository.countsByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackVersionRepository.findLatestNotesByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackCommentRepository.findLatestByTrackIds(List.of(trackId))).thenReturn(List.of());
+        when(trackMapper.toResponse(archivedTrack, 0, null, null)).thenReturn(response);
+
+        List<TrackResponse> result = trackService.findAll(projectId, EMAIL, true);
 
         assertThat(result).containsExactly(response);
     }
@@ -105,14 +146,15 @@ class TrackServiceTest {
         when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
-        assertThatThrownBy(() -> trackService.findAll(projectId, EMAIL))
+        assertThatThrownBy(() -> trackService.findAll(projectId, EMAIL, false))
                 .isInstanceOf(ProjectNotFoundException.class);
     }
 
     @Test
     void findById_returnsTrack() {
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
         TrackResponse result = trackService.findById(projectId, trackId, EMAIL);
 
@@ -133,7 +175,8 @@ class TrackServiceTest {
         UpdateTrackRequest request = new UpdateTrackRequest("New Name", null, TrackStatus.DONE);
 
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
         trackService.update(projectId, trackId, request, EMAIL);
 
@@ -156,7 +199,8 @@ class TrackServiceTest {
     @Test
     void archive_setsArchivedTrueAndReturnsResponse() {
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
-        when(trackMapper.toResponse(track)).thenReturn(response);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
 
         trackService.archive(projectId, trackId, EMAIL);
 

@@ -83,14 +83,14 @@ public class ProjectService {
 
     @Transactional
     public void delete(UUID id, String email) {
-        Project project = permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
-        projectRepository.delete(project);
+        permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
+        projectRepository.deleteProjectById(id);
     }
 
     @Transactional
     public ProjectResponse uploadCover(UUID id, MultipartFile file, String email) {
-        validateImageFile(file);
         ProjectMember member = permissionService.resolveMembership(id, email, ProjectRole.COLLABORATOR);
+        validateImageFile(file);
         Project project = member.getProject();
 
         String coverUrl = cloudinaryService.upload(
@@ -108,7 +108,7 @@ public class ProjectService {
             throw new FileValidationException("File size must not exceed 5MB");
         }
         try (InputStream is = file.getInputStream()) {
-            String detectedType = TIKA.detect(is, file.getOriginalFilename());
+            String detectedType = TIKA.detect(is);
             if (detectedType == null || !detectedType.startsWith("image/")) {
                 throw new FileValidationException("Only image files are accepted");
             }

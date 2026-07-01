@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.musicworkspace.backend.dto.TrackVersionMapper;
 import com.musicworkspace.backend.dto.TrackVersionResponse;
+import com.musicworkspace.backend.dto.UpdateTrackVersionRequest;
 import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
@@ -23,12 +24,12 @@ import com.musicworkspace.backend.exception.VersionConflictException;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -77,7 +78,7 @@ class TrackVersionServiceTest {
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
         version = TrackVersion.builder().id(versionId).track(track).versionNumber(1).audioUrl("https://cloudinary.com/audio.mp3").notes("First take").build();
-        response = new TrackVersionResponse(versionId, trackId, 1, "https://cloudinary.com/audio.mp3", "First take", Instant.now());
+        response = new TrackVersionResponse(versionId, trackId, 1, "https://cloudinary.com/audio.mp3", "First take", "Rough mix", "track.mp3", Instant.now(), Instant.now());
     }
 
     @Test
@@ -91,10 +92,13 @@ class TrackVersionServiceTest {
         when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenReturn(version);
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
-        TrackVersionResponse result = trackVersionService.create(projectId, trackId, "First take", file, EMAIL);
+        TrackVersionResponse result = trackVersionService.create(projectId, trackId, "First take", "Rough mix", file, EMAIL);
 
         assertThat(result).isEqualTo(response);
-        verify(trackVersionRepository).saveAndFlush(any(TrackVersion.class));
+        ArgumentCaptor<TrackVersion> captor = ArgumentCaptor.forClass(TrackVersion.class);
+        verify(trackVersionRepository).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getLabel()).isEqualTo("Rough mix");
+        assertThat(captor.getValue().getOriginalFileName()).isEqualTo("track.mp3");
     }
 
     @Test
@@ -108,10 +112,10 @@ class TrackVersionServiceTest {
 
         TrackVersion savedVersion = TrackVersion.builder().id(versionId).track(track).versionNumber(4).audioUrl("https://cloudinary.com/v4.mp3").build();
         when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenReturn(savedVersion);
-        TrackVersionResponse v4Response = new TrackVersionResponse(versionId, trackId, 4, "https://cloudinary.com/v4.mp3", null, Instant.now());
+        TrackVersionResponse v4Response = new TrackVersionResponse(versionId, trackId, 4, "https://cloudinary.com/v4.mp3", null, null, "track.mp3", Instant.now(), Instant.now());
         when(trackVersionMapper.toResponse(savedVersion)).thenReturn(v4Response);
 
-        TrackVersionResponse result = trackVersionService.create(projectId, trackId, null, file, EMAIL);
+        TrackVersionResponse result = trackVersionService.create(projectId, trackId, null, null, file, EMAIL);
 
         assertThat(result.versionNumber()).isEqualTo(4);
     }
@@ -123,7 +127,7 @@ class TrackVersionServiceTest {
 
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);
     }
 
@@ -134,7 +138,7 @@ class TrackVersionServiceTest {
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
     }
 
@@ -145,7 +149,7 @@ class TrackVersionServiceTest {
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(TrackNotFoundException.class);
     }
 
@@ -159,7 +163,7 @@ class TrackVersionServiceTest {
                 .thenReturn("https://cloudinary.com/audio.mp3");
         when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenThrow(new DataIntegrityViolationException("duplicate"));
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(VersionConflictException.class);
     }
 
@@ -172,7 +176,7 @@ class TrackVersionServiceTest {
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
                 .thenThrow(new CloudinaryUploadException("network error", new RuntimeException()));
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(CloudinaryUploadException.class);
     }
 
@@ -216,6 +220,62 @@ class TrackVersionServiceTest {
     }
 
     @Test
+    void update_updatesLabelAndNotes() {
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
+        when(trackVersionRepository.saveAndFlush(version)).thenReturn(version);
+        when(trackVersionMapper.toResponse(version)).thenReturn(response);
+
+        trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest("New label", "New notes"), EMAIL);
+
+        assertThat(version.getLabel()).isEqualTo("New label");
+        assertThat(version.getNotes()).isEqualTo("New notes");
+    }
+
+    @Test
+    void update_blankLabelClearsToNull() {
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
+        when(trackVersionRepository.saveAndFlush(version)).thenReturn(version);
+        when(trackVersionMapper.toResponse(version)).thenReturn(response);
+
+        trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest("   ", null), EMAIL);
+
+        assertThat(version.getLabel()).isNull();
+    }
+
+    @Test
+    void update_nullFieldsLeaveValuesUnchanged() {
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
+        when(trackVersionRepository.saveAndFlush(version)).thenReturn(version);
+        when(trackVersionMapper.toResponse(version)).thenReturn(response);
+
+        trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest(null, null), EMAIL);
+
+        assertThat(version.getNotes()).isEqualTo("First take");
+    }
+
+    @Test
+    void update_throwsWhenTrackIsArchived() {
+        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).archived(true).build();
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
+
+        assertThatThrownBy(() -> trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest("x", null), EMAIL))
+                .isInstanceOf(TrackAlreadyArchivedException.class);
+    }
+
+    @Test
+    void update_throwsWhenVersionNotFound() {
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        when(permissionService.resolveTrackVersion(trackId, versionId))
+                .thenThrow(new TrackVersionNotFoundException("Track version not found"));
+
+        assertThatThrownBy(() -> trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest("x", null), EMAIL))
+                .isInstanceOf(TrackVersionNotFoundException.class);
+    }
+
+    @Test
     void findById_throwsWhenVersionNotFound() {
         when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
                 .thenThrow(new TrackVersionNotFoundException("Track version not found"));
@@ -246,7 +306,7 @@ class TrackVersionServiceTest {
     void create_throwsWhenFileIsEmpty() {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", new byte[0]);
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("File must not be empty");
     }
@@ -258,7 +318,7 @@ class TrackVersionServiceTest {
         largeContent[1] = (byte) 0xFB;
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", largeContent);
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("File size must not exceed 70MB");
     }
@@ -268,7 +328,7 @@ class TrackVersionServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "image.png", "image/png",
                 new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
 
-        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", file, EMAIL))
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(FileValidationException.class)
                 .hasMessageContaining("Only audio files are accepted");
     }

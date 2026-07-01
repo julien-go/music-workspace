@@ -69,7 +69,7 @@ class ProjectMemberControllerTest {
 
     @Test
     void addMember_returns201() throws Exception {
-        CreateMemberRequest request = new CreateMemberRequest(UUID.randomUUID(), ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest("collab@example.com", ProjectRole.COLLABORATOR);
         when(projectMemberService.addMember(eq(projectId), any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/projects/{projectId}/members", projectId)
@@ -82,7 +82,7 @@ class ProjectMemberControllerTest {
 
     @Test
     void addMember_returns403WhenOwnerRole() throws Exception {
-        CreateMemberRequest request = new CreateMemberRequest(UUID.randomUUID(), ProjectRole.OWNER);
+        CreateMemberRequest request = new CreateMemberRequest("collab@example.com", ProjectRole.OWNER);
         when(projectMemberService.addMember(eq(projectId), any(), any()))
                 .thenThrow(new OwnerRoleException("Cannot assign OWNER role"));
 

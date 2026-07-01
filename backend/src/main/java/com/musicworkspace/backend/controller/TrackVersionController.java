@@ -1,7 +1,9 @@
 package com.musicworkspace.backend.controller;
 
 import com.musicworkspace.backend.dto.TrackVersionResponse;
+import com.musicworkspace.backend.dto.UpdateTrackVersionRequest;
 import com.musicworkspace.backend.service.TrackVersionService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,10 +33,11 @@ public class TrackVersionController {
             @PathVariable UUID projectId,
             @PathVariable UUID trackId,
             @RequestParam(required = false) String notes,
+            @RequestParam(required = false) String label,
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(trackVersionService.create(projectId, trackId, notes, file, authentication.getName()));
+                .body(trackVersionService.create(projectId, trackId, notes, label, file, authentication.getName()));
     }
 
     @GetMapping
@@ -41,6 +46,17 @@ public class TrackVersionController {
             @PathVariable UUID trackId,
             Authentication authentication) {
         return ResponseEntity.ok(trackVersionService.findAll(projectId, trackId, authentication.getName()));
+    }
+
+    @PatchMapping("/{versionId}")
+    public ResponseEntity<TrackVersionResponse> update(
+            @PathVariable UUID projectId,
+            @PathVariable UUID trackId,
+            @PathVariable UUID versionId,
+            @Valid @RequestBody UpdateTrackVersionRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(
+                trackVersionService.update(projectId, trackId, versionId, request, authentication.getName()));
     }
 
     @GetMapping("/{versionId}")

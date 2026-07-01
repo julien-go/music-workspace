@@ -9,6 +9,9 @@ public record TrackVersionResponse(
         int versionNumber,
         String audioUrl,
         String notes,
-        Instant createdAt
+        String label,
+        String originalFileName,
+        Instant createdAt,
+        Instant updatedAt
 ) {
 }

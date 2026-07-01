@@ -6,6 +6,7 @@ import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserMapper;
 import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.entity.User;
+import com.musicworkspace.backend.exception.ConflictException;
 import com.musicworkspace.backend.exception.EmailAlreadyExistsException;
 import com.musicworkspace.backend.exception.UsernameAlreadyExistsException;
 import com.musicworkspace.backend.repository.UserRepository;
@@ -83,7 +84,7 @@ public class AuthService {
                 return new UsernameAlreadyExistsException("Username already in use: " + request.username());
             }
         }
-        return ex;
+        throw new ConflictException("Registration conflict — please try again");
     }
 
     private AuthResult buildAuthResult(User user) {

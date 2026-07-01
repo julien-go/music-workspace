@@ -28,11 +28,21 @@ export async function fetchApi<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...requestInit,
-    headers: { ...headers, ...(requestInit.headers as Record<string, string>) },
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...requestInit,
+      headers: { ...headers, ...(requestInit.headers as Record<string, string>) },
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiException({
+      status: 0,
+      error: "NETWORK_ERROR",
+      message: "Le serveur est momentanément indisponible.",
+      errors: [],
+    });
+  }
 
   if (response.status === 401 && !skipAuthRedirect) {
     useAuthStore.getState().clearUser();
@@ -40,12 +50,20 @@ export async function fetchApi<T>(
     throw new ApiException({
       status: 401,
       error: "UNAUTHORIZED",
-      message: "Session expired",
+      message: "Session expirée",
       errors: [],
     });
   }
 
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new ApiException({
+        status: response.status,
+        error: "SERVICE_UNAVAILABLE",
+        message: "Le serveur est momentanément indisponible.",
+        errors: [],
+      });
+    }
     try {
       const apiError: ApiError = await response.json();
       throw new ApiException(apiError);
@@ -54,7 +72,7 @@ export async function fetchApi<T>(
       throw new ApiException({
         status: response.status,
         error: response.statusText || "ERROR",
-        message: `Request failed with status ${response.status}`,
+        message: "Une erreur inattendue est survenue.",
         errors: [],
       });
     }

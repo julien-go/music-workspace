@@ -3,7 +3,6 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -159,7 +158,7 @@ class ProjectServiceTest {
 
         projectService.delete(projectId, EMAIL);
 
-        verify(projectRepository).delete(project);
+        verify(projectRepository).deleteProjectById(projectId);
     }
 
     @Test
@@ -170,7 +169,7 @@ class ProjectServiceTest {
         assertThatThrownBy(() -> projectService.delete(projectId, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
 
-        verify(projectRepository, never()).delete(any());
+        verify(projectRepository, never()).deleteProjectById(any());
     }
 
     @Test

@@ -55,6 +55,7 @@ class ProjectMemberServiceTest {
 
     private static final String OWNER_EMAIL = "owner@example.com";
     private static final String MEMBER_EMAIL = "member@example.com";
+    private static final String COLLAB_EMAIL = "collab@example.com";
     private User owner;
     private User collaborator;
     private UUID projectId;
@@ -67,7 +68,7 @@ class ProjectMemberServiceTest {
     @BeforeEach
     void setUp() {
         owner = User.builder().id(UUID.randomUUID()).email(OWNER_EMAIL).username("owner").build();
-        collaborator = User.builder().id(UUID.randomUUID()).email("collab@example.com").username("collab").build();
+        collaborator = User.builder().id(UUID.randomUUID()).email(COLLAB_EMAIL).username("collab").build();
         projectId = UUID.randomUUID();
         memberId = UUID.randomUUID();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
@@ -79,11 +80,11 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_savesAndReturnsMember() {
-        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest(COLLAB_EMAIL, ProjectRole.COLLABORATOR);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
+        when(userRepository.findByEmail(COLLAB_EMAIL)).thenReturn(Optional.of(collaborator));
         when(projectMemberRepository.existsByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(false);
-        when(userRepository.findById(collaborator.getId())).thenReturn(Optional.of(collaborator));
         when(projectMemberRepository.saveAndFlush(any(ProjectMember.class))).thenReturn(collabMember);
         when(projectMemberMapper.toResponse(collabMember)).thenReturn(collabResponse);
 
@@ -98,7 +99,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_throwsWhenRoleIsOwner() {
-        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.OWNER);
+        CreateMemberRequest request = new CreateMemberRequest(COLLAB_EMAIL, ProjectRole.OWNER);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
 
@@ -109,10 +110,11 @@ class ProjectMemberServiceTest {
     }
 
     @Test
-    void addMember_throwsWhenUserAlreadyMember() {
-        CreateMemberRequest request = new CreateMemberRequest(collaborator.getId(), ProjectRole.COLLABORATOR);
+    void addMember_throwsConflictWhenUserAlreadyMember() {
+        CreateMemberRequest request = new CreateMemberRequest(COLLAB_EMAIL, ProjectRole.COLLABORATOR);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
+        when(userRepository.findByEmail(COLLAB_EMAIL)).thenReturn(Optional.of(collaborator));
         when(projectMemberRepository.existsByProjectIdAndUserId(projectId, collaborator.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, request, OWNER_EMAIL))
@@ -121,12 +123,10 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_throwsWhenUserNotFound() {
-        UUID fakeUserId = UUID.randomUUID();
-        CreateMemberRequest request = new CreateMemberRequest(fakeUserId, ProjectRole.COLLABORATOR);
+        CreateMemberRequest request = new CreateMemberRequest("unknown@example.com", ProjectRole.COLLABORATOR);
 
         when(permissionService.checkProjectPermission(projectId, OWNER_EMAIL, ProjectRole.OWNER)).thenReturn(project);
-        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, fakeUserId)).thenReturn(false);
-        when(userRepository.findById(fakeUserId)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, request, OWNER_EMAIL))
                 .isInstanceOf(UserNotFoundException.class);

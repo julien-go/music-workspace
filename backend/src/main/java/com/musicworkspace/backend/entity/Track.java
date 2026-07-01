@@ -48,6 +48,9 @@ public class Track {
     @Column(nullable = false, length = 50)
     private TrackStatus status;
 
+    @Column(name = "position", nullable = false)
+    private int position;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean archived = false;

@@ -6,11 +6,15 @@ import java.util.UUID;
 
 public record TrackResponse(
         UUID id,
+        int position,
         String name,
         String description,
         TrackStatus status,
         boolean archived,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        int versionCount,
+        String lastVersionNote,
+        CommentResponse lastComment
 ) {
 }
