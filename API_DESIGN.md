@@ -96,8 +96,9 @@ Validation errors (422):
 | GET | `/projects/{id}/tracks/{trackId}/versions` | List versions | Yes |
 | POST | `/projects/{id}/tracks/{trackId}/versions` | Create a version + upload audio | Yes |
 | GET | `/projects/{id}/tracks/{trackId}/versions/{vId}` | Version detail | Yes |
+| PATCH | `/projects/{id}/tracks/{trackId}/versions/{vId}` | Edit version metadata (label, notes) | Yes |
 
-> No DELETE or PATCH on versions — a version is immutable. Create a new one instead.
+> The `audio` and `version_number` are immutable — no replacement, no deletion (create a new version instead). Only the metadata (`label`, `notes`) is editable via `PATCH`.
 
 ### Tasks
 
@@ -245,11 +246,20 @@ Validation errors (422):
 ### Track Versions
 
 ```json
-// CreateTrackVersionRequest
-// Audio file is sent as multipart/form-data alongside this JSON.
+// CreateTrackVersionRequest (multipart/form-data fields)
+// Audio file is sent as multipart/form-data alongside these fields.
 // The Cloudinary URL is generated server-side — the client does not provide it.
+// originalFileName is extracted server-side from the uploaded file — not provided by the client.
 {
-  "notes": "First demo, tempo needs revisiting"
+  "notes": "First demo, tempo needs revisiting",
+  "label": "Rough mix"
+}
+
+// UpdateTrackVersionRequest (all fields optional — PATCH, metadata only)
+// Blank string clears the field (stored as null). audio and version_number cannot be changed.
+{
+  "label": "Final mix",
+  "notes": "Updated notes"
 }
 
 // TrackVersionResponse
@@ -258,8 +268,12 @@ Validation errors (422):
   "versionNumber": 1,
   "audioUrl": "https://cloudinary.com/...",
   "notes": "First demo, tempo needs revisiting",
-  "createdAt": "2024-01-01T00:00:00Z"
+  "label": "Rough mix",
+  "originalFileName": "intro-demo.mp3",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
 }
+// label and originalFileName are nullable. The file extension is derived client-side from originalFileName.
 ```
 
 ### Tasks

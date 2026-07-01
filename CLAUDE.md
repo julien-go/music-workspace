@@ -73,7 +73,7 @@ HTTP codes: 404 NOT_FOUND · 401 UNAUTHORIZED · 403 FORBIDDEN · 422 VALIDATION
 ## Design rules
 
 - `version_number` on TrackVersion is managed by the service (`SELECT MAX + 1`), not DB auto-increment
-- `TrackVersion` is immutable — no update, no delete. Create a new version instead
+- `TrackVersion` audio and `version_number` are immutable — no replacement, no delete. Create a new version instead. Only metadata (`label`, `notes`) is editable via `PATCH`
 - `assigned_to_id` on Task is nullable from MVP to anticipate V1 without migration
 - When a Project is created, automatically create a `ProjectMember` entry with role OWNER
 - `ProjectResponse` includes `currentUserRole` (OWNER / COLLABORATOR / VIEWER) resolved from ProjectMember for the authenticated user
@@ -189,6 +189,5 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 - [x] Homepage + layout global (nav, structure des pages, routing visuel)
 - [x] Auth (login / register)
 - [x] Dashboard projets
-- [ ] Vue projet (tracks + tâches)
-- [ ] Vue track (versions + player audio)
-- [ ] Ajouter `originalFileName` sur `TrackVersion` (backend)
+- [x] Vue projet (tracks + tâches)
+- [x] Vue track (versions + player audio)

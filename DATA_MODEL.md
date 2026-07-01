@@ -61,9 +61,14 @@
 | version_number | INTEGER | NOT NULL |
 | audio_url | VARCHAR(500) | NOT NULL |
 | notes | TEXT | nullable |
+| label | VARCHAR(255) | nullable — user-provided |
+| original_file_name | VARCHAR(255) | nullable — extracted server-side from the uploaded file |
 | created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
-> `version_number` is managed by the service layer (`SELECT MAX + 1`), not a DB auto-increment. No `updated_at`: a version is immutable — never edited, a new one is created instead.
+> `version_number` is managed by the service layer (`SELECT MAX + 1`), not a DB auto-increment.
+
+> **Immutability rule**: the `audio_url` and `version_number` of a version are immutable — no replacement, no deletion. Only the metadata (`label`, `notes`) can be edited via `PATCH`. `updated_at` tracks the last metadata edit.
 
 ---
 
