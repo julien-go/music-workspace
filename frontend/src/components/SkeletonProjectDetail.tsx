@@ -1,7 +1,11 @@
 /** Loading placeholder for the project detail view (header + tracks + tasks + sidebar). */
 export function SkeletonProjectDetail() {
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 animate-pulse">
+    <div
+      className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 animate-pulse"
+      aria-busy="true"
+      aria-hidden="true"
+    >
       <div className="flex gap-8 items-start">
         {/* Main column */}
         <div className="flex-1 min-w-0 space-y-10">
