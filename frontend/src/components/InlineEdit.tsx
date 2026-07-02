@@ -135,8 +135,9 @@ export function InlineEdit({
       {onSave && (
         <button
           onClick={startEditing}
-          className="opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-events-none group-hover:pointer-events-auto focus-visible:pointer-events-auto transition-opacity shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
           title="Modifier"
+          aria-label="Modifier"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
