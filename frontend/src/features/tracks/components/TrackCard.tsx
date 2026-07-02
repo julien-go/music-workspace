@@ -106,6 +106,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         <InlineEdit
           value={track.name}
           onSave={canEdit ? (name) => updateTrack.mutateAsync({ name }) : undefined}
+          ariaLabel="Nom de la track"
           className="font-semibold text-foreground text-lg leading-tight"
         />
         <div className="flex items-center gap-2 shrink-0">
@@ -114,10 +115,14 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
               Archivée
             </Badge>
           )}
-          <Badge variant="outline" className={`text-sm ${statusClass[track.status]}`}>
+          <Badge
+            variant="outline"
+            aria-label={`Statut : ${statusLabel[track.status]}`}
+            className={`text-sm ${statusClass[track.status]}`}
+          >
             {statusLabel[track.status]}
           </Badge>
-          <ChevronRight className="w-5 h-5 text-muted-foreground/40" />
+          <ChevronRight className="w-5 h-5 text-muted-foreground/40" aria-hidden="true" />
         </div>
       </div>
 
@@ -126,6 +131,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           value={track.description ?? ""}
           onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
           multiline
+          ariaLabel="Description de la track"
           className="text-base text-muted-foreground"
           displayClassName="line-clamp-2"
           emptyLabel={canEdit ? "Ajouter une description" : undefined}
@@ -179,6 +185,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); setConfirmArchive(true); }}
+            aria-label={`Archiver ${track.name}`}
             className="text-sm h-8 px-3 text-muted-foreground hover:text-foreground"
           >
             Archiver
@@ -223,6 +230,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
               });
             }}
             disabled={unarchiveTrack.isPending}
+            aria-label={`Désarchiver ${track.name}`}
             className="text-sm h-8 px-3 text-muted-foreground hover:text-foreground"
           >
             Désarchiver

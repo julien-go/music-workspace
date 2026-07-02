@@ -46,46 +46,67 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
+            <label htmlFor="register-email" className="sr-only">Email</label>
             <input
+              id="register-email"
               type="email"
               placeholder="Email"
+              autoComplete="email"
               {...register("email")}
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? "register-email-error" : undefined}
               className={inputClass}
             />
             {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="register-email-error" role="alert" className="text-xs text-destructive">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-1">
+            <label htmlFor="register-username" className="sr-only">Nom d'utilisateur</label>
             <input
+              id="register-username"
               type="text"
               placeholder="Nom d'utilisateur"
+              autoComplete="username"
               {...register("username")}
+              aria-invalid={errors.username ? true : undefined}
+              aria-describedby={errors.username ? "register-username-error" : undefined}
               className={inputClass}
             />
             {errors.username && (
-              <p className="text-xs text-destructive">{errors.username.message}</p>
+              <p id="register-username-error" role="alert" className="text-xs text-destructive">
+                {errors.username.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-1">
+            <label htmlFor="register-password" className="sr-only">Mot de passe</label>
             <input
+              id="register-password"
               type="password"
               placeholder="Mot de passe"
+              autoComplete="new-password"
               {...register("password")}
+              aria-invalid={errors.password ? true : undefined}
+              aria-describedby={errors.password ? "register-password-error" : undefined}
               className={inputClass}
             />
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="register-password-error" role="alert" className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           {serverMessage && (
-            <p className="text-sm text-destructive">{serverMessage}</p>
+            <p role="alert" className="text-sm text-destructive">{serverMessage}</p>
           )}
           {serverErrors.map((err, i) => (
-            <p key={i} className="text-xs text-destructive">{err}</p>
+            <p key={i} role="alert" className="text-xs text-destructive">{err}</p>
           ))}
 
           <Button

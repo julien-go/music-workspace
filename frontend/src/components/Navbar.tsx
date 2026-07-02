@@ -27,7 +27,16 @@ export function Navbar({
   maxWidthClassName = "max-w-[1200px]",
 }: NavbarProps) {
   return (
-    <header className="bg-surface border-b border-border h-20 shrink-0">
+    <>
+      {/* WCAG 2.4.1 Bypass Blocks — first focusable element in the DOM, hidden
+          until focused, lets keyboard users jump past the nav to the content. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-foreground focus:outline focus:outline-2 focus:outline-ring"
+      >
+        Aller au contenu
+      </a>
+      <header className="bg-surface border-b border-border h-20 shrink-0">
       <div
         className={cn(
           "mx-auto h-full px-4 md:px-6 flex items-center justify-between",
@@ -58,5 +67,6 @@ export function Navbar({
         </Sheet>
       </div>
     </header>
+    </>
   );
 }

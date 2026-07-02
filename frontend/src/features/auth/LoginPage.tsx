@@ -41,31 +41,45 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
+            <label htmlFor="login-email" className="sr-only">Email</label>
             <input
+              id="login-email"
               type="email"
               placeholder="Email"
+              autoComplete="email"
               {...register("email")}
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? "login-email-error" : undefined}
               className={inputClass}
             />
             {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="login-email-error" role="alert" className="text-xs text-destructive">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-1">
+            <label htmlFor="login-password" className="sr-only">Mot de passe</label>
             <input
+              id="login-password"
               type="password"
               placeholder="Mot de passe"
+              autoComplete="current-password"
               {...register("password")}
+              aria-invalid={errors.password ? true : undefined}
+              aria-describedby={errors.password ? "login-password-error" : undefined}
               className={inputClass}
             />
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="login-password-error" role="alert" className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           {serverError && (
-            <p className="text-sm text-destructive">{serverError}</p>
+            <p role="alert" className="text-sm text-destructive">{serverError}</p>
           )}
 
           <Button type="submit" className="w-full" disabled={login.isPending}>

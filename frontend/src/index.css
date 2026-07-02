@@ -25,6 +25,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -59,10 +60,17 @@
   --surface-elevated: #282828;
   --border: #3a3a3a;
   --foreground: #f5f5f5;
-  --muted-foreground: #888888;
+  /* WCAG 1.4.3: #888 failed 4.5:1 on surface-elevated (4.16). #9a9a9a clears
+     4.5:1 on every dark surface (≥5.24 on surface-elevated, 6.8 on background). */
+  --muted-foreground: #9a9a9a;
   --accent: #e8642a;
   --accent-hover: #f07340;
-  --destructive: #dc2626;
+  /* WCAG 1.4.3: text-destructive (#dc2626) was only 3.97:1 on the dark
+     background. #f87171 (red-400) clears 4.5:1 on every dark surface (6.96 on
+     background, 5.35 on surface-elevated). A single token can't also carry white
+     button text, so the destructive button now uses a dark foreground below. */
+  --destructive: #f87171;
+  --destructive-foreground: #0f0f0f;
   --radius: 6px;
   --radius-card: 10px;
 
@@ -72,7 +80,10 @@
   --popover: #1a1a1a;
   --popover-foreground: #f5f5f5;
   --primary: #e8642a;
-  --primary-foreground: #ffffff;
+  /* WCAG 1.4.3: white on the orange accent is only 3.34:1 (fails 4.5 for the
+     button label). A near-black label on the same accent is 5.74:1. The accent
+     stays vivid; only the label color changes. */
+  --primary-foreground: #0f0f0f;
   --secondary: var(--surface-elevated);
   --secondary-foreground: #f5f5f5;
   --muted: var(--surface-elevated);
@@ -94,6 +105,14 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* WCAG 2.4.7: guarantee a visible focus indicator on every interactive
+     element (links, buttons, inputs, custom role="button" elements). The ring
+     colour (#e8642a) is 5.74:1 on the base background, well above the 3:1 for
+     non-text UI indicators. */
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground font-sans;

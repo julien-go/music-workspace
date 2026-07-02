@@ -82,6 +82,8 @@ export function CoverCropDialog({ imageSrc, open, onClose, onCrop }: Props) {
             step={0.05}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
+            aria-label="Zoom"
+            aria-valuetext={`${zoom.toFixed(2)}×`}
             className="w-full accent-accent"
           />
           <p className="text-xs text-muted-foreground text-center">

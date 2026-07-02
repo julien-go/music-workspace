@@ -108,13 +108,18 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                           })
                         }
                         disabled={updateRole.isPending}
+                        aria-label={`Rôle de ${member.user.username}`}
                         className="text-sm text-muted-foreground bg-transparent border-none focus:outline-none cursor-pointer mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="COLLABORATOR">Collaborateur</option>
                         <option value="VIEWER">Lecteur</option>
                       </select>
                     ) : (
-                      <Badge variant="outline" className={`text-sm mt-0.5 ${ROLE_CLASS[member.role]}`}>
+                      <Badge
+                        variant="outline"
+                        aria-label={`Rôle : ${ROLE_LABEL[member.role]}`}
+                        className={`text-sm mt-0.5 ${ROLE_CLASS[member.role]}`}
+                      >
                         {ROLE_LABEL[member.role]}
                       </Badge>
                     )}
@@ -124,8 +129,9 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                       onClick={() => setConfirmingRemoveId(member.user.id)}
                       className="text-muted-foreground/50 hover:text-red-400 transition-colors text-sm shrink-0"
                       title="Retirer"
+                      aria-label={`Retirer ${member.user.username}`}
                     >
-                      ✕
+                      <span aria-hidden="true">✕</span>
                     </button>
                   )}
                 </div>

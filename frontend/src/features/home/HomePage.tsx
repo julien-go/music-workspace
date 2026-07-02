@@ -71,7 +71,7 @@ export default function HomePage() {
                   {number}
                 </span>
                 <div className={`flex-1 ${isOdd ? "" : "md:text-right"}`}>
-                  <h3 className="font-semibold text-foreground text-base mb-1">{title}</h3>
+                  <h2 className="font-semibold text-foreground text-base mb-1">{title}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
                 </div>
               </div>

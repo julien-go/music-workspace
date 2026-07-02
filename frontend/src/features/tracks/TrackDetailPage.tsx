@@ -213,6 +213,7 @@ export default function TrackDetailPage() {
                     ? (name) => updateTrack.mutateAsync({ name })
                     : undefined
                 }
+                ariaLabel="Nom de la track"
                 className="text-2xl font-bold font-heading text-foreground leading-tight"
               />
               <div className="flex items-center gap-2 shrink-0">
@@ -225,6 +226,7 @@ export default function TrackDetailPage() {
                       })
                     }
                     disabled={updateTrack.isPending}
+                    aria-label="Statut de la track"
                     className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${statusClass[track.status]}`}
                   >
                     <option value="DRAFT">Brouillon</option>
@@ -254,6 +256,7 @@ export default function TrackDetailPage() {
                   : undefined
               }
               multiline
+              ariaLabel="Description de la track"
               className="text-base text-foreground/70 whitespace-pre-wrap"
               emptyLabel={canEdit ? "Ajouter une description" : undefined}
             />

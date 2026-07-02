@@ -1,4 +1,4 @@
-import { useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Music } from "lucide-react";
 import { type ProjectResponse, ROLE_LABEL, ROLE_CLASS } from "../types";
 
@@ -42,18 +42,11 @@ function CoverAvatar({ name, coverUrl }: { name: string; coverUrl: string | null
 }
 
 export function ProjectCard({ project }: { project: ProjectResponse }) {
-  const router = useRouter();
-
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => router.navigate({ to: "/projects/$projectId", params: { projectId: project.id } })}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          router.navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
-        }
-      }}
+    <Link
+      to="/projects/$projectId"
+      params={{ projectId: project.id }}
+      aria-label={`Ouvrir le projet ${project.name}, par ${project.owner.username}, rôle : ${ROLE_LABEL[project.currentUserRole]}`}
       className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card hover:bg-surface-elevated transition-colors duration-150 cursor-pointer"
     >
       <CoverAvatar name={project.name} coverUrl={project.coverUrl} />
@@ -73,6 +66,6 @@ export function ProjectCard({ project }: { project: ProjectResponse }) {
           {formatDate(project.updatedAt)}
         </span>
       </div>
-    </div>
+    </Link>
   );
 }

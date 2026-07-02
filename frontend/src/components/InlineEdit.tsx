@@ -8,6 +8,8 @@ interface Props {
   className?: string;
   displayClassName?: string;
   emptyLabel?: string;
+  /** Accessible name for the editable field (and its edit button). */
+  ariaLabel?: string;
 }
 
 export function InlineEdit({
@@ -17,16 +19,22 @@ export function InlineEdit({
   className = "",
   displayClassName = "",
   emptyLabel,
+  ariaLabel,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [prevValue, setPrevValue] = useState(value);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!isEditing) setDraft(value);
-  }, [value, isEditing]);
+  // Re-sync the draft when the source value changes from outside. Done during
+  // render (React's "adjust state on prop change" pattern) instead of in an
+  // effect, to avoid a cascading re-render. The guard prevents an infinite loop.
+  if (!isEditing && value !== prevValue) {
+    setPrevValue(value);
+    setDraft(value);
+  }
 
   useEffect(() => {
     if (isEditing) {
@@ -81,9 +89,14 @@ export function InlineEdit({
             disabled={isPending}
             rows={3}
             placeholder={emptyLabel}
+            aria-label={ariaLabel}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
-            onBlur={() => { if (!isPending) cancel(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancel();
+            }}
+            onBlur={() => {
+              if (!isPending) cancel();
+            }}
             className={fieldClassName}
           />
         ) : (
@@ -92,16 +105,26 @@ export function InlineEdit({
             value={draft}
             disabled={isPending}
             placeholder={emptyLabel}
+            aria-label={ariaLabel}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") cancel();
-              if (e.key === "Enter") { e.preventDefault(); save(); }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                save();
+              }
             }}
-            onBlur={() => { if (!isPending) cancel(); }}
+            onBlur={() => {
+              if (!isPending) cancel();
+            }}
             className={fieldClassName}
           />
         )}
-        {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-destructive mt-1">
+            {error}
+          </p>
+        )}
         <div className="flex gap-3 mt-1.5">
           <button
             onMouseDown={(e) => e.preventDefault()}
@@ -128,17 +151,22 @@ export function InlineEdit({
   return (
     <div className="group flex items-start gap-1.5 min-w-0">
       {value ? (
-        <span className={`${className} ${displayClassName} block min-w-0`}>{value}</span>
+        <span className={`${className} ${displayClassName} block min-w-0`}>
+          {value}
+        </span>
       ) : emptyLabel ? (
-        <span className="text-sm text-muted-foreground italic">{emptyLabel}</span>
+        <span className="text-sm text-muted-foreground italic">
+          {emptyLabel}
+        </span>
       ) : null}
       {onSave && (
         <button
           onClick={startEditing}
-          className="opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-events-none group-hover:pointer-events-auto focus-visible:pointer-events-auto transition-opacity shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
           title="Modifier"
+          aria-label={ariaLabel ? `Modifier : ${ariaLabel}` : "Modifier"}
         >
-          <Pencil className="w-3.5 h-3.5" />
+          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       )}
     </div>

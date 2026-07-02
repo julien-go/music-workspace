@@ -42,8 +42,9 @@ export default function DashboardPage() {
           <FolderOpen
             className="w-12 h-12 text-muted-foreground"
             strokeWidth={1.5}
+            aria-hidden="true"
           />
-          <div className="space-y-1">
+          <div className="space-y-1" role="status">
             <p className="text-foreground font-medium">
               Aucun projet pour le moment
             </p>

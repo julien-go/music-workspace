@@ -58,7 +58,14 @@ function SortableTrackCard({
   reorderPending: boolean;
 }) {
   const { active } = useDndContext();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: track.id,
     disabled: !canEdit || reorderPending,
   });
@@ -79,11 +86,12 @@ function SortableTrackCard({
       {canEdit && (
         <button
           type="button"
+          aria-label={`Réordonner ${track.name}`}
           {...attributes}
           {...listeners}
           className="shrink-0 p-0.5 touch-none opacity-100 md:opacity-40 md:group-hover/sort:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground focus-visible:outline-none"
         >
-          <GripVertical className="w-4 h-4" />
+          <GripVertical className="w-4 h-4" aria-hidden="true" />
         </button>
       )}
       <div className="flex-1 min-w-0">
@@ -98,9 +106,20 @@ function SortableTrackCard({
   );
 }
 
-function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | null }) {
+function ProjectCover({
+  name,
+  coverUrl,
+}: {
+  name: string;
+  coverUrl: string | null;
+}) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   if (coverUrl) {
     return (
@@ -116,7 +135,11 @@ function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | nul
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="bg-surface p-3 sm:max-w-md">
             <DialogTitle className="sr-only">{name}</DialogTitle>
-            <img src={coverUrl} alt={name} className="w-full aspect-square object-cover rounded-md" />
+            <img
+              src={coverUrl}
+              alt={name}
+              className="w-full aspect-square object-cover rounded-md"
+            />
           </DialogContent>
         </Dialog>
       </>
@@ -126,7 +149,9 @@ function ProjectCover({ name, coverUrl }: { name: string; coverUrl: string | nul
   return (
     <div className="w-32 h-32 rounded-lg bg-surface border border-border flex items-center justify-center shrink-0">
       {initials ? (
-        <span className="text-2xl font-semibold text-muted-foreground">{initials}</span>
+        <span className="text-2xl font-semibold text-muted-foreground">
+          {initials}
+        </span>
       ) : (
         <Music className="w-8 h-8 text-muted-foreground" />
       )}
@@ -143,12 +168,18 @@ export default function ProjectDetailPage() {
     error: projectErrorObj,
     refetch: refetchProject,
   } = useProject(projectId);
-  const { data: tracks = [], isLoading: tracksLoading, isError: isTracksError } = useTracks(projectId);
+  const {
+    data: tracks = [],
+    isLoading: tracksLoading,
+    isError: isTracksError,
+  } = useTracks(projectId);
   const updateProject = useUpdateProject(projectId);
   const reorderTracks = useReorderTracks(projectId);
 
   // useState (not setQueryData) so the update batches synchronously with dnd-kit's own state cleanup.
-  const [orderedIds, setOrderedIds] = useState<string[]>(() => tracks.map((t) => t.id));
+  const [orderedIds, setOrderedIds] = useState<string[]>(() =>
+    tracks.map((t) => t.id),
+  );
   const prevServerIdsRef = useRef<string[]>(tracks.map((t) => t.id));
   useEffect(() => {
     const serverIds = tracks.map((t) => t.id);
@@ -157,21 +188,30 @@ export default function ProjectDetailPage() {
     prevServerIdsRef.current = serverIds;
     // Only reset local order when the *set* of IDs changes (track added or archived).
     // A refetch with same IDs but server-side order must not clobber the user's drag order.
-    const setsMatch = prev.size === next.size && [...next].every((id) => prev.has(id));
+    const setsMatch =
+      prev.size === next.size && [...next].every((id) => prev.has(id));
     if (!setsMatch) setOrderedIds(serverIds);
   }, [tracks]);
   const orderedTracks = useMemo(
-    () => orderedIds.map((id) => tracks.find((t) => t.id === id)).filter((t): t is TrackResponse => t !== undefined),
+    () =>
+      orderedIds
+        .map((id) => tracks.find((t) => t.id === id))
+        .filter((t): t is TrackResponse => t !== undefined),
     [orderedIds, tracks],
   );
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: archivedTracks = [], isLoading: archivedLoading, isError: isArchivedError } =
-    useArchivedTracks(projectId, showArchived);
+  const {
+    data: archivedTracks = [],
+    isLoading: archivedLoading,
+    isError: isArchivedError,
+  } = useArchivedTracks(projectId, showArchived);
 
   useStopPlayerOnProjectChange(projectId);
 
@@ -190,7 +230,9 @@ export default function ProjectDetailPage() {
         onError: (err) => {
           setOrderedIds(previousIds);
           if (!isUnauthorizedError(err)) {
-            toastError(describeError(err, "Impossible de réordonner les tracks."));
+            toastError(
+              describeError(err, "Impossible de réordonner les tracks."),
+            );
           }
         },
       },
@@ -201,25 +243,32 @@ export default function ProjectDetailPage() {
   if (projectError)
     return (
       <ErrorState
-        message={describeError(projectErrorObj, "Impossible de charger ce projet.")}
+        message={describeError(
+          projectErrorObj,
+          "Impossible de charger ce projet.",
+        )}
         onRetry={() => refetchProject()}
       />
     );
   if (!project) return null;
 
   const canEdit =
-    project.currentUserRole === "OWNER" || project.currentUserRole === "COLLABORATOR";
+    project.currentUserRole === "OWNER" ||
+    project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
+    <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Breadcrumb + mobile members trigger */}
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-              <Link to="/dashboard" className="hover:text-foreground transition-colors">
+              <Link
+                to="/dashboard"
+                className="hover:text-foreground transition-colors"
+              >
                 Dashboard
               </Link>
               <span>/</span>
@@ -254,7 +303,12 @@ export default function ProjectDetailPage() {
               <div className="flex items-start justify-between gap-4 mb-2">
                 <InlineEdit
                   value={project.name}
-                  onSave={canEdit ? (name) => updateProject.mutateAsync({ name }) : undefined}
+                  onSave={
+                    canEdit
+                      ? (name) => updateProject.mutateAsync({ name })
+                      : undefined
+                  }
+                  ariaLabel="Nom du projet"
                   className="text-2xl font-bold font-heading text-foreground leading-tight"
                 />
                 {isOwner && (
@@ -262,17 +316,22 @@ export default function ProjectDetailPage() {
                     onClick={() => setSettingsOpen(true)}
                     className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-1"
                     title="Paramètres du projet"
+                    aria-label="Paramètres du projet"
                   >
-                    <Settings className="w-5 h-5" />
+                    <Settings className="w-5 h-5" aria-hidden="true" />
                   </button>
                 )}
               </div>
               <InlineEdit
                 value={project.description ?? ""}
                 onSave={
-                  canEdit ? (description) => updateProject.mutateAsync({ description }) : undefined
+                  canEdit
+                    ? (description) =>
+                        updateProject.mutateAsync({ description })
+                    : undefined
                 }
                 multiline
+                ariaLabel="Description du projet"
                 className="text-sm text-muted-foreground whitespace-pre-wrap"
                 emptyLabel={canEdit ? "Ajouter une description" : undefined}
               />
@@ -309,17 +368,24 @@ export default function ProjectDetailPage() {
             )}
 
             {!tracksLoading && isTracksError && (
-              <p className="text-sm text-destructive">Impossible de charger les tracks.</p>
+              <p className="text-sm text-destructive">
+                Impossible de charger les tracks.
+              </p>
             )}
 
-            {!tracksLoading && !isTracksError && tracks.length === 0 && !showArchived && (
-              <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-                <p className="text-base">Aucune track pour le moment.</p>
-                {canEdit && (
-                  <p className="text-sm mt-1">Créez votre première track pour commencer.</p>
-                )}
-              </div>
-            )}
+            {!tracksLoading &&
+              !isTracksError &&
+              tracks.length === 0 &&
+              !showArchived && (
+                <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
+                  <p className="text-base">Aucune track pour le moment.</p>
+                  {canEdit && (
+                    <p className="text-sm mt-1">
+                      Créez votre première track pour commencer.
+                    </p>
+                  )}
+                </div>
+              )}
 
             {!tracksLoading && !isTracksError && tracks.length > 0 && (
               <DndContext
@@ -352,12 +418,17 @@ export default function ProjectDetailPage() {
               <Separator className="mb-4" />
               <button
                 onClick={() => setShowArchived((v) => !v)}
+                aria-expanded={showArchived}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
               >
-                <span>{showArchived ? "▾" : "▸"}</span>
-                {showArchived ? "Masquer les tracks archivées" : "Afficher les tracks archivées"}
+                <span aria-hidden="true">{showArchived ? "▾" : "▸"}</span>
+                {showArchived
+                  ? "Masquer les tracks archivées"
+                  : "Afficher les tracks archivées"}
                 {archivedTracks.length > 0 && (
-                  <span className="text-muted-foreground/60">({archivedTracks.length})</span>
+                  <span className="text-muted-foreground/60">
+                    ({archivedTracks.length})
+                  </span>
                 )}
               </button>
 
@@ -366,7 +437,10 @@ export default function ProjectDetailPage() {
                   {archivedLoading && (
                     <div className="space-y-3 animate-pulse">
                       {[...Array(2)].map((_, i) => (
-                        <div key={i} className="h-24 bg-surface rounded-lg opacity-60" />
+                        <div
+                          key={i}
+                          className="h-24 bg-surface rounded-lg opacity-60"
+                        />
                       ))}
                     </div>
                   )}
@@ -375,22 +449,28 @@ export default function ProjectDetailPage() {
                       Impossible de charger les tracks archivées.
                     </p>
                   )}
-                  {!archivedLoading && !isArchivedError && archivedTracks.length === 0 && (
-                    <p className="text-sm text-muted-foreground py-4">Aucune track archivée.</p>
-                  )}
-                  {!archivedLoading && !isArchivedError && archivedTracks.length > 0 && (
-                    <div className="space-y-3 opacity-70">
-                      {archivedTracks.map((track) => (
-                        <TrackCard
-                          key={track.id}
-                          track={track}
-                          projectId={projectId}
-                          projectName={project.name}
-                          canEdit={canEdit}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {!archivedLoading &&
+                    !isArchivedError &&
+                    archivedTracks.length === 0 && (
+                      <p className="text-sm text-muted-foreground py-4">
+                        Aucune track archivée.
+                      </p>
+                    )}
+                  {!archivedLoading &&
+                    !isArchivedError &&
+                    archivedTracks.length > 0 && (
+                      <div className="space-y-3 opacity-70">
+                        {archivedTracks.map((track) => (
+                          <TrackCard
+                            key={track.id}
+                            track={track}
+                            projectId={projectId}
+                            projectName={project.name}
+                            canEdit={canEdit}
+                          />
+                        ))}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
