@@ -16,8 +16,14 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Music, Settings } from "lucide-react";
+import { GripVertical, Music, Settings, Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { InlineEdit } from "@/components/InlineEdit";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonProjectDetail } from "@/components/SkeletonProjectDetail";
@@ -75,7 +81,7 @@ function SortableTrackCard({
           type="button"
           {...attributes}
           {...listeners}
-          className="shrink-0 p-0.5 opacity-40 group-hover/sort:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground focus-visible:outline-none"
+          className="shrink-0 p-0.5 touch-none opacity-100 md:opacity-40 md:group-hover/sort:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground focus-visible:outline-none"
         >
           <GripVertical className="w-4 h-4" />
         </button>
@@ -206,17 +212,39 @@ export default function ProjectDetailPage() {
   const isOwner = project.currentUserRole === "OWNER";
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-            <Link to="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">{project.name}</span>
+          {/* Breadcrumb + mobile members trigger */}
+          <div className="flex items-center justify-between gap-2 mb-6">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+              <Link to="/dashboard" className="hover:text-foreground transition-colors">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-foreground truncate">{project.name}</span>
+            </div>
+            {/* Mobile-only: opens the members sidebar in a drawer */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="md:hidden shrink-0 gap-1.5"
+                >
+                  <Users className="w-4 h-4" />
+                  Membres
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-80 max-w-[85vw] overflow-y-auto p-4"
+              >
+                <SheetTitle className="sr-only">Membres</SheetTitle>
+                <MembersSidebar projectId={projectId} isOwner={isOwner} />
+              </SheetContent>
+            </Sheet>
           </div>
 
           {/* Header */}
@@ -253,7 +281,7 @@ export default function ProjectDetailPage() {
 
           {/* Tracks section */}
           <div className="mb-10">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest">
                 Tracks
                 {tracks.length > 0 && (
@@ -263,7 +291,12 @@ export default function ProjectDetailPage() {
                 )}
               </h2>
               {canEdit && (
-                <Button onClick={() => setCreateTrackOpen(true)}>+ Nouvelle track</Button>
+                <Button
+                  onClick={() => setCreateTrackOpen(true)}
+                  className="w-full md:w-auto"
+                >
+                  + Nouvelle track
+                </Button>
               )}
             </div>
 
@@ -374,8 +407,8 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar — sticky */}
-        <div className="w-72 shrink-0 sticky top-8">
+        {/* Sidebar — desktop only, sticky (mobile uses the drawer above) */}
+        <div className="hidden md:block w-72 shrink-0 sticky top-8">
           <MembersSidebar projectId={projectId} isOwner={isOwner} />
         </div>
       </div>

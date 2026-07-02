@@ -1,8 +1,15 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "@tanstack/react-router";
+import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { InlineEdit } from "@/components/InlineEdit";
 import { MembersSidebar } from "@/features/projects/components/MembersSidebar";
 import { useProject } from "@/features/projects/hooks/useProject";
@@ -109,34 +116,96 @@ export default function TrackDetailPage() {
     });
   };
 
+  const sidebarContent = (
+    <>
+      <MembersSidebar projectId={projectId} isOwner={isOwner} />
+
+      {/* Track info */}
+      <div className="bg-surface border border-border rounded-lg p-5">
+        <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
+        <Separator className="mb-4" />
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between items-center gap-2">
+            <dt className="text-muted-foreground">Statut</dt>
+            <dd>
+              <Badge
+                variant="outline"
+                className={`text-xs ${statusClass[track.status]}`}
+              >
+                {statusLabel[track.status]}
+              </Badge>
+            </dd>
+          </div>
+          <div className="flex justify-between items-center gap-2">
+            <dt className="text-muted-foreground">Versions</dt>
+            <dd className="text-foreground">{versions.length}</dd>
+          </div>
+          <div className="flex justify-between items-center gap-2">
+            <dt className="text-muted-foreground">Créée</dt>
+            <dd className="text-foreground">
+              {formatRelativeTime(track.createdAt)}
+            </dd>
+          </div>
+        </dl>
+        {track.archived && (
+          <div className="mt-4 px-3 py-2 rounded-md bg-amber-400/10 border border-amber-400/20 text-xs text-amber-400">
+            Cette track est archivée.
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
-    <div className="max-w-300 mx-auto px-6 py-8">
+    <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
-            <Link
-              to="/dashboard"
-              className="hover:text-foreground transition-colors"
-            >
-              Dashboard
-            </Link>
-            <span>/</span>
-            <Link
-              to="/projects/$projectId"
-              params={{ projectId }}
-              className="hover:text-foreground transition-colors"
-            >
-              {project.name}
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">{track.name}</span>
+          {/* Breadcrumb + mobile members/infos trigger */}
+          <div className="flex items-start justify-between gap-2 mb-6">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0 flex-wrap">
+              <Link
+                to="/dashboard"
+                className="hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+              <span>/</span>
+              <Link
+                to="/projects/$projectId"
+                params={{ projectId }}
+                className="hover:text-foreground transition-colors"
+              >
+                {project.name}
+              </Link>
+              <span>/</span>
+              <span className="text-foreground">{track.name}</span>
+            </div>
+            {/* Mobile-only: opens members + infos in a drawer */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="md:hidden shrink-0 gap-1.5"
+                >
+                  <Users className="w-4 h-4" />
+                  Membres
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-80 max-w-[85vw] overflow-y-auto p-4"
+              >
+                <SheetTitle className="sr-only">Membres et infos</SheetTitle>
+                <div className="flex flex-col gap-4">{sidebarContent}</div>
+              </SheetContent>
+            </Sheet>
           </div>
 
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex flex-col gap-3 mb-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <InlineEdit
                 value={track.name}
                 onSave={
@@ -259,45 +328,9 @@ export default function TrackDetailPage() {
           </div>
         </div>
 
-        {/* Right sidebar */}
-        <div className="w-72 shrink-0 sticky top-8 flex flex-col gap-4">
-          <MembersSidebar projectId={projectId} isOwner={isOwner} />
-
-          {/* Track info */}
-          <div className="bg-surface border border-border rounded-lg p-5">
-            <h2 className="font-semibold text-foreground text-base mb-4">
-              Infos
-            </h2>
-            <Separator className="mb-4" />
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between items-center gap-2">
-                <dt className="text-muted-foreground">Statut</dt>
-                <dd>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${statusClass[track.status]}`}
-                  >
-                    {statusLabel[track.status]}
-                  </Badge>
-                </dd>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <dt className="text-muted-foreground">Versions</dt>
-                <dd className="text-foreground">{versions.length}</dd>
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <dt className="text-muted-foreground">Créée</dt>
-                <dd className="text-foreground">
-                  {formatRelativeTime(track.createdAt)}
-                </dd>
-              </div>
-            </dl>
-            {track.archived && (
-              <div className="mt-4 px-3 py-2 rounded-md bg-amber-400/10 border border-amber-400/20 text-xs text-amber-400">
-                Cette track est archivée.
-              </div>
-            )}
-          </div>
+        {/* Right sidebar — desktop only, sticky (mobile uses the drawer above) */}
+        <div className="hidden md:flex w-72 shrink-0 sticky top-8 flex-col gap-4">
+          {sidebarContent}
         </div>
       </div>
 
