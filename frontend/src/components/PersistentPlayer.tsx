@@ -29,8 +29,13 @@ export function PersistentPlayer() {
       audio.pause();
       audio.src = "";
       prevVersionIdRef.current = null;
+      // This effect legitimately synchronises React with the <audio> element (an
+      // external system). Resetting the transient progress/duration on teardown is
+      // intentional and safe here.
+      /* eslint-disable react-hooks/set-state-in-effect */
       setProgress(0);
       setDuration(0);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
 

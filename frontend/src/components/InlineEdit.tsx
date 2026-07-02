@@ -20,13 +20,18 @@ export function InlineEdit({
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [prevValue, setPrevValue] = useState(value);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!isEditing) setDraft(value);
-  }, [value, isEditing]);
+  // Re-sync the draft when the source value changes from outside. Done during
+  // render (React's "adjust state on prop change" pattern) instead of in an
+  // effect, to avoid a cascading re-render. The guard prevents an infinite loop.
+  if (!isEditing && value !== prevValue) {
+    setPrevValue(value);
+    setDraft(value);
+  }
 
   useEffect(() => {
     if (isEditing) {
