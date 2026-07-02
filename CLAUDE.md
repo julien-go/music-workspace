@@ -183,12 +183,4 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 
 🎨 Phase 4 — Frontend
 
-Étape 15 — Responsive
-
-- [x] Layout global + nav (breakpoints, menu mobile)
-- [x] Homepage
-- [x] Login / Register
-- [x] Dashboard (liste projets)
-- [x] Vue projet (tracks + tâches + sidebar membres)
-- [x] Vue track (versions + commentaires + sidebar)
-- [x] Composants partagés (modals, toasts, skeletons)
+Step 16 — Accessibility
