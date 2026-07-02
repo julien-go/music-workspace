@@ -20,6 +20,9 @@ export function PersistentPlayer() {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
+  const [shownVersionId, setShownVersionId] = useState<string | null>(
+    current?.versionId ?? null,
+  );
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -29,13 +32,6 @@ export function PersistentPlayer() {
       audio.pause();
       audio.src = "";
       prevVersionIdRef.current = null;
-      // This effect legitimately synchronises React with the <audio> element (an
-      // external system). Resetting the transient progress/duration on teardown is
-      // intentional and safe here.
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setProgress(0);
-      setDuration(0);
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
 
@@ -84,6 +80,18 @@ export function PersistentPlayer() {
   };
 
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+
+  // Reset the transient progress/duration when playback is torn down (current
+  // cleared). Done during render — React's "adjust state on change" pattern —
+  // so it stays out of the audio-sync effect. Matches the previous behaviour.
+  const currentVersionId = current?.versionId ?? null;
+  if (currentVersionId !== shownVersionId) {
+    setShownVersionId(currentVersionId);
+    if (currentVersionId === null) {
+      setProgress(0);
+      setDuration(0);
+    }
+  }
 
   if (!current) return null;
 
