@@ -2,10 +2,16 @@ package com.musicworkspace.backend.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.musicworkspace.backend.dto.CommentMapper;
 import com.musicworkspace.backend.dto.CreateTrackRequest;
+import com.musicworkspace.backend.dto.ReorderTracksRequest;
 import com.musicworkspace.backend.dto.TrackMapper;
 import com.musicworkspace.backend.dto.TrackResponse;
 import com.musicworkspace.backend.dto.UpdateTrackRequest;
@@ -29,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class TrackServiceTest {
@@ -225,5 +232,80 @@ class TrackServiceTest {
 
         assertThatThrownBy(() -> trackService.archive(projectId, trackId, EMAIL))
                 .isInstanceOf(TrackAlreadyArchivedException.class);
+    }
+
+    @Test
+    void unarchive_reappendsTrackAfterLastPosition() {
+        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro")
+                .status(TrackStatus.DRAFT).archived(true).position(3).build();
+
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
+        when(trackRepository.findMaxPositionByProjectId(projectId)).thenReturn(5);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(archivedTrack, 0, null, null)).thenReturn(response);
+
+        trackService.unarchive(projectId, trackId, EMAIL);
+
+        assertThat(archivedTrack.isArchived()).isFalse();
+        assertThat(archivedTrack.getPosition()).isEqualTo(6);
+    }
+
+    @Test
+    void unarchive_leavesNonArchivedTrackUntouched() {
+        track.setPosition(2);
+
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        stubEnrichment(trackId);
+        when(trackMapper.toResponse(track, 0, null, null)).thenReturn(response);
+
+        trackService.unarchive(projectId, trackId, EMAIL);
+
+        assertThat(track.isArchived()).isFalse();
+        assertThat(track.getPosition()).isEqualTo(2);
+        verify(trackRepository, never()).findMaxPositionByProjectId(any());
+    }
+
+    @Test
+    void reorder_appliesRequestedOrderAsPositions() {
+        UUID otherId = UUID.randomUUID();
+        Track other = Track.builder().id(otherId).project(project).name("Outro")
+                .status(TrackStatus.DRAFT).position(1).build();
+        track.setPosition(0);
+
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track, other));
+        when(trackVersionRepository.countsByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackVersionRepository.findLatestNotesByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackCommentRepository.findLatestByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackMapper.toResponse(any(Track.class), eq(0), isNull(), isNull())).thenReturn(response);
+
+        trackService.reorder(projectId, new ReorderTracksRequest(List.of(otherId, trackId)), EMAIL);
+
+        assertThat(other.getPosition()).isEqualTo(0);
+        assertThat(track.getPosition()).isEqualTo(1);
+    }
+
+    @Test
+    void reorder_throwsWhenTrackCountMismatch() {
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track));
+
+        ReorderTracksRequest request = new ReorderTracksRequest(List.of(trackId, UUID.randomUUID()));
+
+        assertThatThrownBy(() -> trackService.reorder(projectId, request, EMAIL))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(422));
+    }
+
+    @Test
+    void reorder_throwsWhenIdsDoNotMatchProjectTracks() {
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track));
+
+        ReorderTracksRequest request = new ReorderTracksRequest(List.of(UUID.randomUUID()));
+
+        assertThatThrownBy(() -> trackService.reorder(projectId, request, EMAIL))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(422));
     }
 }

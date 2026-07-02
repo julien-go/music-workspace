@@ -97,7 +97,14 @@ public class TrackService {
     @Transactional
     public TrackResponse unarchive(UUID projectId, UUID trackId, String email) {
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
-        track.setArchived(false);
+        if (track.isArchived()) {
+            track.setArchived(false);
+            // The old position may have been given to another track by a reorder
+            // while this one was archived (reorder compacts active positions to
+            // 0..n-1), which would violate uq_tracks_project_position_active.
+            // Re-append at the end instead of restoring the old slot.
+            track.setPosition(trackRepository.findMaxPositionByProjectId(projectId) + 1);
+        }
         return buildResponse(track);
     }
 

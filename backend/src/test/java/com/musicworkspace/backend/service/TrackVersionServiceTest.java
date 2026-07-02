@@ -3,6 +3,7 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -165,6 +166,29 @@ class TrackVersionServiceTest {
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
                 .isInstanceOf(VersionConflictException.class);
+    }
+
+    @Test
+    void create_conflictCleanupDeletesOnlyItsOwnUpload() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
+
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
+        when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
+        when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
+                .thenReturn("https://cloudinary.com/audio.mp3");
+        when(trackVersionRepository.saveAndFlush(any(TrackVersion.class))).thenThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
+                .isInstanceOf(VersionConflictException.class);
+
+        // The public id is unique per attempt: cleanup must target the asset this
+        // request uploaded, never the shared "v{n}" slot a concurrent winner used.
+        String folder = String.format("music-workspace/projects/%s/tracks/%s/versions", projectId, trackId);
+        ArgumentCaptor<String> publicIdCaptor = ArgumentCaptor.forClass(String.class);
+        verify(cloudinaryService).upload(any(), eq(folder), publicIdCaptor.capture(), eq("video"), eq(false));
+        String publicId = publicIdCaptor.getValue();
+        assertThat(publicId).startsWith("v1-").isNotEqualTo("v1");
+        verify(cloudinaryService).delete(folder + "/" + publicId, "video");
     }
 
     @Test
