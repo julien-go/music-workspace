@@ -73,6 +73,11 @@ export function PersistentPlayer() {
     }
   };
 
+  const handleSeek = (val: number) => {
+    setProgress(val);
+    if (audioRef.current) audioRef.current.currentTime = val;
+  };
+
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
 
   if (!current) return null;
@@ -83,7 +88,7 @@ export function PersistentPlayer() {
   const versionExt = getFileExtension(current.originalFileName);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-28 bg-surface border-t border-border z-50 flex items-center justify-center px-8">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border">
       <audio
         ref={audioRef}
         onTimeUpdate={() => setProgress(audioRef.current?.currentTime ?? 0)}
@@ -91,82 +96,132 @@ export function PersistentPlayer() {
         onEnded={pause}
       />
 
-      <div className="flex flex-col items-center gap-3">
-
-        {/* Ligne 1 — texte x2 */}
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
-            <span className="text-xl font-mono text-accent">v{current.versionNumber}</span>
-            {versionTitle && (
-              <span className="text-lg text-foreground/80 max-w-60 truncate">{versionTitle}</span>
-            )}
-            {versionExt && (
-              <span className="text-xs font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
-                {versionExt}
-              </span>
-            )}
-            {current.notes && (
-              <span className="text-lg text-muted-foreground italic max-w-80 truncate">· {current.notes}</span>
-            )}
-          </div>
-          <span className="text-xs text-muted-foreground/60">{current.projectName}</span>
-        </div>
-
-        {/* Ligne 2 — contrôles x1.5 */}
-        <div className="flex items-center gap-4">
+      {/* Mobile — mini-player compact : play · titre · fermer, puis seek pleine largeur.
+          Volume (géré par le téléphone) et description de version omis pour gagner de la place. */}
+      <div className="flex flex-col gap-1.5 px-3 py-2.5 md:hidden">
+        <div className="flex items-center gap-3">
           <button
             onClick={isPlaying ? pause : resume}
-            className="text-foreground hover:text-accent transition-colors"
+            className="shrink-0 text-foreground hover:text-accent transition-colors"
+            title={isPlaying ? "Pause" : "Lecture"}
           >
             {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
           </button>
-
-          <span className="text-sm text-muted-foreground tabular-nums">{formatTime(progress)}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {current.trackName}
+              </span>
+              <span className="shrink-0 text-sm font-mono text-accent">
+                v{current.versionNumber}
+              </span>
+            </div>
+            <span className="block truncate text-xs text-muted-foreground/60">
+              {current.projectName}
+            </span>
+          </div>
+          <button
+            onClick={stop}
+            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            title="Fermer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            {formatTime(progress)}
+          </span>
           <input
             type="range"
             min={0}
             max={duration || 100}
             value={progress}
             step={0.1}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              setProgress(val);
-              if (audioRef.current) audioRef.current.currentTime = val;
-            }}
-            className="w-96 h-2.5 accent-accent cursor-pointer"
+            onChange={(e) => handleSeek(Number(e.target.value))}
+            className="h-2 flex-1 cursor-pointer accent-accent"
+            aria-label="Progression"
           />
-          <span className="text-sm text-muted-foreground tabular-nums">{formatTime(duration)}</span>
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+      </div>
 
-          <div className="w-px h-6 bg-border" />
+      {/* Desktop — layout complet centré */}
+      <div className="hidden h-28 items-center justify-center px-8 md:flex">
+        <div className="flex flex-col items-center gap-3">
+          {/* Ligne 1 — texte x2 */}
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
+              <span className="text-xl font-mono text-accent">v{current.versionNumber}</span>
+              {versionTitle && (
+                <span className="text-lg text-foreground/80 max-w-60 truncate">{versionTitle}</span>
+              )}
+              {versionExt && (
+                <span className="text-xs font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                  {versionExt}
+                </span>
+              )}
+              {current.notes && (
+                <span className="text-lg text-muted-foreground italic max-w-80 truncate">· {current.notes}</span>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground/60">{current.projectName}</span>
+          </div>
 
-          <button
-            onClick={toggleMute}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title={isMuted ? "Activer le son" : "Couper le son"}
-          >
-            <VolumeIcon className="w-6 h-6" />
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={isMuted ? 0 : volume}
-            onChange={(e) => handleVolumeChange(Number(e.target.value))}
-            className="w-28 h-2.5 cursor-pointer"
-            style={{ accentColor: "#ffffff" }}
-          />
+          {/* Ligne 2 — contrôles x1.5 */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={isPlaying ? pause : resume}
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+            </button>
 
-          <div className="w-px h-6 bg-border" />
+            <span className="text-sm text-muted-foreground tabular-nums">{formatTime(progress)}</span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={progress}
+              step={0.1}
+              onChange={(e) => handleSeek(Number(e.target.value))}
+              className="w-96 h-2.5 accent-accent cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground tabular-nums">{formatTime(duration)}</span>
 
-          <button
-            onClick={stop}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Fermer"
-          >
-            <X className="w-6 h-6" />
-          </button>
+            <div className="w-px h-6 bg-border" />
+
+            <button
+              onClick={toggleMute}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title={isMuted ? "Activer le son" : "Couper le son"}
+            >
+              <VolumeIcon className="w-6 h-6" />
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(Number(e.target.value))}
+              className="w-28 h-2.5 cursor-pointer"
+              style={{ accentColor: "#ffffff" }}
+            />
+
+            <div className="w-px h-6 bg-border" />
+
+            <button
+              onClick={stop}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Fermer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

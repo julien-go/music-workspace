@@ -79,7 +79,7 @@ export function CommentThread({
                   <button
                     onClick={() => onDelete(comment.id)}
                     disabled={deletingId === comment.id}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-red-400 text-xs shrink-0 mt-0.5 disabled:opacity-50"
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-red-400 text-xs shrink-0 mt-0.5 disabled:opacity-50"
                   >
                     {deletingId === comment.id ? "…" : "✕"}
                   </button>

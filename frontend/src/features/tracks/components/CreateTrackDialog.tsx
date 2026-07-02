@@ -62,7 +62,7 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="bg-surface ring-border sm:max-w-md p-8 gap-6">
+      <DialogContent className="bg-surface ring-border sm:max-w-md p-6 sm:p-8 gap-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-heading font-bold">Nouvelle track</DialogTitle>
         </DialogHeader>

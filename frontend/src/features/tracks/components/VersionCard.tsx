@@ -63,7 +63,8 @@ export function VersionCard({
 
   const handlePlay = () => {
     if (isCurrentVersion) {
-      isCurrentlyPlaying ? pause() : resume();
+      if (isCurrentlyPlaying) pause();
+      else resume();
       return;
     }
     play({
@@ -91,8 +92,8 @@ export function VersionCard({
 
   return (
     <div className="bg-surface border border-border rounded-lg p-5">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-col items-start gap-2 mb-3 md:flex-row md:items-start md:justify-between md:gap-4">
+        <div className="flex items-center gap-3 min-w-0 w-full md:w-auto">
           <Badge variant="outline" className="text-accent border-accent/40 font-mono text-base font-bold px-3 py-1 shrink-0">
             v{version.versionNumber}
           </Badge>

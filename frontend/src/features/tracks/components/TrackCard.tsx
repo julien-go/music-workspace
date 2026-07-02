@@ -65,7 +65,8 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
     e.stopPropagation();
     if (track.versionCount === 0 || isLoadingPlay) return;
     if (isCurrentTrack) {
-      isPlaying ? pause() : resume();
+      if (isPlaying) pause();
+      else resume();
       return;
     }
     setIsLoadingPlay(true);
@@ -146,7 +147,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex flex-col items-start gap-2 mt-1 md:flex-row md:items-center">
         {track.versionCount === 0 && canEdit ? (
           <Button
             variant="ghost"

@@ -126,9 +126,23 @@ public class TrackService {
                 .collect(Collectors.toMap(Track::getId, t -> t));
 
         List<UUID> orderedIds = request.trackIds();
+
+        // Two-phase update to avoid transient violations of the partial unique index
+        // uq_tracks_project_position_active. Hibernate flushes the position updates one
+        // row at a time, so writing the final positions directly can momentarily
+        // duplicate a (project_id, position) pair. The index is partial (WHERE
+        // archived = false) and therefore can't be made DEFERRABLE in Postgres, so we
+        // first park every track on a negative position — a range disjoint from the
+        // existing non-negative ones — flush, then assign the final 0-based positions.
+        for (int i = 0; i < orderedIds.size(); i++) {
+            trackById.get(orderedIds.get(i)).setPosition(-(i + 1));
+        }
+        trackRepository.flush();
+
         for (int i = 0; i < orderedIds.size(); i++) {
             trackById.get(orderedIds.get(i)).setPosition(i);
         }
+        trackRepository.flush();
 
         List<Track> reorderedTracks = orderedIds.stream().map(trackById::get).toList();
         return enrichTracks(reorderedTracks);
