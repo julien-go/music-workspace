@@ -8,6 +8,8 @@ interface Props {
   className?: string;
   displayClassName?: string;
   emptyLabel?: string;
+  /** Accessible name for the editable field (and its edit button). */
+  ariaLabel?: string;
 }
 
 export function InlineEdit({
@@ -17,6 +19,7 @@ export function InlineEdit({
   className = "",
   displayClassName = "",
   emptyLabel,
+  ariaLabel,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -86,6 +89,7 @@ export function InlineEdit({
             disabled={isPending}
             rows={3}
             placeholder={emptyLabel}
+            aria-label={ariaLabel}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") cancel();
@@ -101,6 +105,7 @@ export function InlineEdit({
             value={draft}
             disabled={isPending}
             placeholder={emptyLabel}
+            aria-label={ariaLabel}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") cancel();
@@ -115,7 +120,11 @@ export function InlineEdit({
             className={fieldClassName}
           />
         )}
-        {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-destructive mt-1">
+            {error}
+          </p>
+        )}
         <div className="flex gap-3 mt-1.5">
           <button
             onMouseDown={(e) => e.preventDefault()}
@@ -155,9 +164,9 @@ export function InlineEdit({
           onClick={startEditing}
           className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-events-none group-hover:pointer-events-auto focus-visible:pointer-events-auto transition-opacity shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
           title="Modifier"
-          aria-label="Modifier"
+          aria-label={ariaLabel ? `Modifier : ${ariaLabel}` : "Modifier"}
         >
-          <Pencil className="w-3.5 h-3.5" />
+          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       )}
     </div>

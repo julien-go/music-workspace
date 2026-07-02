@@ -102,8 +102,9 @@ function DraggableCard({
             }}
             className="text-muted-foreground/40 hover:text-red-400 text-sm transition-colors"
             title="Supprimer"
+            aria-label={`Supprimer la tâche : ${task.title}`}
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         )}
       </div>
@@ -117,7 +118,7 @@ function DraggableCard({
             onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
             {...stopDnd}
             onClick={(e) => e.stopPropagation()}
-            aria-label="Changer le statut de la tâche"
+            aria-label={`Changer le statut de : ${task.title}`}
             className={`w-full appearance-none cursor-pointer rounded-md border border-border bg-surface py-2 pl-3 pr-9 text-sm font-medium transition-colors hover:border-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent ${
               columns.find((c) => c.status === task.status)?.titleClass ?? ""
             }`}
@@ -132,7 +133,10 @@ function DraggableCard({
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <ChevronDown
+            aria-hidden="true"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          />
         </div>
       )}
     </div>
@@ -179,7 +183,12 @@ function DroppableColumn({
         >
           {label}
         </h3>
-        <span className="text-sm text-muted-foreground/60">{tasks.length}</span>
+        <span
+          className="text-sm text-muted-foreground/60"
+          aria-label={`${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`}
+        >
+          {tasks.length}
+        </span>
       </div>
 
       {canEdit && status === "TODO" && (
