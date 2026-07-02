@@ -41,7 +41,7 @@ export function PublicLayout() {
           </>
         }
       />
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         <Outlet />
       </main>
     </div>
