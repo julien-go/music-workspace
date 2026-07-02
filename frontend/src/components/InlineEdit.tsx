@@ -87,8 +87,12 @@ export function InlineEdit({
             rows={3}
             placeholder={emptyLabel}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
-            onBlur={() => { if (!isPending) cancel(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancel();
+            }}
+            onBlur={() => {
+              if (!isPending) cancel();
+            }}
             className={fieldClassName}
           />
         ) : (
@@ -100,9 +104,14 @@ export function InlineEdit({
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") cancel();
-              if (e.key === "Enter") { e.preventDefault(); save(); }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                save();
+              }
             }}
-            onBlur={() => { if (!isPending) cancel(); }}
+            onBlur={() => {
+              if (!isPending) cancel();
+            }}
             className={fieldClassName}
           />
         )}
@@ -133,9 +142,13 @@ export function InlineEdit({
   return (
     <div className="group flex items-start gap-1.5 min-w-0">
       {value ? (
-        <span className={`${className} ${displayClassName} block min-w-0`}>{value}</span>
+        <span className={`${className} ${displayClassName} block min-w-0`}>
+          {value}
+        </span>
       ) : emptyLabel ? (
-        <span className="text-sm text-muted-foreground italic">{emptyLabel}</span>
+        <span className="text-sm text-muted-foreground italic">
+          {emptyLabel}
+        </span>
       ) : null}
       {onSave && (
         <button
