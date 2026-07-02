@@ -13,11 +13,16 @@ export default function DashboardPage() {
   const { data: projects, isLoading, isError, error, refetch } = useProjects();
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-10">
+    <div className="max-w-300 mx-auto px-4 md:px-6 py-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-foreground">Mes projets</h1>
-        <Button onClick={() => setDialogOpen(true)}>Nouveau projet</Button>
+        <Button
+          onClick={() => setDialogOpen(true)}
+          className="w-full md:w-auto"
+        >
+          Nouveau projet
+        </Button>
       </div>
 
       {/* Loading */}
@@ -34,9 +39,14 @@ export default function DashboardPage() {
       {/* Empty state */}
       {!isLoading && !isError && projects?.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-          <FolderOpen className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
+          <FolderOpen
+            className="w-12 h-12 text-muted-foreground"
+            strokeWidth={1.5}
+          />
           <div className="space-y-1">
-            <p className="text-foreground font-medium">Aucun projet pour le moment</p>
+            <p className="text-foreground font-medium">
+              Aucun projet pour le moment
+            </p>
             <p className="text-sm text-muted-foreground">
               Créez votre premier projet pour commencer
             </p>
@@ -54,7 +64,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <CreateProjectDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <CreateProjectDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
     </div>
   );
 }

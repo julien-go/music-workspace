@@ -32,8 +32,8 @@ export default function RegisterPage() {
         : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-6 md:rounded-xl md:border md:border-border md:bg-surface md:p-8">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">Créer un compte</h1>
           <p className="text-sm text-muted-foreground">
