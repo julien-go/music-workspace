@@ -12,6 +12,8 @@ import { useUnarchiveTrack } from "../hooks/useUnarchiveTrack";
 import { useUpdateTrack } from "../hooks/useUpdateTrack";
 import { AddVersionDialog } from "./AddVersionDialog";
 import { formatRelativeTime } from "@/lib/utils";
+import { toastError } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 import type { TrackResponse } from "../types";
 
 interface Props {
@@ -193,7 +195,12 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                archiveTrack.mutate(track.id, { onError: () => setConfirmArchive(false) });
+                archiveTrack.mutate(track.id, {
+                  onError: (err) => {
+                    setConfirmArchive(false);
+                    if (!isUnauthorizedError(err)) toastError(describeError(err, "Impossible d'archiver la track."));
+                  },
+                });
               }}
               disabled={archiveTrack.isPending}
               className="text-sm text-amber-400 hover:text-amber-300 transition-colors font-medium"
@@ -206,7 +213,14 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => { e.stopPropagation(); unarchiveTrack.mutate(track.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              unarchiveTrack.mutate(track.id, {
+                onError: (err) => {
+                  if (!isUnauthorizedError(err)) toastError(describeError(err, "Impossible de désarchiver la track."));
+                },
+              });
+            }}
             disabled={unarchiveTrack.isPending}
             className="text-sm h-8 px-3 text-muted-foreground hover:text-foreground"
           >

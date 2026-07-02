@@ -13,6 +13,29 @@ export class ApiException extends Error {
   }
 }
 
+/**
+ * True when an error is a 401. Callers use this to skip user-facing feedback on
+ * unauthenticated failures — the fetch wrapper already clears auth and redirects.
+ */
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiException && error.apiError.status === 401;
+}
+
+/**
+ * Maps an error to a plain-French, user-facing message — never an HTTP code or
+ * backend/technical wording. Connectivity and server-side failures get a generic
+ * message; for client-side failures we defer to the caller's action-specific
+ * `fallback` (e.g. "Échec de l'upload, réessaie").
+ */
+export function describeError(error: unknown, fallback: string): string {
+  if (error instanceof ApiException) {
+    const { status } = error.apiError;
+    if (status === 0) return "Connexion au serveur impossible. Vérifie ta connexion internet.";
+    if (status >= 500) return "Le service est momentanément indisponible. Réessaie dans un instant.";
+  }
+  return fallback;
+}
+
 interface FetchApiOptions extends RequestInit {
   skipAuthRedirect?: boolean;
 }

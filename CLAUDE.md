@@ -183,11 +183,7 @@ Do NOT use optimistic updates on: audio upload, project deletion, member managem
 
 🎨 Phase 4 — Frontend
 
-** Étape 13 — UI MVP **
+** Étape 14 — Error handling & loading states**
 
-- [x] Design system & visual direction (palette, typo, variables CSS shadcn, références visuelles)
-- [x] Homepage + layout global (nav, structure des pages, routing visuel)
-- [x] Auth (login / register)
-- [x] Dashboard projets
-- [x] Vue projet (tracks + tâches)
-- [x] Vue track (versions + player audio)
+- [x] Toaster
+- [x] Skeleton loaders

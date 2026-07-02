@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
 import { dialogInputClass, dialogTextareaClass } from "@/features/projects/components/dialogStyles";
+import { toastError, toastSuccess } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 
 interface Props {
   projectId: string;
@@ -38,9 +40,13 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
     createVersion.mutate(
       { file: audioFile, notes: notes.trim() || undefined, label: label.trim() || undefined },
       {
-        onSuccess: handleClose,
-        onError: (err) =>
-          setError(err instanceof Error ? err.message : "Une erreur est survenue"),
+        onSuccess: () => {
+          toastSuccess("Version uploadée avec succès");
+          handleClose();
+        },
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) toastError(describeError(err, "Échec de l'upload, réessaie"));
+        },
       },
     );
   };

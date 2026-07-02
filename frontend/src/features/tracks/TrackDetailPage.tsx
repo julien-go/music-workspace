@@ -15,6 +15,9 @@ import { useDeleteTrackComment } from "./hooks/useDeleteTrackComment";
 import { VersionCard } from "./components/VersionCard";
 import { AddVersionDialog } from "./components/AddVersionDialog";
 import { CommentThread } from "./components/CommentThread";
+import { ErrorState } from "@/components/ErrorState";
+import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
+import { describeError } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { formatRelativeTime } from "@/lib/utils";
 import type { TrackStatus } from "./types";
@@ -31,25 +34,6 @@ const statusClass: Record<TrackStatus, string> = {
   DONE: "text-emerald-400 border-emerald-400/40",
 };
 
-function TrackDetailSkeleton() {
-  return (
-    <div className="max-w-300 mx-auto px-6 py-8 animate-pulse">
-      <div className="flex gap-8">
-        <div className="flex-1 space-y-6">
-          <div className="h-4 w-72 bg-surface rounded" />
-          <div className="h-8 w-64 bg-surface rounded" />
-          <div className="space-y-3 mt-6">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="h-32 bg-surface rounded-lg" />
-            ))}
-          </div>
-        </div>
-        <div className="w-72 shrink-0 h-64 bg-surface rounded-lg" />
-      </div>
-    </div>
-  );
-}
-
 export default function TrackDetailPage() {
   const { projectId = "", trackId = "" } = useParams({ strict: false }) as {
     projectId?: string;
@@ -61,11 +45,15 @@ export default function TrackDetailPage() {
     data: project,
     isLoading: projectLoading,
     isError: projectError,
+    error: projectErrorObj,
+    refetch: refetchProject,
   } = useProject(projectId);
   const {
     data: track,
     isLoading: trackLoading,
     isError: trackError,
+    error: trackErrorObj,
+    refetch: refetchTrack,
   } = useTrack(projectId, trackId);
   const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(
     projectId,
@@ -90,22 +78,17 @@ export default function TrackDetailPage() {
     [versions],
   );
 
-  if (projectLoading || trackLoading) return <TrackDetailSkeleton />;
+  if (projectLoading || trackLoading) return <SkeletonTrackDetail />;
 
   if (projectError || trackError) {
     return (
-      <div className="max-w-300 mx-auto px-6 py-8 text-center space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Cette track est introuvable ou vous n'y avez pas accès.
-        </p>
-        <Link
-          to="/projects/$projectId"
-          params={{ projectId }}
-          className="text-sm text-accent hover:underline"
-        >
-          Retour au projet
-        </Link>
-      </div>
+      <ErrorState
+        message={describeError(projectErrorObj ?? trackErrorObj, "Impossible de charger cette track.")}
+        onRetry={() => {
+          refetchProject();
+          refetchTrack();
+        }}
+      />
     );
   }
 

@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { createTrack, createTrackVersion } from "../api";
 import { useQueryClient } from "@tanstack/react-query";
+import { toastError, toastSuccess } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 
 interface Props {
   projectId: string;
@@ -21,7 +23,6 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
   const [createdTrackId, setCreatedTrackId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -29,14 +30,12 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
   const handleClose = () => {
     reset();
     setAudioFile(null);
-    setServerError(null);
     setCreatedTrackId(null);
     onClose();
   };
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    setServerError(null);
     try {
       let trackId = createdTrackId;
       if (!trackId) {
@@ -46,11 +45,16 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
       }
       if (audioFile) {
         await createTrackVersion(projectId, trackId, audioFile, undefined, data.versionLabel?.trim() || undefined);
+        toastSuccess("Version uploadée avec succès");
       }
       queryClient.invalidateQueries({ queryKey: ["tracks", projectId] });
       handleClose();
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Une erreur est survenue");
+      if (!isUnauthorizedError(err)) {
+        toastError(
+          describeError(err, audioFile ? "Échec de l'upload, réessaie" : "Impossible de créer la track, réessaie"),
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +131,6 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
             />
           </div>
 
-          {serverError && <p className="text-xs text-red-400">{serverError}</p>}
           <div className="flex justify-end gap-3 pt-1">
             <Button type="button" variant="ghost" onClick={handleClose}>Annuler</Button>
             <Button type="submit" disabled={isSubmitting}>
