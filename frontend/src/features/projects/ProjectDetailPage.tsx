@@ -316,8 +316,9 @@ export default function ProjectDetailPage() {
                     onClick={() => setSettingsOpen(true)}
                     className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-1"
                     title="Paramètres du projet"
+                    aria-label="Paramètres du projet"
                   >
-                    <Settings className="w-5 h-5" />
+                    <Settings className="w-5 h-5" aria-hidden="true" />
                   </button>
                 )}
               </div>

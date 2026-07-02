@@ -46,21 +46,25 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">Email *</label>
+            <label htmlFor="invite-email" className="text-sm font-medium text-foreground">Email *</label>
             <input
+              id="invite-email"
               {...register("email", {
                 required: "L'email est requis",
                 pattern: { value: /\S+@\S+\.\S+/, message: "Email invalide" },
               })}
               type="email"
+              autoComplete="email"
+              aria-invalid={errors.email ? true : undefined}
               className={dialogInputClass}
               placeholder="collaborateur@example.com"
             />
-            {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+            {errors.email && <p role="alert" className="text-xs text-red-400">{errors.email.message}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">Rôle</label>
+            <label htmlFor="invite-role" className="text-sm font-medium text-foreground">Rôle</label>
             <select
+              id="invite-role"
               {...register("role")}
               className={dialogInputClass}
             >
@@ -68,7 +72,7 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
               <option value="VIEWER">Lecteur</option>
             </select>
           </div>
-          {serverError && <p className="text-xs text-red-400">{serverError}</p>}
+          {serverError && <p role="alert" className="text-xs text-red-400">{serverError}</p>}
           <div className="flex justify-end gap-3 pt-1">
             <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
             <Button type="submit" disabled={inviteMember.isPending}>

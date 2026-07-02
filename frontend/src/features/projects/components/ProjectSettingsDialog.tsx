@@ -78,23 +78,26 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
         <form onSubmit={handleSubmit(onEditSubmit)} className="flex flex-col gap-4 mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informations</p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">Nom *</label>
+            <label htmlFor="project-settings-name" className="text-sm font-medium text-foreground">Nom *</label>
             <input
+              id="project-settings-name"
               {...register("name", { required: "Le nom est requis" })}
+              aria-invalid={errors.name ? true : undefined}
               className={dialogInputClass}
             />
-            {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
+            {errors.name && <p role="alert" className="text-xs text-red-400">{errors.name.message}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">Description</label>
+            <label htmlFor="project-settings-desc" className="text-sm font-medium text-foreground">Description</label>
             <textarea
+              id="project-settings-desc"
               {...register("description")}
               rows={2}
               className={dialogTextareaClass}
             />
           </div>
-          {editError && <p className="text-xs text-red-400">{editError}</p>}
-          {updateProject.isSuccess && <p className="text-xs text-emerald-400">Sauvegardé.</p>}
+          {editError && <p role="alert" className="text-xs text-red-400">{editError}</p>}
+          {updateProject.isSuccess && <p role="status" className="text-xs text-emerald-400">Sauvegardé.</p>}
           <div className="flex justify-end">
             <Button type="submit" size="sm" disabled={updateProject.isPending}>
               {updateProject.isPending ? "Sauvegarde…" : "Sauvegarder"}

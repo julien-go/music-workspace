@@ -61,35 +61,38 @@ export function CreateProjectDialog({ open, onClose }: Props) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Nom du projet</label>
+            <label htmlFor="create-project-name" className="text-sm font-medium text-foreground">Nom du projet</label>
             <input
+              id="create-project-name"
               placeholder="Mon album, EP Printemps…"
               {...register("name")}
+              aria-invalid={errors.name ? true : undefined}
               className={dialogInputClass}
               autoFocus
             />
             {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.name.message}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
+            <label htmlFor="create-project-desc" className="text-sm font-medium text-foreground">
               Description <span className="text-muted-foreground font-normal">(optionnelle)</span>
             </label>
             <textarea
+              id="create-project-desc"
               placeholder="Décrivez votre projet…"
               rows={4}
               {...register("description")}
               className={dialogTextareaClass}
             />
             {errors.description && (
-              <p className="text-xs text-destructive">{errors.description.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.description.message}</p>
             )}
           </div>
 
           {create.error && (
-            <p className="text-sm text-destructive">{create.error.message}</p>
+            <p role="alert" className="text-sm text-destructive">{create.error.message}</p>
           )}
 
           <div className="flex justify-end gap-2 pt-1">

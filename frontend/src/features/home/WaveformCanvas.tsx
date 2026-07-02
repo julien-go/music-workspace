@@ -102,5 +102,7 @@ export function WaveformCanvas() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="w-full h-30 block" />;
+  return (
+    <canvas ref={canvasRef} aria-hidden="true" className="w-full h-30 block" />
+  );
 }
