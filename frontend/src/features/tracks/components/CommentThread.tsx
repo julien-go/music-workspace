@@ -79,9 +79,10 @@ export function CommentThread({
                   <button
                     onClick={() => onDelete(comment.id)}
                     disabled={deletingId === comment.id}
+                    aria-label={`Supprimer le commentaire de ${comment.author.username}`}
                     className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-red-400 text-xs shrink-0 mt-0.5 disabled:opacity-50"
                   >
-                    {deletingId === comment.id ? "…" : "✕"}
+                    <span aria-hidden="true">{deletingId === comment.id ? "…" : "✕"}</span>
                   </button>
                 )}
               </div>
@@ -90,7 +91,9 @@ export function CommentThread({
         </div>
       )}
 
-      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
+      {deleteError && (
+        <p role="alert" className="text-xs text-destructive">{deleteError}</p>
+      )}
 
       <form onSubmit={handleSubmit} className="flex gap-2 items-end">
         <textarea
@@ -103,6 +106,7 @@ export function CommentThread({
             }
           }}
           rows={2}
+          aria-label="Ajouter un commentaire"
           placeholder="Ajouter un commentaire… (Entrée pour envoyer, Maj+Entrée pour saut de ligne)"
           disabled={isAdding}
           className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent resize-none disabled:opacity-60"
@@ -116,7 +120,9 @@ export function CommentThread({
         </button>
       </form>
 
-      {addError && <p className="text-xs text-destructive mt-1">{addError}</p>}
+      {addError && (
+        <p role="alert" className="text-xs text-destructive mt-1">{addError}</p>
+      )}
     </div>
   );
 }
