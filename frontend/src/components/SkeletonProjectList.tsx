@@ -17,7 +17,8 @@ function SkeletonRow() {
 /** Loading placeholder for the dashboard project list. */
 export function SkeletonProjectList() {
   return (
-    <div className="space-y-3 animate-pulse" aria-busy="true" aria-hidden="true">
+    <div className="space-y-3 animate-pulse" role="status">
+      <span className="sr-only">Chargement des projets…</span>
       {Array.from({ length: 4 }).map((_, i) => (
         <SkeletonRow key={i} />
       ))}
