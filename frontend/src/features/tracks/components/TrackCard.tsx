@@ -14,7 +14,7 @@ import { AddVersionDialog } from "./AddVersionDialog";
 import { formatRelativeTime } from "@/lib/utils";
 import { toastError } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
-import type { TrackResponse } from "../types";
+import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackResponse } from "../types";
 
 interface Props {
   track: TrackResponse;
@@ -22,18 +22,6 @@ interface Props {
   projectName: string;
   canEdit: boolean;
 }
-
-const statusLabel: Record<string, string> = {
-  DRAFT: "Brouillon",
-  IN_PROGRESS: "En cours",
-  DONE: "Terminé",
-};
-
-const statusClass: Record<string, string> = {
-  DRAFT: "text-muted-foreground border-border",
-  IN_PROGRESS: "text-amber-400 border-amber-400/40",
-  DONE: "text-emerald-400 border-emerald-400/40",
-};
 
 export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const navigate = useNavigate();
@@ -120,10 +108,10 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           )}
           <Badge
             variant="outline"
-            aria-label={`Statut : ${statusLabel[track.status]}`}
-            className={`text-sm ${statusClass[track.status]}`}
+            aria-label={`Statut : ${TRACK_STATUS_LABEL[track.status]}`}
+            className={`text-sm ${TRACK_STATUS_CLASS[track.status]}`}
           >
-            {statusLabel[track.status]}
+            {TRACK_STATUS_LABEL[track.status]}
           </Badge>
           {/* The card's onClick div is invisible to keyboards — this link is the
               focusable way in. */}

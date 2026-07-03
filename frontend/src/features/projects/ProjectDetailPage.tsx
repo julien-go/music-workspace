@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import {
   DndContext,
   closestCenter,
@@ -159,8 +159,10 @@ function ProjectCover({
   );
 }
 
+const routeApi = getRouteApi("/auth-layout/projects/$projectId");
+
 export default function ProjectDetailPage() {
-  const { projectId } = useParams({ strict: false }) as { projectId: string };
+  const { projectId } = routeApi.useParams();
   const {
     data: project,
     isLoading: projectLoading,

@@ -51,7 +51,7 @@ describe("LoginPage", () => {
     expect(login).not.toHaveBeenCalled();
   });
 
-  it("shows the server message on rejected credentials", async () => {
+  it("shows a French error on rejected credentials", async () => {
     vi.mocked(login).mockRejectedValue(
       new ApiException({
         status: 401,
@@ -67,7 +67,9 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText("Mot de passe"), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
 
-    expect(await screen.findByText("Invalid email or password")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Email ou mot de passe incorrect."),
+    ).toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();
   });
 

@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@tanstack/react-router";
 import { useRegister } from "./hooks/useRegister";
 import { registerSchema, type RegisterFormData } from "./validation";
-import { ApiException } from "@/lib/api";
+import { ApiException, describeError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 const inputClass =
@@ -24,12 +24,17 @@ export default function RegisterPage() {
   const error = registerMutation.error;
   const apiError = error instanceof ApiException ? error.apiError : null;
   const serverErrors = apiError?.errors ?? [];
-  const serverMessage =
-    apiError && !serverErrors.length
-      ? apiError.message
-      : error && !apiError
-        ? error.message
-        : null;
+  // The backend 409 tells apart email and username conflicts through its
+  // (English) message — translate rather than display it raw.
+  const serverMessage = !error
+    ? null
+    : apiError?.status === 409
+      ? apiError.message.startsWith("Username")
+        ? "Ce nom d'utilisateur est déjà pris."
+        : "Cet email est déjà utilisé."
+      : serverErrors.length
+        ? null
+        : describeError(error, "Impossible de créer le compte. Réessaie.");
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

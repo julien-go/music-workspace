@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUpdateProject } from "../hooks/useUpdateProject";
 import { useDeleteProject } from "../hooks/useDeleteProject";
 import { useUploadCover } from "../hooks/useUploadCover";
+import { describeError } from "@/lib/api";
 import { CoverCropDialog } from "./CoverCropDialog";
 import type { ProjectResponse, UpdateProjectRequest } from "../types";
 import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
@@ -48,7 +49,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
   const onEditSubmit = (data: UpdateProjectRequest) => {
     setEditError(null);
     updateProject.mutate(data, {
-      onError: (err) => setEditError(err instanceof Error ? err.message : "Une erreur est survenue"),
+      onError: (err) => setEditError(describeError(err, "Impossible de sauvegarder. Réessaie.")),
     });
   };
 
@@ -60,7 +61,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
         navigate({ to: "/dashboard" });
       },
       onError: (err) => {
-        setDeleteError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setDeleteError(describeError(err, "Impossible de supprimer le projet. Réessaie."));
         setConfirming(false);
       },
     });

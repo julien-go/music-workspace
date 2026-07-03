@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Pencil, Check, X } from "lucide-react";
+import { describeError } from "@/lib/api";
 
 interface Props {
   value: string;
@@ -71,7 +72,7 @@ export function InlineEdit({
       await onSave!(trimmed);
       setIsEditing(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setError(describeError(err, "Impossible d'enregistrer. Réessaie."));
     } finally {
       setIsPending(false);
     }

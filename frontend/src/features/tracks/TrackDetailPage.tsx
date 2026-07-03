@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,25 +27,12 @@ import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
 import { describeError } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { formatRelativeTime } from "@/lib/utils";
-import type { TrackStatus } from "./types";
+import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackStatus } from "./types";
 
-const statusLabel: Record<TrackStatus, string> = {
-  DRAFT: "Brouillon",
-  IN_PROGRESS: "En cours",
-  DONE: "Terminé",
-};
-
-const statusClass: Record<TrackStatus, string> = {
-  DRAFT: "text-muted-foreground border-border",
-  IN_PROGRESS: "text-amber-400 border-amber-400/40",
-  DONE: "text-emerald-400 border-emerald-400/40",
-};
+const routeApi = getRouteApi("/auth-layout/projects/$projectId/tracks/$trackId");
 
 export default function TrackDetailPage() {
-  const { projectId = "", trackId = "" } = useParams({ strict: false }) as {
-    projectId?: string;
-    trackId?: string;
-  };
+  const { projectId, trackId } = routeApi.useParams();
   const currentUser = useAuthStore((s) => s.user);
 
   const {
@@ -137,9 +124,9 @@ export default function TrackDetailPage() {
             <dd>
               <Badge
                 variant="outline"
-                className={`text-xs ${statusClass[track.status]}`}
+                className={`text-xs ${TRACK_STATUS_CLASS[track.status]}`}
               >
-                {statusLabel[track.status]}
+                {TRACK_STATUS_LABEL[track.status]}
               </Badge>
             </dd>
           </div>
@@ -234,7 +221,7 @@ export default function TrackDetailPage() {
                     }
                     disabled={updateTrack.isPending}
                     aria-label="Statut de la track"
-                    className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${statusClass[track.status]}`}
+                    className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${TRACK_STATUS_CLASS[track.status]}`}
                   >
                     <option value="DRAFT">Brouillon</option>
                     <option value="IN_PROGRESS">En cours</option>
@@ -243,9 +230,9 @@ export default function TrackDetailPage() {
                 ) : (
                   <Badge
                     variant="outline"
-                    className={`text-sm ${statusClass[track.status]}`}
+                    className={`text-sm ${TRACK_STATUS_CLASS[track.status]}`}
                   >
-                    {statusLabel[track.status]}
+                    {TRACK_STATUS_LABEL[track.status]}
                   </Badge>
                 )}
                 {canEdit && (
