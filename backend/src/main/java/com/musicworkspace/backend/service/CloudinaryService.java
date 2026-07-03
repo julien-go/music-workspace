@@ -18,10 +18,8 @@ public class CloudinaryService {
     public String upload(MultipartFile file, String folder, String publicId,
                          String resourceType, boolean overwrite) {
         try {
-            // uploadLarge streams the file in 20MB chunks: heap usage is bounded
-            // by the chunk size instead of the full file size (audio uploads can
-            // reach 70MB, and several concurrent uploads were enough to exhaust
-            // the Railway container's heap with getBytes()).
+            // uploadLarge + InputStream: heap usage stays bounded by the 20MB
+            // chunk size instead of the full file (audio uploads go up to 70MB).
             @SuppressWarnings("unchecked")
             Map<String, Object> result = cloudinary.uploader().uploadLarge(
                     file.getInputStream(),
@@ -47,9 +45,8 @@ public class CloudinaryService {
     }
 
     /**
-     * Best-effort removal of every asset under a folder (project deletion).
-     * A failure leaves orphaned assets in Cloudinary but must never fail the
-     * deletion itself — the DB rows are gone either way.
+     * Best-effort: a failure leaves orphaned assets in Cloudinary but must
+     * never fail the project deletion itself.
      */
     public void deleteFolder(String folder) {
         try {

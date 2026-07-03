@@ -292,9 +292,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb + mobile members trigger */}
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
               <Link
@@ -306,7 +304,6 @@ export default function ProjectDetailPage() {
               <span>/</span>
               <span className="text-foreground truncate">{project.name}</span>
             </div>
-            {/* Mobile-only: opens the members sidebar in a drawer */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -328,7 +325,6 @@ export default function ProjectDetailPage() {
             </Sheet>
           </div>
 
-          {/* Header */}
           <div className="flex items-start gap-4 mb-8">
             <ProjectCover name={project.name} coverUrl={project.coverUrl} />
             <div className="flex-1 min-w-0">
@@ -370,7 +366,6 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* Tracks section */}
           <div className="mb-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest">
@@ -445,7 +440,6 @@ export default function ProjectDetailPage() {
               </DndContext>
             )}
 
-            {/* Archived tracks toggle */}
             <div className="mt-6">
               <Separator className="mb-4" />
               <button
@@ -510,7 +504,6 @@ export default function ProjectDetailPage() {
 
           <Separator className="mb-8" />
 
-          {/* Tasks section */}
           <div className="mb-10">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Tâches
@@ -520,7 +513,6 @@ export default function ProjectDetailPage() {
 
           <Separator className="mb-8" />
 
-          {/* Project comments */}
           <div>
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Commentaires
@@ -540,13 +532,11 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar — desktop only, sticky (mobile uses the drawer above) */}
         <div className="hidden md:block w-72 shrink-0 sticky top-8">
           <MembersSidebar projectId={projectId} isOwner={isOwner} />
         </div>
       </div>
 
-      {/* Modals */}
       {canEdit && (
         <CreateTrackDialog
           projectId={projectId}

@@ -11,9 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * In-memory per-IP rate limiting for the auth endpoints (bucket4j). Good
- * enough for a single-instance MVP: state is lost on restart and not shared
- * across instances — move to a distributed store before scaling out.
+ * In-memory per-IP rate limiting — not shared across instances, move to a
+ * distributed store before scaling out.
  */
 @Component
 public class AuthRateLimiter {
@@ -21,9 +20,8 @@ public class AuthRateLimiter {
     private static final int LOGIN_PER_MINUTE = 5;
     private static final int REGISTER_PER_MINUTE = 3;
 
-    // Evicting an idle bucket is lossless: after >= 1 minute without access the
-    // greedy refill has fully restored it, so a fresh bucket is equivalent. The
-    // size cap only bounds memory under a flood of distinct IPs.
+    // Evicting an idle bucket is lossless: after >= 1 minute the refill has
+    // fully restored it, so a fresh bucket is equivalent.
     private final Cache<String, Bucket> loginBuckets = newCache();
     private final Cache<String, Bucket> registerBuckets = newCache();
 
@@ -59,12 +57,8 @@ public class AuthRateLimiter {
                 .build();
     }
 
-    /**
-     * Behind the deployment proxy (Railway) the remote address is the proxy
-     * itself — every user would share one bucket. The first X-Forwarded-For
-     * entry is the client as seen by the edge; it is spoofable only when the
-     * app is exposed without the proxy, which we accept for the MVP.
-     */
+    // Behind the proxy the remote address is the proxy itself — use the first
+    // X-Forwarded-For entry (spoofable without the proxy, accepted for the MVP).
     private String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

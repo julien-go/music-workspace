@@ -30,11 +30,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF tokens are intentionally off. Dev: the cookie is
-                // SameSite=Lax, cross-site mutations never carry it. Prod runs
-                // cross-site (SameSite=None), where OriginValidationFilter
-                // rejects state-changing requests from foreign origins and the
-                // CORS preflight stops every non-simple request.
+                // CSRF tokens off: dev is covered by SameSite=Lax, prod
+                // (SameSite=None) by OriginValidationFilter + CORS preflight.
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -30,10 +30,8 @@ const columns: { status: TaskStatus; label: string; titleClass: string }[] = [
   { status: "DONE", label: "Terminé", titleClass: "text-emerald-500" },
 ];
 
-// Stops an interactive control (delete button, status select) from starting a
-// card drag. Must cover every activator event of the active sensors —
-// MouseSensor listens on mousedown, TouchSensor on touchstart — not just
-// pointerdown, otherwise the guard is a no-op.
+// Keeps interactive controls from starting a card drag. Must cover every
+// sensor activator (mousedown, touchstart), not just pointerdown.
 const stopDnd = {
   onPointerDown: (e: React.SyntheticEvent) => e.stopPropagation(),
   onMouseDown: (e: React.SyntheticEvent) => e.stopPropagation(),
@@ -111,12 +109,8 @@ function DraggableCard({
         )}
       </div>
 
-      {/* Status control — the only keyboard-operable way to move a task (the
-          drag sensors are pointer-based), and the reliable alternative to
-          cross-column drag on mobile where columns stack vertically. On
-          desktop (≥ md) drag is the primary interaction, so the select is
-          visually hidden — but it must stay in the tab order for keyboard
-          users, so it is sr-only and reappears while focused. */}
+      {/* Only keyboard-operable way to move a task (drag is pointer-based) —
+          sr-only on desktop but kept in the tab order, revealed on focus. */}
       {canEdit && (
         <div className="mt-2.5 md:sr-only md:focus-within:not-sr-only">
           <div className="relative">
@@ -264,9 +258,8 @@ export function TaskKanban({ projectId, canEdit }: Props) {
     });
   };
 
-  // Separate sensors per input type: the whole card is the drag handle, so on touch
-  // we require a short press-and-hold (delay) to start a drag — a quick swipe scrolls
-  // the page instead. The tolerance lets the finger jitter slightly during the hold.
+  // The whole card is the drag handle: on touch a press-and-hold starts the
+  // drag so a quick swipe still scrolls the page.
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {

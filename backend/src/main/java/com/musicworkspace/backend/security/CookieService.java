@@ -17,10 +17,8 @@ public class CookieService {
     @Value("${app.cookie.secure}")
     private boolean secure;
 
-    // Lax in dev (frontend is same-origin through the Vite proxy). Prod runs
-    // the frontend and the API on different sites (Netlify / Railway), so the
-    // cookie must be None + Secure to be sent at all — CSRF is then covered by
-    // OriginValidationFilter instead of SameSite.
+    // Lax in dev (same-origin via the Vite proxy); prod is cross-site, so the
+    // cookie must be None + Secure — CSRF is then OriginValidationFilter's job.
     @Value("${app.cookie.same-site:Lax}")
     private String sameSite;
 

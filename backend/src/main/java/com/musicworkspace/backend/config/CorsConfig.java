@@ -9,9 +9,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * The API is cookie-authenticated, so the allowed origin must be a single
- * explicit URL: browsers reject credentialed responses carrying a wildcard,
- * and a permissive origin would let any site replay the user's session.
+ * Cookie-authenticated API: the allowed origin must be one explicit URL —
+ * a wildcard would let any site replay the user's session.
  */
 @Configuration
 public class CorsConfig {

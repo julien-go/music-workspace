@@ -114,7 +114,6 @@ export default function TrackDetailPage() {
     <>
       <MembersSidebar projectId={projectId} isOwner={isOwner} />
 
-      {/* Track info */}
       <div className="bg-surface border border-border rounded-lg p-5">
         <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
         <Separator className="mb-4" />
@@ -153,9 +152,7 @@ export default function TrackDetailPage() {
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb + mobile members/infos trigger */}
           <div className="flex items-start justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0 flex-wrap">
               <Link
@@ -175,7 +172,6 @@ export default function TrackDetailPage() {
               <span>/</span>
               <span className="text-foreground">{track.name}</span>
             </div>
-            {/* Mobile-only: opens members + infos in a drawer */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -197,7 +193,6 @@ export default function TrackDetailPage() {
             </Sheet>
           </div>
 
-          {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col gap-3 mb-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <InlineEdit
@@ -256,7 +251,6 @@ export default function TrackDetailPage() {
             />
           </div>
 
-          {/* Versions */}
           <div className="mb-10">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Versions
@@ -312,7 +306,6 @@ export default function TrackDetailPage() {
 
           <Separator className="mb-8" />
 
-          {/* Track comments */}
           <div>
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Commentaires
@@ -332,7 +325,6 @@ export default function TrackDetailPage() {
           </div>
         </div>
 
-        {/* Right sidebar — desktop only, sticky (mobile uses the drawer above) */}
         <div className="hidden md:flex w-72 shrink-0 sticky top-8 flex-col gap-4">
           {sidebarContent}
         </div>

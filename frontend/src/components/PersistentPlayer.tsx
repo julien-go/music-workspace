@@ -81,9 +81,8 @@ export function PersistentPlayer() {
 
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
 
-  // Reset the transient progress/duration when playback is torn down (current
-  // cleared). Done during render — React's "adjust state on change" pattern —
-  // so it stays out of the audio-sync effect. Matches the previous behaviour.
+  // Reset transient progress during render when playback is torn down
+  // ("adjust state on change" — keeps it out of the audio-sync effect).
   const currentVersionId = current?.versionId ?? null;
   if (currentVersionId !== shownVersionId) {
     setShownVersionId(currentVersionId);
@@ -117,8 +116,7 @@ export function PersistentPlayer() {
         onEnded={pause}
       />
 
-      {/* Mobile — mini-player compact : play · titre · fermer, puis seek pleine largeur.
-          Volume (géré par le téléphone) et description de version omis pour gagner de la place. */}
+      {/* Volume omis sur mobile — géré par le téléphone. */}
       <div className="flex flex-col gap-1.5 px-3 py-2.5 md:hidden">
         <div className="flex items-center gap-3">
           <button
@@ -172,10 +170,8 @@ export function PersistentPlayer() {
         </div>
       </div>
 
-      {/* Desktop — layout complet centré */}
       <div className="hidden h-28 items-center justify-center px-8 md:flex">
         <div className="flex flex-col items-center gap-3">
-          {/* Ligne 1 — texte x2 */}
           <div className="flex flex-col items-center gap-0.5">
             <div className="flex items-center gap-3">
               <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
@@ -195,7 +191,6 @@ export function PersistentPlayer() {
             <span className="text-xs text-muted-foreground/60">{current.projectName}</span>
           </div>
 
-          {/* Ligne 2 — contrôles x1.5 */}
           <div className="flex items-center gap-4">
             <button
               onClick={isPlaying ? pause : resume}

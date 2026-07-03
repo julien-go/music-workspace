@@ -18,13 +18,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * CSRF defense for the cross-site prod deployment (SameSite=None cookie):
- * state-changing requests must come from the configured frontend origin or
- * from the API's own origin (Swagger UI). This closes the gap CORS leaves
- * open — "simple" requests like multipart POSTs are sent without preflight,
- * cookie included. Requests without an Origin header pass: non-browser
- * clients don't carry the victim's cookie, and browsers always send Origin
- * on cross-site mutations.
+ * CSRF defense for the cross-site prod deployment (SameSite=None cookie),
+ * covering the "simple" requests that skip the CORS preflight. No Origin
+ * header passes: non-browser clients don't carry the victim's cookie.
  */
 @Component
 public class OriginValidationFilter extends OncePerRequestFilter {
@@ -61,11 +57,8 @@ public class OriginValidationFilter extends OncePerRequestFilter {
                 HttpStatus.FORBIDDEN.value(), "FORBIDDEN", "Origin not allowed", List.of()));
     }
 
-    /**
-     * Same-origin check via the Host header rather than the request scheme —
-     * behind the deployment proxy the scheme seen by the app can differ from
-     * the one in the Origin header. Default ports are omitted on both sides.
-     */
+    // Compares the Host header, not the request scheme — behind the proxy the
+    // scheme seen by the app can differ from the one in the Origin header.
     private boolean isSameOrigin(String origin, HttpServletRequest request) {
         try {
             URI uri = URI.create(origin);

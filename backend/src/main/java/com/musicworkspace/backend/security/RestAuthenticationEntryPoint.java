@@ -14,10 +14,8 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 /**
- * Without an explicit entry point, Spring Security falls back to
- * Http403ForbiddenEntryPoint (no httpBasic/formLogin is enabled here), so a
- * missing or expired JWT would yield a 403 with an empty body instead of the
- * documented 401 JSON — which the frontend relies on to redirect to /login.
+ * Without this, Spring falls back to a 403 empty body; the frontend relies
+ * on the documented 401 JSON to redirect to /login.
  */
 @Component
 @RequiredArgsConstructor

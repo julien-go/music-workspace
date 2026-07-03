@@ -48,10 +48,8 @@ public class TrackVersionService {
 
         int nextVersion = trackVersionRepository.findMaxVersionNumberByTrackId(trackId) + 1;
         String folder = String.format(audioFolder, projectId, trackId);
-        // The public id must be unique per upload attempt, not per version number:
-        // with a shared "v{n}" id, a request losing the version-number race would
-        // delete the asset the winning request just stored (Cloudinary returns the
-        // existing asset instead of failing when overwrite=false).
+        // Unique per attempt: with a shared "v{n}" id, the loser of the version
+        // race would delete the asset the winner just stored.
         String publicId = "v" + nextVersion + "-" + UUID.randomUUID().toString().substring(0, 8);
         String audioUrl = cloudinaryService.upload(file, folder, publicId, "video", false);
 

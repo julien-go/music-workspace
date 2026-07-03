@@ -105,10 +105,8 @@ public class TrackService {
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
         if (track.isArchived()) {
             track.setArchived(false);
-            // The old position may have been given to another track by a reorder
-            // while this one was archived (reorder compacts active positions to
-            // 0..n-1), which would violate uq_tracks_project_position_active.
-            // Re-append at the end instead of restoring the old slot.
+            // A reorder may have reassigned the old position while this track
+            // was archived (positions are compacted) — re-append at the end.
             track.setPosition(trackRepository.findMaxPositionByProjectId(projectId) + 1);
         }
         return buildResponse(track);
@@ -136,13 +134,9 @@ public class TrackService {
 
         List<UUID> orderedIds = request.trackIds();
 
-        // Two-phase update to avoid transient violations of the partial unique index
-        // uq_tracks_project_position_active. Hibernate flushes the position updates one
-        // row at a time, so writing the final positions directly can momentarily
-        // duplicate a (project_id, position) pair. The index is partial (WHERE
-        // archived = false) and therefore can't be made DEFERRABLE in Postgres, so we
-        // first park every track on a negative position — a range disjoint from the
-        // existing non-negative ones — flush, then assign the final 0-based positions.
+        // Two-phase update: uq_tracks_project_position_active is partial, so it
+        // can't be DEFERRABLE, and row-by-row flushes can transiently duplicate
+        // a position — park everything on negatives, flush, then assign 0..n-1.
         for (int i = 0; i < orderedIds.size(); i++) {
             trackById.get(orderedIds.get(i)).setPosition(-(i + 1));
         }

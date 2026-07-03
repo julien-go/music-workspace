@@ -55,8 +55,6 @@ class CloudinaryServiceTest {
         ArgumentCaptor<Map<String, Object>> options = ArgumentCaptor.forClass(Map.class);
         verify(uploader).uploadLarge(fileArg.capture(), options.capture());
 
-        // An InputStream keeps heap usage bounded by the SDK chunk size —
-        // passing a byte[] here would reintroduce the full-file buffering.
         assertThat(fileArg.getValue()).isInstanceOf(InputStream.class);
         assertThat(options.getValue())
                 .containsEntry("folder", "folder")

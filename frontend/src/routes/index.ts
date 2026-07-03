@@ -47,7 +47,6 @@ const rootRoute = createRootRoute({
   beforeLoad: rehydrateAuth,
 });
 
-// Public layout — topbar with Login / Register
 const publicLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "public-layout",
@@ -71,7 +70,6 @@ const publicProjectRoute = createRoute({
   component: PublicProjectPage,
 });
 
-// Auth layout — topbar with Dashboard / username / Logout; redirects if not authenticated
 const authLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "auth-layout",
@@ -99,7 +97,6 @@ const trackDetailRoute = createRoute({
   component: TrackDetailPage,
 });
 
-// Auth pages without layout
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
