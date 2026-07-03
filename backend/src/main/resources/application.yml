@@ -16,6 +16,10 @@ app:
   cors:
     # Dev default: the Vite dev server. Overridden per profile — prod requires FRONTEND_URL.
     allowed-origin: ${FRONTEND_URL:http://localhost:5173}
+  rate-limit:
+    # Number of trusted proxy hops appending to X-Forwarded-For — the rate
+    # limiter reads the client IP counting from the right of that header.
+    trusted-proxies: ${TRUSTED_PROXY_HOPS:1}
 
 cloudinary:
   folder:

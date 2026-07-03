@@ -14,7 +14,7 @@ class AuthRateLimiterTest {
 
     @BeforeEach
     void setUp() {
-        rateLimiter = new AuthRateLimiter();
+        rateLimiter = new AuthRateLimiter(1);
     }
 
     private MockHttpServletRequest requestFrom(String ip) {
@@ -60,19 +60,39 @@ class AuthRateLimiterTest {
     }
 
     @Test
-    void clientIp_usesFirstForwardedForEntryBehindProxy() {
-        MockHttpServletRequest request = requestFrom("172.16.0.1");
-        request.addHeader("X-Forwarded-For", "203.0.113.7, 172.16.0.1");
-
+    void clientIp_ignoresSpoofedForwardedForPrefix() {
+        // The client-supplied part of X-Forwarded-For varies on every request;
+        // the entry appended by the single trusted hop stays the same. Spoofing
+        // must not grant a fresh bucket.
         for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest request = requestFrom("172.16.0.1");
+            request.addHeader("X-Forwarded-For", "fake-" + i + ", 198.51.100.9");
             rateLimiter.checkLogin(request);
         }
 
-        // Same client IP via the proxy → same bucket, even with a different remote addr.
-        MockHttpServletRequest sameClient = requestFrom("172.16.0.99");
-        sameClient.addHeader("X-Forwarded-For", "203.0.113.7");
+        MockHttpServletRequest spoofed = requestFrom("172.16.0.1");
+        spoofed.addHeader("X-Forwarded-For", "fake-again, 198.51.100.9");
 
-        assertThatThrownBy(() -> rateLimiter.checkLogin(sameClient))
+        assertThatThrownBy(() -> rateLimiter.checkLogin(spoofed))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void clientIp_readsClientBehindTwoTrustedHops() {
+        // Prod topology: Netlify appends the client IP, then the Railway edge
+        // appends Netlify's IP — the client sits second from the right.
+        AuthRateLimiter twoHops = new AuthRateLimiter(2);
+
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest request = requestFrom("172.16.0.1");
+            request.addHeader("X-Forwarded-For", "203.0.113.7, 10.10.0." + i);
+            twoHops.checkLogin(request);
+        }
+
+        MockHttpServletRequest sameClient = requestFrom("172.16.0.99");
+        sameClient.addHeader("X-Forwarded-For", "spoofed, 203.0.113.7, 10.10.0.99");
+
+        assertThatThrownBy(() -> twoHops.checkLogin(sameClient))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

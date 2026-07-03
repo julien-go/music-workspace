@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -278,6 +279,19 @@ class TrackServiceTest {
         assertThat(track.isArchived()).isFalse();
         assertThat(track.getPosition()).isEqualTo(2);
         verify(trackRepository, never()).findMaxPositionByProjectId(any());
+    }
+
+    @Test
+    void unarchive_throwsConflictWhenPositionRaceLost() {
+        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro")
+                .status(TrackStatus.DRAFT).archived(true).position(3).build();
+
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
+        when(trackRepository.findMaxPositionByProjectId(projectId)).thenReturn(5);
+        doThrow(new DataIntegrityViolationException("duplicate position")).when(trackRepository).flush();
+
+        assertThatThrownBy(() -> trackService.unarchive(projectId, trackId, EMAIL))
+                .isInstanceOf(ConflictException.class);
     }
 
     @Test

@@ -108,6 +108,12 @@ public class TrackService {
             // A reorder may have reassigned the old position while this track
             // was archived (positions are compacted) — re-append at the end.
             track.setPosition(trackRepository.findMaxPositionByProjectId(projectId) + 1);
+            try {
+                trackRepository.flush();
+            } catch (DataIntegrityViolationException e) {
+                // Concurrent unarchive/create computed the same MAX(position) + 1.
+                throw new ConflictException("Track position conflict, please retry");
+            }
         }
         return buildResponse(track);
     }

@@ -28,3 +28,7 @@ app:
     # No localhost fallback in prod: an empty value makes CorsConfig fail fast
     # at startup with an explicit "FRONTEND_URL is not set" error.
     allowed-origin: ${FRONTEND_URL:}
+  rate-limit:
+    # Two trusted hops append to X-Forwarded-For in prod: the Netlify proxy
+    # (adds the real client IP) then the Railway edge (adds Netlify's IP).
+    trusted-proxies: ${TRUSTED_PROXY_HOPS:2}
