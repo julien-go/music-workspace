@@ -1,6 +1,7 @@
 package com.musicworkspace.backend.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.musicworkspace.backend.config.AuthRateLimiter;
 import com.musicworkspace.backend.security.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
@@ -27,12 +29,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -55,6 +59,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private AuthRateLimiter authRateLimiter;
 
     private final AuthResult authResult = new AuthResult("jwt-token",
             new AuthResponse(new AuthUser(UUID.randomUUID(), "test@example.com", "testuser")));
@@ -124,6 +131,23 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.email").value("test@example.com"))
                 .andExpect(jsonPath("$.user.username").value("testuser"))
                 .andExpect(jsonPath("$.token").doesNotExist());
+    }
+
+    @Test
+    void login_returns429WhenRateLimited() throws Exception {
+        LoginRequest request = new LoginRequest("test@example.com", "Password1!");
+        doThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "Trop de tentatives, réessaie dans un instant."))
+                .when(authRateLimiter).checkLogin(any());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.error").value("TOO_MANY_REQUESTS"))
+                .andExpect(jsonPath("$.message").value("Trop de tentatives, réessaie dans un instant."))
+                .andExpect(jsonPath("$.errors").isEmpty());
     }
 
     @Test

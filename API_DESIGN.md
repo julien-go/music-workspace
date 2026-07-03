@@ -40,6 +40,7 @@ Validation errors (422) — `errors` is a flat array of `"field: message"` strin
 | 403 | `FORBIDDEN` | Authenticated but not allowed (rare — see rule below) |
 | 422 | `VALIDATION_ERROR` | Invalid input (Bean Validation) |
 | 409 | `CONFLICT` | Conflict — e.g. email already taken |
+| 429 | `TOO_MANY_REQUESTS` | Rate limit exceeded — login: 5/min per IP, register: 3/min per IP |
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
 
 > **403 vs 404 rule**: when a user doesn't have access to an existing resource, return 404 (not 403). A 403 confirms the resource exists — that's an information leak.
