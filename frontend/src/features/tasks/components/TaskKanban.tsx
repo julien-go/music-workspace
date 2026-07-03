@@ -113,33 +113,38 @@ function DraggableCard({
 
       {/* Status control — the only keyboard-operable way to move a task (the
           drag sensors are pointer-based), and the reliable alternative to
-          cross-column drag on mobile where columns stack vertically. */}
+          cross-column drag on mobile where columns stack vertically. On
+          desktop (≥ md) drag is the primary interaction, so the select is
+          visually hidden — but it must stay in the tab order for keyboard
+          users, so it is sr-only and reappears while focused. */}
       {canEdit && (
-        <div className="relative mt-2.5">
-          <select
-            value={task.status}
-            onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-            {...stopDnd}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Changer le statut de : ${task.title}`}
-            className={`w-full appearance-none cursor-pointer rounded-md border border-border bg-surface py-2 pl-3 pr-9 text-sm font-medium transition-colors hover:border-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent ${
-              columns.find((c) => c.status === task.status)?.titleClass ?? ""
-            }`}
-          >
-            {columns.map((c) => (
-              <option
-                key={c.status}
-                value={c.status}
-                className="bg-surface text-foreground"
-              >
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            aria-hidden="true"
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-          />
+        <div className="mt-2.5 md:sr-only md:focus-within:not-sr-only">
+          <div className="relative">
+            <select
+              value={task.status}
+              onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
+              {...stopDnd}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Changer le statut de : ${task.title}`}
+              className={`w-full appearance-none cursor-pointer rounded-md border border-border bg-surface py-2 pl-3 pr-9 text-sm font-medium transition-colors hover:border-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent ${
+                columns.find((c) => c.status === task.status)?.titleClass ?? ""
+              }`}
+            >
+              {columns.map((c) => (
+                <option
+                  key={c.status}
+                  value={c.status}
+                  className="bg-surface text-foreground"
+                >
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            />
+          </div>
         </div>
       )}
     </div>
