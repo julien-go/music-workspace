@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { AddVersionDialog } from "./AddVersionDialog";
 import { formatRelativeTime } from "@/lib/utils";
 import { toastError } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
-import type { TrackResponse } from "../types";
+import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackResponse } from "../types";
 
 interface Props {
   track: TrackResponse;
@@ -22,18 +22,6 @@ interface Props {
   projectName: string;
   canEdit: boolean;
 }
-
-const statusLabel: Record<string, string> = {
-  DRAFT: "Brouillon",
-  IN_PROGRESS: "En cours",
-  DONE: "Terminé",
-};
-
-const statusClass: Record<string, string> = {
-  DRAFT: "text-muted-foreground border-border",
-  IN_PROGRESS: "text-amber-400 border-amber-400/40",
-  DONE: "text-emerald-400 border-emerald-400/40",
-};
 
 export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const navigate = useNavigate();
@@ -53,6 +41,9 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const archiveTrack = useArchiveTrack(projectId);
   const unarchiveTrack = useUnarchiveTrack(projectId);
   const updateTrack = useUpdateTrack(projectId, track.id);
+
+  // Editing an archived track is rejected server-side (409) — hide the affordances.
+  const canEditContent = canEdit && !track.archived;
 
   const handleNavigate = () => {
     navigate({
@@ -105,7 +96,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <InlineEdit
           value={track.name}
-          onSave={canEdit ? (name) => updateTrack.mutateAsync({ name }) : undefined}
+          onSave={canEditContent ? (name) => updateTrack.mutateAsync({ name }) : undefined}
           ariaLabel="Nom de la track"
           className="font-semibold text-foreground text-lg leading-tight"
         />
@@ -117,24 +108,34 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           )}
           <Badge
             variant="outline"
-            aria-label={`Statut : ${statusLabel[track.status]}`}
-            className={`text-sm ${statusClass[track.status]}`}
+            aria-label={`Statut : ${TRACK_STATUS_LABEL[track.status]}`}
+            className={`text-sm ${TRACK_STATUS_CLASS[track.status]}`}
           >
-            {statusLabel[track.status]}
+            {TRACK_STATUS_LABEL[track.status]}
           </Badge>
-          <ChevronRight className="w-5 h-5 text-muted-foreground/40" aria-hidden="true" />
+          {/* The card's onClick div is invisible to keyboards — this link is the
+              focusable way in. */}
+          <Link
+            to="/projects/$projectId/tracks/$trackId"
+            params={{ projectId, trackId: track.id }}
+            aria-label={`Ouvrir ${track.name}`}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded text-muted-foreground/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+          >
+            <ChevronRight className="w-5 h-5" aria-hidden="true" />
+          </Link>
         </div>
       </div>
 
       <div className="mb-3" onClick={(e) => e.stopPropagation()}>
         <InlineEdit
           value={track.description ?? ""}
-          onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
+          onSave={canEditContent ? (description) => updateTrack.mutateAsync({ description }) : undefined}
           multiline
           ariaLabel="Description de la track"
           className="text-base text-muted-foreground"
           displayClassName="line-clamp-2"
-          emptyLabel={canEdit ? "Ajouter une description" : undefined}
+          emptyLabel={canEditContent ? "Ajouter une description" : undefined}
         />
       </div>
 
@@ -154,7 +155,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       )}
 
       <div className="flex flex-col items-start gap-2 mt-1 md:flex-row md:items-center">
-        {track.versionCount === 0 && canEdit ? (
+        {track.versionCount === 0 && canEditContent ? (
           <Button
             variant="ghost"
             size="sm"

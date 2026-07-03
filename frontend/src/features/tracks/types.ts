@@ -2,6 +2,18 @@ import type { CommentResponse } from "@/features/comments/types";
 
 export type TrackStatus = "DRAFT" | "IN_PROGRESS" | "DONE";
 
+export const TRACK_STATUS_LABEL: Record<TrackStatus, string> = {
+  DRAFT: "Brouillon",
+  IN_PROGRESS: "En cours",
+  DONE: "Terminé",
+};
+
+export const TRACK_STATUS_CLASS: Record<TrackStatus, string> = {
+  DRAFT: "text-muted-foreground border-border",
+  IN_PROGRESS: "text-amber-400 border-amber-400/40",
+  DONE: "text-emerald-400 border-emerald-400/40",
+};
+
 export interface TrackResponse {
   id: string;
   position: number;

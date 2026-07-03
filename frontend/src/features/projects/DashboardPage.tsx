@@ -14,7 +14,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-10">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-foreground">Mes projets</h1>
         <Button
@@ -25,10 +24,8 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {/* Loading */}
       {isLoading && <SkeletonProjectList />}
 
-      {/* Error */}
       {isError && (
         <ErrorState
           message={describeError(error, "Impossible de charger les projets.")}
@@ -36,7 +33,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Empty state */}
       {!isLoading && !isError && projects?.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
           <FolderOpen
@@ -56,7 +52,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Project list */}
       {!isLoading && !isError && projects && projects.length > 0 && (
         <div className="space-y-3">
           {projects.map((project) => (

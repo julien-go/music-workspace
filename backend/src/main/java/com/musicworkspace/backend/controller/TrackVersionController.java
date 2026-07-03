@@ -4,6 +4,7 @@ import com.musicworkspace.backend.dto.TrackVersionResponse;
 import com.musicworkspace.backend.dto.UpdateTrackVersionRequest;
 import com.musicworkspace.backend.service.TrackVersionService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class TrackVersionController {
             @PathVariable UUID projectId,
             @PathVariable UUID trackId,
             @RequestParam(required = false) String notes,
-            @RequestParam(required = false) String label,
+            @RequestParam(required = false) @Size(max = 255) String label,
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)

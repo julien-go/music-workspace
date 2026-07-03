@@ -11,6 +11,8 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
+import com.musicworkspace.backend.exception.ConflictException;
+import com.musicworkspace.backend.exception.InvalidReorderException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.repository.TrackCommentRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
@@ -23,10 +25,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,12 @@ public class TrackService {
         if (track.getStatus() == null) {
             track.setStatus(TrackStatus.DRAFT);
         }
-        return buildResponse(trackRepository.saveAndFlush(track));
+        try {
+            return buildResponse(trackRepository.saveAndFlush(track));
+        } catch (DataIntegrityViolationException e) {
+            // Two concurrent creates computed the same MAX(position) + 1.
+            throw new ConflictException("Track position conflict, please retry");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -97,7 +103,18 @@ public class TrackService {
     @Transactional
     public TrackResponse unarchive(UUID projectId, UUID trackId, String email) {
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
-        track.setArchived(false);
+        if (track.isArchived()) {
+            track.setArchived(false);
+            // A reorder may have reassigned the old position while this track
+            // was archived (positions are compacted) — re-append at the end.
+            track.setPosition(trackRepository.findMaxPositionByProjectId(projectId) + 1);
+            try {
+                trackRepository.flush();
+            } catch (DataIntegrityViolationException e) {
+                // Concurrent unarchive/create computed the same MAX(position) + 1.
+                throw new ConflictException("Track position conflict, please retry");
+            }
+        }
         return buildResponse(track);
     }
 
@@ -108,18 +125,14 @@ public class TrackService {
         List<Track> existingTracks = trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId);
 
         if (request.trackIds().size() != existingTracks.size()) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Track IDs must match all non-archived tracks of the project");
+            throw new InvalidReorderException("Track IDs must match all non-archived tracks of the project");
         }
 
         Set<UUID> existingIds = existingTracks.stream().map(Track::getId).collect(Collectors.toSet());
         Set<UUID> requestIds = new HashSet<>(request.trackIds());
 
         if (!existingIds.equals(requestIds)) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Track IDs must match all non-archived tracks of the project");
+            throw new InvalidReorderException("Track IDs must match all non-archived tracks of the project");
         }
 
         Map<UUID, Track> trackById = existingTracks.stream()
@@ -127,13 +140,9 @@ public class TrackService {
 
         List<UUID> orderedIds = request.trackIds();
 
-        // Two-phase update to avoid transient violations of the partial unique index
-        // uq_tracks_project_position_active. Hibernate flushes the position updates one
-        // row at a time, so writing the final positions directly can momentarily
-        // duplicate a (project_id, position) pair. The index is partial (WHERE
-        // archived = false) and therefore can't be made DEFERRABLE in Postgres, so we
-        // first park every track on a negative position — a range disjoint from the
-        // existing non-negative ones — flush, then assign the final 0-based positions.
+        // Two-phase update: uq_tracks_project_position_active is partial, so it
+        // can't be DEFERRABLE, and row-by-row flushes can transiently duplicate
+        // a position — park everything on negatives, flush, then assign 0..n-1.
         for (int i = 0; i < orderedIds.size(); i++) {
             trackById.get(orderedIds.get(i)).setPosition(-(i + 1));
         }

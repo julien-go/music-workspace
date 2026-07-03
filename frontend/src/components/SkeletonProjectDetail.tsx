@@ -7,9 +7,7 @@ export function SkeletonProjectDetail() {
     >
       <span className="sr-only">Chargement du projet…</span>
       <div className="flex gap-8 items-start">
-        {/* Main column */}
         <div className="flex-1 min-w-0 space-y-10">
-          {/* Header: cover + title/description */}
           <div className="flex items-start gap-4">
             <div className="w-32 h-32 rounded-lg bg-muted shrink-0" />
             <div className="flex-1 min-w-0 space-y-3 pt-2">
@@ -18,7 +16,6 @@ export function SkeletonProjectDetail() {
             </div>
           </div>
 
-          {/* Tracks column */}
           <div className="space-y-3">
             <div className="h-4 w-24 rounded bg-muted" />
             {[...Array(3)].map((_, i) => (
@@ -26,14 +23,12 @@ export function SkeletonProjectDetail() {
             ))}
           </div>
 
-          {/* Tasks column */}
           <div className="space-y-3">
             <div className="h-4 w-24 rounded bg-muted" />
             <div className="h-40 rounded-lg bg-muted" />
           </div>
         </div>
 
-        {/* Sidebar — desktop only (mobile uses the drawer) */}
         <div className="hidden md:block w-72 shrink-0 h-64 rounded-lg bg-muted" />
       </div>
     </div>

@@ -7,6 +7,8 @@ import { useUpdateMemberRole } from "../hooks/useUpdateMemberRole";
 import { useRemoveMember } from "../hooks/useRemoveMember";
 import { InviteMemberDialog } from "./InviteMemberDialog";
 import { useAuthStore } from "@/store/authStore";
+import { toastError } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 import { type ProjectRole, ROLE_LABEL, ROLE_CLASS } from "../types";
 
 interface Props {
@@ -27,7 +29,7 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
-  const { data: members, isLoading } = useMembers(projectId);
+  const { data: members, isLoading, isError } = useMembers(projectId);
   const updateRole = useUpdateMemberRole(projectId);
   const removeMember = useRemoveMember(projectId);
   const currentUser = useAuthStore((s) => s.user);
@@ -47,8 +49,26 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
         setConfirmingRemoveId(null);
         setPendingRemoveId(null);
       },
-      onError: () => setPendingRemoveId(null),
+      onError: (err) => {
+        setPendingRemoveId(null);
+        if (!isUnauthorizedError(err)) {
+          toastError(describeError(err, "Impossible de retirer ce membre."));
+        }
+      },
     });
+  };
+
+  const handleRoleChange = (userId: string, role: Exclude<ProjectRole, "OWNER">) => {
+    updateRole.mutate(
+      { userId, role },
+      {
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de changer le rôle de ce membre."));
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -80,6 +100,10 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
         </div>
       )}
 
+      {isError && (
+        <p className="text-sm text-destructive">Impossible de charger les membres.</p>
+      )}
+
       {sortedMembers.length > 0 && (
         <div className="space-y-3">
           {sortedMembers.map((member) => {
@@ -102,10 +126,7 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                       <select
                         value={member.role}
                         onChange={(e) =>
-                          updateRole.mutate({
-                            userId: member.user.id,
-                            role: e.target.value as Exclude<ProjectRole, "OWNER">,
-                          })
+                          handleRoleChange(member.user.id, e.target.value as Exclude<ProjectRole, "OWNER">)
                         }
                         disabled={updateRole.isPending}
                         aria-label={`Rôle de ${member.user.username}`}

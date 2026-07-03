@@ -1,0 +1,21 @@
+# Monorepo: the site is the Vite frontend.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy the API through Netlify so the JWT cookie stays first-party and
+# SameSite=Lax keeps working: Safari blocks third-party cookies, so calling
+# Railway directly from the browser would break auth there.
+# Replace the target with the actual Railway URL once the service exists.
+[[redirects]]
+  from = "/api/*"
+  to = "https://REPLACE-WITH-RAILWAY-APP.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback — client-side routes are handled by TanStack Router.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

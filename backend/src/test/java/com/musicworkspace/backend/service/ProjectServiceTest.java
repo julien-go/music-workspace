@@ -63,6 +63,7 @@ class ProjectServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(projectService, "coverFolder", "music-workspace/projects/%s/cover");
+        ReflectionTestUtils.setField(projectService, "projectFolder", "music-workspace/projects/%s");
         owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();

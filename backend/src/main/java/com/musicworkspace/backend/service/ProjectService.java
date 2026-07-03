@@ -39,6 +39,9 @@ public class ProjectService {
     @Value("${cloudinary.folder.cover}")
     private String coverFolder;
 
+    @Value("${cloudinary.folder.project}")
+    private String projectFolder;
+
     @Transactional
     public ProjectResponse create(CreateProjectRequest request, String email) {
         User owner = permissionService.resolveUser(email);
@@ -85,6 +88,9 @@ public class ProjectService {
     public void delete(UUID id, String email) {
         permissionService.checkProjectPermission(id, email, ProjectRole.OWNER);
         projectRepository.deleteProjectById(id);
+        // Best-effort: if the transaction rolls back after this point the assets
+        // are lost anyway, which we accept over leaking storage on every delete.
+        cloudinaryService.deleteFolder(String.format(projectFolder, id));
     }
 
     @Transactional
