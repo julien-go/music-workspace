@@ -36,6 +36,8 @@ public class ProjectMemberService {
 
         rejectOwnerRole(request.role());
 
+        // Accepted trade-off: the distinct 404 lets a project owner probe which
+        // emails are registered. Inviting by email needs the feedback to be usable.
         User newMember = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 

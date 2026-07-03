@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.musicworkspace.backend.config.CookieService;
+import com.musicworkspace.backend.security.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.AuthResponse.AuthUser;
 import com.musicworkspace.backend.dto.LoginRequest;

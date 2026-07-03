@@ -1,6 +1,6 @@
 package com.musicworkspace.backend.controller;
 
-import com.musicworkspace.backend.config.CookieService;
+import com.musicworkspace.backend.security.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;

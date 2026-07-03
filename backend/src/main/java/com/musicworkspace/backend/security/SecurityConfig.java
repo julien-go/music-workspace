@@ -28,6 +28,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF protection is intentionally off: the JWT cookie is
+                // SameSite=Lax + httpOnly, so cross-site POST/PATCH/DELETE
+                // requests never carry it, and the API is stateless.
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth

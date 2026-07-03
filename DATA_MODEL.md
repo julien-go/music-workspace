@@ -12,7 +12,7 @@
 |---|---|---|
 | id | UUID | PK |
 | email | VARCHAR(255) | UNIQUE, NOT NULL |
-| username | VARCHAR(100) | UNIQUE, NOT NULL |
+| username | VARCHAR(255) | UNIQUE, NOT NULL — app-level limit: 30 chars |
 | password | VARCHAR(255) | NOT NULL |
 | created_at | TIMESTAMP | NOT NULL |
 

@@ -41,4 +41,19 @@ public class CloudinaryService {
             // best-effort cleanup — failure here does not affect the caller's error path
         }
     }
+
+    /**
+     * Best-effort removal of every asset under a folder (project deletion).
+     * A failure leaves orphaned assets in Cloudinary but must never fail the
+     * deletion itself — the DB rows are gone either way.
+     */
+    public void deleteFolder(String folder) {
+        try {
+            cloudinary.api().deleteResourcesByPrefix(folder + "/", ObjectUtils.asMap("resource_type", "image"));
+            cloudinary.api().deleteResourcesByPrefix(folder + "/", ObjectUtils.asMap("resource_type", "video"));
+            cloudinary.api().deleteFolder(folder, ObjectUtils.emptyMap());
+        } catch (Exception ignored) {
+            // best-effort cleanup
+        }
+    }
 }

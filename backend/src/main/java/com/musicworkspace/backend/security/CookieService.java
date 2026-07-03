@@ -1,6 +1,5 @@
-package com.musicworkspace.backend.config;
+package com.musicworkspace.backend.security;
 
-import com.musicworkspace.backend.security.JwtService;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

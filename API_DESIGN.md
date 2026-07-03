@@ -17,7 +17,7 @@ All errors follow this format via `@ControllerAdvice`:
 }
 ```
 
-Validation errors (422):
+Validation errors (422) — `errors` is a flat array of `"field: message"` strings:
 
 ```json
 {
@@ -25,8 +25,8 @@ Validation errors (422):
   "error": "VALIDATION_ERROR",
   "message": "Validation failed",
   "errors": [
-    { "field": "email", "message": "must be a valid email" },
-    { "field": "password", "message": "must be at least 8 characters" }
+    "email: must be a valid email",
+    "password: must be at least 8 characters"
   ]
 }
 ```
@@ -63,6 +63,7 @@ Validation errors (422):
 |---|---|---|---|
 | POST | `/auth/register` | Register | No |
 | POST | `/auth/login` | Login → sets JWT cookie | No |
+| POST | `/auth/logout` | Logout → clears the JWT cookie | No |
 | GET | `/auth/me` | Authenticated user profile | Yes |
 
 ### Projects
@@ -309,7 +310,7 @@ Validation errors (422):
 ### Members (V1)
 
 ```json
-// AddMemberRequest
+// CreateMemberRequest
 {
   "email": "collaborateur@example.com",
   "role": "COLLABORATOR"
