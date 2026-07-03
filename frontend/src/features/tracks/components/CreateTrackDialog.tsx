@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createTrack, createTrackVersion } from "../api";
+import { useAudioFileInput } from "../hooks/useAudioFileInput";
 import { useQueryClient } from "@tanstack/react-query";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
@@ -21,15 +22,20 @@ type FormData = {
 
 export function CreateTrackDialog({ projectId, open, onClose }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
-  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTrackId, setCreatedTrackId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    file: audioFile,
+    fileError,
+    inputRef: fileInputRef,
+    onChange: onFileChange,
+    clear: clearFile,
+  } = useAudioFileInput();
   const queryClient = useQueryClient();
 
   const handleClose = () => {
     reset();
-    setAudioFile(null);
+    clearFile();
     setCreatedTrackId(null);
     onClose();
   };
@@ -107,7 +113,7 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               {audioFile && (
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setAudioFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  onClick={(e) => { e.stopPropagation(); clearFile(); }}
                   aria-label="Retirer le fichier"
                   className="text-muted-foreground/50 hover:text-foreground text-xs"
                 >
@@ -121,8 +127,11 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               type="file"
               accept="audio/*"
               className="sr-only"
-              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
             />
+            {fileError && (
+              <p role="alert" className="text-xs text-destructive">{fileError}</p>
+            )}
             <p className="text-xs text-muted-foreground">Optionnel — une première version sera créée automatiquement.</p>
           </div>
 

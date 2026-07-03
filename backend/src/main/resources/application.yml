@@ -8,10 +8,21 @@ spring:
       max-file-size: 70MB
       max-request-size: 70MB
 
+# 7 days — no refresh token by design (see CLAUDE.md, Frontend — Auth)
 jwt:
-  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+
+app:
+  cors:
+    # Dev default: the Vite dev server. Overridden per profile — prod requires FRONTEND_URL.
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
+  rate-limit:
+    # Number of trusted proxy hops appending to X-Forwarded-For — the rate
+    # limiter reads the client IP counting from the right of that header.
+    trusted-proxies: ${TRUSTED_PROXY_HOPS:1}
 
 cloudinary:
   folder:
+    project: music-workspace/projects/%s
     cover: music-workspace/projects/%s/cover
     audio: music-workspace/projects/%s/tracks/%s/versions

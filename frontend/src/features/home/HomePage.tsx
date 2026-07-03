@@ -32,7 +32,6 @@ const features = [
 export default function HomePage() {
   return (
     <div className="flex flex-col">
-      {/* Hero */}
       <section className="bg-background border-b border-border pt-20 md:pt-28 pb-0">
         <div className="max-w-2xl mx-auto text-center space-y-7 px-4 md:px-6 pb-14">
           <h1 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight text-foreground">
@@ -57,7 +56,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="bg-background px-4 md:px-6 py-8">
         <div className="max-w-5xl mx-auto">
           {features.map(({ number, title, description }, index) => {
@@ -81,7 +79,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-border py-10 text-center">
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Music Workspace

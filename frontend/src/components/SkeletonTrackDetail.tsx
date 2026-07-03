@@ -7,18 +7,14 @@ export function SkeletonTrackDetail() {
     >
       <span className="sr-only">Chargement de la track…</span>
       <div className="flex gap-8 items-start">
-        {/* Main column */}
         <div className="flex-1 min-w-0 space-y-10">
-          {/* Breadcrumb */}
           <div className="h-3.5 w-72 max-w-full rounded bg-muted" />
 
-          {/* Title + description */}
           <div className="space-y-3">
             <div className="h-8 w-64 max-w-full rounded bg-muted" />
             <div className="h-4 w-96 max-w-full rounded bg-muted" />
           </div>
 
-          {/* Versions */}
           <div className="space-y-3">
             <div className="h-4 w-20 rounded bg-muted" />
             {[...Array(2)].map((_, i) => (
@@ -26,14 +22,12 @@ export function SkeletonTrackDetail() {
             ))}
           </div>
 
-          {/* Comments */}
           <div className="space-y-3">
             <div className="h-4 w-28 rounded bg-muted" />
             <div className="h-20 rounded-lg bg-muted" />
           </div>
         </div>
 
-        {/* Sidebar — desktop only (mobile uses the drawer) */}
         <div className="hidden md:block w-72 shrink-0 h-64 rounded-lg bg-muted" />
       </div>
     </div>

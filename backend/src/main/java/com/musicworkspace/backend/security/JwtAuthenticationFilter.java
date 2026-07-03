@@ -1,6 +1,6 @@
 package com.musicworkspace.backend.security;
 
-import com.musicworkspace.backend.config.CookieService;
+
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

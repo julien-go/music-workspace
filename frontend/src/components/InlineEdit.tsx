@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Pencil, Check, X } from "lucide-react";
+import { describeError } from "@/lib/api";
 
 interface Props {
   value: string;
@@ -28,9 +29,8 @@ export function InlineEdit({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
-  // Re-sync the draft when the source value changes from outside. Done during
-  // render (React's "adjust state on prop change" pattern) instead of in an
-  // effect, to avoid a cascading re-render. The guard prevents an infinite loop.
+  // Re-sync the draft during render ("adjust state on prop change" — no
+  // effect); the guard prevents an infinite loop.
   if (!isEditing && value !== prevValue) {
     setPrevValue(value);
     setDraft(value);
@@ -71,7 +71,7 @@ export function InlineEdit({
       await onSave!(trimmed);
       setIsEditing(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setError(describeError(err, "Impossible d'enregistrer. Réessaie."));
     } finally {
       setIsPending(false);
     }

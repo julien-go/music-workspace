@@ -7,7 +7,7 @@ import { useVersionComments } from "../hooks/useVersionComments";
 import { useAddVersionComment } from "../hooks/useAddVersionComment";
 import { useDeleteVersionComment } from "../hooks/useDeleteVersionComment";
 import { useUpdateTrackVersion } from "../hooks/useUpdateTrackVersion";
-import { CommentThread } from "./CommentThread";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { InlineEdit } from "@/components/InlineEdit";
 import { formatRelativeTime, getFileExtension, stripFileExtension } from "@/lib/utils";
 import type { TrackVersionResponse } from "../types";
@@ -32,8 +32,6 @@ export function VersionCard({
   canEdit,
 }: Props) {
   const [commentsOpen, setCommentsOpen] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(null);
 
   const play = usePlayerStore((s) => s.play);
   const pause = usePlayerStore((s) => s.pause);
@@ -53,11 +51,11 @@ export function VersionCard({
     : null;
   const title = version.label ?? fallbackName;
 
-  const { data: comments = [], isLoading: commentsLoading } = useVersionComments(
-    projectId,
-    trackId,
-    version.id,
-  );
+  const {
+    data: comments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useVersionComments(projectId, trackId, version.id);
   const addComment = useAddVersionComment(projectId, trackId, version.id);
   const deleteComment = useDeleteVersionComment(projectId, trackId, version.id);
 
@@ -78,15 +76,6 @@ export function VersionCard({
       notes: version.notes,
       label: version.label,
       originalFileName: version.originalFileName,
-    });
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    setDeletingId(commentId);
-    setDeleteCommentError(null);
-    deleteComment.mutate(commentId, {
-      onSettled: () => setDeletingId(null),
-      onError: () => setDeleteCommentError("Impossible de supprimer ce commentaire."),
     });
   };
 
@@ -175,13 +164,12 @@ export function VersionCard({
             <CommentThread
               comments={comments}
               isLoading={commentsLoading}
+              loadError={commentsError}
               currentUserId={currentUser?.id}
               isOwner={isOwner}
               onAdd={(content) => addComment.mutateAsync(content)}
               isAdding={addComment.isPending}
-              onDelete={handleDeleteComment}
-              deletingId={deletingId}
-              deleteError={deleteCommentError}
+              onDelete={(commentId) => deleteComment.mutateAsync(commentId)}
             />
           </div>
         )}

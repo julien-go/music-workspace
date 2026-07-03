@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,31 +21,18 @@ import { useAddTrackComment } from "./hooks/useAddTrackComment";
 import { useDeleteTrackComment } from "./hooks/useDeleteTrackComment";
 import { VersionCard } from "./components/VersionCard";
 import { AddVersionDialog } from "./components/AddVersionDialog";
-import { CommentThread } from "./components/CommentThread";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
 import { describeError } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { formatRelativeTime } from "@/lib/utils";
-import type { TrackStatus } from "./types";
+import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackStatus } from "./types";
 
-const statusLabel: Record<TrackStatus, string> = {
-  DRAFT: "Brouillon",
-  IN_PROGRESS: "En cours",
-  DONE: "Terminé",
-};
-
-const statusClass: Record<TrackStatus, string> = {
-  DRAFT: "bg-muted/50 text-muted-foreground border-border",
-  IN_PROGRESS: "bg-amber-400/10 text-amber-400 border-amber-400/25",
-  DONE: "bg-emerald-400/10 text-emerald-400 border-emerald-400/25",
-};
+const routeApi = getRouteApi("/auth-layout/projects/$projectId/tracks/$trackId");
 
 export default function TrackDetailPage() {
-  const { projectId = "", trackId = "" } = useParams({ strict: false }) as {
-    projectId?: string;
-    trackId?: string;
-  };
+  const { projectId, trackId } = routeApi.useParams();
   const currentUser = useAuthStore((s) => s.user);
 
   const {
@@ -62,22 +49,20 @@ export default function TrackDetailPage() {
     error: trackErrorObj,
     refetch: refetchTrack,
   } = useTrack(projectId, trackId);
-  const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(
-    projectId,
-    trackId,
-  );
-  const { data: trackComments = [], isLoading: commentsLoading } =
-    useTrackComments(projectId, trackId);
+  const {
+    data: versions = [],
+    isLoading: versionsLoading,
+    isError: versionsError,
+  } = useTrackVersions(projectId, trackId);
+  const {
+    data: trackComments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useTrackComments(projectId, trackId);
 
   const updateTrack = useUpdateTrack(projectId, trackId);
   const addTrackComment = useAddTrackComment(projectId, trackId);
   const deleteTrackComment = useDeleteTrackComment(projectId, trackId);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
-    null,
-  );
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(
-    null,
-  );
   const [addVersionOpen, setAddVersionOpen] = useState(false);
 
   const sortedVersions = useMemo(
@@ -101,27 +86,20 @@ export default function TrackDetailPage() {
 
   if (!project || !track) return null;
 
-  const canEdit =
+  const hasWriteRole =
     project.currentUserRole === "OWNER" ||
     project.currentUserRole === "COLLABORATOR";
+  // Everything on an archived track is read-only server-side (409) — don't
+  // show edit affordances that can only fail.
+  const canEdit = hasWriteRole && !track.archived;
   const isOwner = project.currentUserRole === "OWNER";
-
-  const handleDeleteTrackComment = (commentId: string) => {
-    setDeletingCommentId(commentId);
-    setDeleteCommentError(null);
-    deleteTrackComment.mutate(commentId, {
-      onSettled: () => setDeletingCommentId(null),
-      onError: () =>
-        setDeleteCommentError("Impossible de supprimer ce commentaire."),
-    });
-  };
 
   const sidebarContent = (
     <>
       <MembersSidebar projectId={projectId} isOwner={isOwner} />
 
-      {/* Track info */}
       <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
+
         <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
         <Separator className="mb-4" />
         <dl className="space-y-2 text-sm">
@@ -130,9 +108,9 @@ export default function TrackDetailPage() {
             <dd>
               <Badge
                 variant="outline"
-                className={`text-xs ${statusClass[track.status]}`}
+                className={`text-xs ${TRACK_STATUS_CLASS[track.status]}`}
               >
-                {statusLabel[track.status]}
+                {TRACK_STATUS_LABEL[track.status]}
               </Badge>
             </dd>
           </div>
@@ -159,9 +137,7 @@ export default function TrackDetailPage() {
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb + mobile members/infos trigger */}
           <div className="flex items-start justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0 flex-wrap">
               <Link
@@ -181,7 +157,6 @@ export default function TrackDetailPage() {
               <span>/</span>
               <span className="text-foreground">{track.name}</span>
             </div>
-            {/* Mobile-only: opens members + infos in a drawer */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -203,7 +178,6 @@ export default function TrackDetailPage() {
             </Sheet>
           </div>
 
-          {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col gap-3 mb-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <InlineEdit
@@ -227,7 +201,7 @@ export default function TrackDetailPage() {
                     }
                     disabled={updateTrack.isPending}
                     aria-label="Statut de la track"
-                    className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${statusClass[track.status]}`}
+                    className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${TRACK_STATUS_CLASS[track.status]}`}
                   >
                     <option value="DRAFT">Brouillon</option>
                     <option value="IN_PROGRESS">En cours</option>
@@ -236,9 +210,9 @@ export default function TrackDetailPage() {
                 ) : (
                   <Badge
                     variant="outline"
-                    className={`text-sm ${statusClass[track.status]}`}
+                    className={`text-sm ${TRACK_STATUS_CLASS[track.status]}`}
                   >
-                    {statusLabel[track.status]}
+                    {TRACK_STATUS_LABEL[track.status]}
                   </Badge>
                 )}
                 {canEdit && (
@@ -262,7 +236,6 @@ export default function TrackDetailPage() {
             />
           </div>
 
-          {/* Versions */}
           <div className="mb-10">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Versions
@@ -281,7 +254,13 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            {!versionsLoading && versions.length === 0 && (
+            {!versionsLoading && versionsError && (
+              <p className="text-sm text-destructive">
+                Impossible de charger les versions.
+              </p>
+            )}
+
+            {!versionsLoading && !versionsError && versions.length === 0 && (
               <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
                 <p className="text-base">Aucune version pour le moment.</p>
                 {canEdit && (
@@ -292,7 +271,7 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            {!versionsLoading && sortedVersions.length > 0 && (
+            {!versionsLoading && !versionsError && sortedVersions.length > 0 && (
               <div className="flex flex-col gap-3">
                 {sortedVersions.map((version) => (
                   <VersionCard
@@ -312,7 +291,6 @@ export default function TrackDetailPage() {
 
           <Separator className="mb-8" />
 
-          {/* Track comments */}
           <div>
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Commentaires
@@ -320,18 +298,16 @@ export default function TrackDetailPage() {
             <CommentThread
               comments={trackComments}
               isLoading={commentsLoading}
+              loadError={commentsError}
               currentUserId={currentUser?.id}
               isOwner={isOwner}
               onAdd={(content) => addTrackComment.mutateAsync(content)}
               isAdding={addTrackComment.isPending}
-              onDelete={handleDeleteTrackComment}
-              deletingId={deletingCommentId}
-              deleteError={deleteCommentError}
+              onDelete={(commentId) => deleteTrackComment.mutateAsync(commentId)}
             />
           </div>
         </div>
 
-        {/* Right sidebar — desktop only, sticky (mobile uses the drawer above) */}
         <div className="hidden md:flex w-72 shrink-0 sticky top-8 flex-col gap-4">
           {sidebarContent}
         </div>

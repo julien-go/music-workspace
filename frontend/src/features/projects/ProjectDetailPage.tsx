@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import {
   DndContext,
   closestCenter,
@@ -31,13 +31,18 @@ import { toastError } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
 import { useProject } from "./hooks/useProject";
 import { useUpdateProject } from "./hooks/useUpdateProject";
+import { useProjectComments } from "./hooks/useProjectComments";
+import { useAddProjectComment } from "./hooks/useAddProjectComment";
+import { useDeleteProjectComment } from "./hooks/useDeleteProjectComment";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
 import { useArchivedTracks } from "@/features/tracks/hooks/useArchivedTracks";
 import { useReorderTracks } from "@/features/tracks/hooks/useReorderTracks";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { CreateTrackDialog } from "@/features/tracks/components/CreateTrackDialog";
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { MembersSidebar } from "./components/MembersSidebar";
+import { useAuthStore } from "@/store/authStore";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
 import { Button } from "@/components/ui/button";
@@ -159,8 +164,10 @@ function ProjectCover({
   );
 }
 
+const routeApi = getRouteApi("/auth-layout/projects/$projectId");
+
 export default function ProjectDetailPage() {
-  const { projectId } = useParams({ strict: false }) as { projectId: string };
+  const { projectId } = routeApi.useParams();
   const {
     data: project,
     isLoading: projectLoading,
@@ -175,6 +182,15 @@ export default function ProjectDetailPage() {
   } = useTracks(projectId);
   const updateProject = useUpdateProject(projectId);
   const reorderTracks = useReorderTracks(projectId);
+  const currentUser = useAuthStore((s) => s.user);
+
+  const {
+    data: projectComments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useProjectComments(projectId);
+  const addProjectComment = useAddProjectComment(projectId);
+  const deleteProjectComment = useDeleteProjectComment(projectId);
 
   // useState (not setQueryData) so the update batches synchronously with dnd-kit's own state cleanup.
   const [orderedIds, setOrderedIds] = useState<string[]>(() =>
@@ -260,9 +276,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
       <div className="flex gap-8 items-start">
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Breadcrumb + mobile members trigger */}
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
               <Link
@@ -274,7 +288,6 @@ export default function ProjectDetailPage() {
               <span>/</span>
               <span className="text-foreground truncate">{project.name}</span>
             </div>
-            {/* Mobile-only: opens the members sidebar in a drawer */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -296,7 +309,6 @@ export default function ProjectDetailPage() {
             </Sheet>
           </div>
 
-          {/* Header */}
           <div className="flex items-start gap-4 mb-8">
             <ProjectCover name={project.name} coverUrl={project.coverUrl} />
             <div className="flex-1 min-w-0">
@@ -338,7 +350,6 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* Tracks section */}
           <div className="mb-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest">
@@ -413,7 +424,6 @@ export default function ProjectDetailPage() {
               </DndContext>
             )}
 
-            {/* Archived tracks toggle */}
             <div className="mt-6">
               <Separator className="mb-4" />
               <button
@@ -478,22 +488,37 @@ export default function ProjectDetailPage() {
 
           <Separator className="mb-8" />
 
-          {/* Tasks section */}
-          <div>
+          <div className="mb-10">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Tâches
             </h2>
             <TaskKanban projectId={projectId} canEdit={canEdit} />
           </div>
+
+          <Separator className="mb-8" />
+
+          <div>
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
+              Commentaires
+            </h2>
+            <CommentThread
+              comments={projectComments}
+              isLoading={commentsLoading}
+              loadError={commentsError}
+              currentUserId={currentUser?.id}
+              isOwner={isOwner}
+              onAdd={(content) => addProjectComment.mutateAsync(content)}
+              isAdding={addProjectComment.isPending}
+              onDelete={(commentId) => deleteProjectComment.mutateAsync(commentId)}
+            />
+          </div>
         </div>
 
-        {/* Sidebar — desktop only, sticky (mobile uses the drawer above) */}
         <div className="hidden md:block w-72 shrink-0 sticky top-8">
           <MembersSidebar projectId={projectId} isOwner={isOwner} />
         </div>
       </div>
 
-      {/* Modals */}
       {canEdit && (
         <CreateTrackDialog
           projectId={projectId}

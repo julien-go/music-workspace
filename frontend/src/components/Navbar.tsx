@@ -28,8 +28,7 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <>
-      {/* WCAG 2.4.1 Bypass Blocks — first focusable element in the DOM, hidden
-          until focused, lets keyboard users jump past the nav to the content. */}
+      {/* WCAG 2.4.1 skip link — must stay the first focusable element in the DOM. */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-foreground focus:outline focus:outline-2 focus:outline-ring"
@@ -45,10 +44,8 @@ export function Navbar({
       >
         {brand}
 
-        {/* Desktop nav — hidden below 768px */}
         <nav className="hidden md:flex items-center gap-4">{desktopNav}</nav>
 
-        {/* Mobile nav — hamburger + drawer, hidden at ≥ 768px */}
         <Sheet>
           <SheetTrigger asChild>
             <Button

@@ -47,7 +47,11 @@ public class TrackVersionService {
         }
 
         int nextVersion = trackVersionRepository.findMaxVersionNumberByTrackId(trackId) + 1;
-        String audioUrl = uploadAudio(file, projectId, trackId, nextVersion);
+        String folder = String.format(audioFolder, projectId, trackId);
+        // Unique per attempt: with a shared "v{n}" id, the loser of the version
+        // race would delete the asset the winner just stored.
+        String publicId = "v" + nextVersion + "-" + UUID.randomUUID().toString().substring(0, 8);
+        String audioUrl = cloudinaryService.upload(file, folder, publicId, "video", false);
 
         TrackVersion version = TrackVersion.builder()
                 .track(track)
@@ -61,9 +65,8 @@ public class TrackVersionService {
         try {
             return trackVersionMapper.toResponse(trackVersionRepository.saveAndFlush(version));
         } catch (DataIntegrityViolationException e) {
-            // Two concurrent uploads raced to the same version slot — clean up the orphaned file.
-            cloudinaryService.delete(
-                    String.format(audioFolder, projectId, trackId) + "/v" + nextVersion, "video");
+            // Two concurrent uploads raced to the same version slot — clean up our own file.
+            cloudinaryService.delete(folder + "/" + publicId, "video");
             throw new VersionConflictException("Version number conflict, please retry");
         }
     }
@@ -92,7 +95,7 @@ public class TrackVersionService {
     @Transactional(readOnly = true)
     public List<TrackVersionResponse> findAll(UUID projectId, UUID trackId, String email) {
         permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
-        return trackVersionRepository.findByTrackId(trackId).stream()
+        return trackVersionRepository.findByTrackIdOrderByVersionNumberDesc(trackId).stream()
                 .map(trackVersionMapper::toResponse)
                 .toList();
     }
@@ -120,9 +123,4 @@ public class TrackVersionService {
         }
     }
 
-    private String uploadAudio(MultipartFile file, UUID projectId, UUID trackId, int versionNumber) {
-        return cloudinaryService.upload(
-                file, String.format(audioFolder, projectId, trackId),
-                "v" + versionNumber, "video", false);
-    }
 }
