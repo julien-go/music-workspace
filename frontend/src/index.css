@@ -5,11 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Typography */
   --font-heading: "Outfit", sans-serif;
   --font-sans: "DM Sans", sans-serif;
 
-  /* Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -30,27 +28,21 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Custom design tokens */
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --color-accent-hover: var(--accent-hover);
   --color-border-hover: var(--border-hover);
 
-  /* Shadows — on dark surfaces depth needs shadow + border together; these
-     are tuned for near-black backgrounds (higher alpha than Tailwind's
-     defaults, which disappear on dark). */
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 2px 8px -1px rgb(0 0 0 / 0.35);
   --shadow-overlay:
     0 16px 40px -8px rgb(0 0 0 / 0.6), 0 4px 12px -2px rgb(0 0 0 / 0.45);
 
-  /* Radius */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-card: var(--radius-card);
   --radius-xl: calc(var(--radius) * 1.4);
 
-  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -62,59 +54,35 @@
 }
 
 :root {
-  /* === Design tokens ===
-     "Monochrome" — near-monochrome cool darks with hairline borders, white
-     primary buttons (dark label) and a quiet periwinkle accent reserved for
-     links, icons and focus. Amber/emerald/red stay reserved for track & task
-     status colors. Every ratio below is computed for these surfaces
-     (WCAG 1.4.3 threshold: 4.5:1 for text). */
-  /* Native widgets (scrollbars, form controls, <select> popups) follow the
-     dark theme instead of rendering white. */
+  /* Native widgets (scrollbars, form controls, <select> popups) follow the dark theme instead of rendering white. */
   color-scheme: dark;
   --background: #101013;
   --surface: #17181d;
   --surface-elevated: #23242b;
-  /* Visible hairline — the surface steps alone were too subtle, so borders
-     carry part of the separation between panels. */
   --border: #34353e;
-  /* Hover state for interactive cards — one step lighter than --border so
-     the affordance reads without relying on the background shift alone. */
   --border-hover: #42434e;
   --foreground: #f7f8f8;
-  /* WCAG 1.4.3: 6.5:1 on surface-elevated, 7.5:1 on surface. */
   --muted-foreground: #a6a8b3;
-  /* periwinkle — 6.2:1 on surface-elevated, 7.7:1 on background. */
   --accent: #949dfa;
   --accent-hover: #aeb5ff;
-  /* WCAG 1.4.3: red-400 clears 4.5:1 on every surface (6.9:1 on background,
-     5.6:1 on surface-elevated). A single token can't also carry white button
-     text, so the destructive button uses a dark foreground. */
   --destructive: #f87171;
   --destructive-foreground: #101013;
   --radius: 8px;
   --radius-card: 14px;
 
-  /* === shadcn mappings === */
-  /* Cards sit a full surface step above the background so they read as
-     distinct panels. */
   --card: #17181d;
   --card-foreground: #f7f8f8;
   --popover: #1e1f26;
   --popover-foreground: #f7f8f8;
-  /* Primary CTAs are white-on-black (Vercel/Linear style): the accent color
-     is kept for links and focus, never for solid buttons. Pure white fill,
-     near-black label — ~20:1. */
   --primary: #ffffff;
   --primary-foreground: #09090b;
   --secondary: var(--surface-elevated);
   --secondary-foreground: #f7f8f8;
   --muted: var(--surface-elevated);
-  /* Dark text for bg-accent hover fills — 7.7:1 on the periwinkle accent. */
   --accent-foreground: #101013;
   --input: #26272f;
   --ring: #949dfa;
 
-  /* Sidebar */
   --sidebar: var(--surface);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--accent);
@@ -129,10 +97,6 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* WCAG 2.4.7: guarantee a visible focus indicator on every interactive
-     element (links, buttons, inputs, custom role="button" elements). The ring
-     colour (#949dfa) is 7.7:1 on the base background, well above the 3:1 for
-     non-text UI indicators. */
   *:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -140,7 +104,6 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
-  /* Periwinkle selection — dark text on the accent is 7.7:1. */
   ::selection {
     background: var(--accent);
     color: #101013;
