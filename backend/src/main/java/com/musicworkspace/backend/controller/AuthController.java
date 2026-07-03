@@ -1,12 +1,14 @@
 package com.musicworkspace.backend.controller;
 
-import com.musicworkspace.backend.config.CookieService;
+import com.musicworkspace.backend.config.AuthRateLimiter;
+import com.musicworkspace.backend.security.CookieService;
 import com.musicworkspace.backend.dto.AuthResponse;
 import com.musicworkspace.backend.dto.LoginRequest;
 import com.musicworkspace.backend.dto.RegisterRequest;
 import com.musicworkspace.backend.dto.UserResponse;
 import com.musicworkspace.backend.service.AuthService;
 import com.musicworkspace.backend.service.AuthService.AuthResult;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -26,9 +28,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final CookieService cookieService;
+    private final AuthRateLimiter authRateLimiter;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                 HttpServletRequest httpRequest) {
+        authRateLimiter.checkRegister(httpRequest);
         AuthResult result = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, cookieService.buildJwtCookie(result.token()).toString())
@@ -36,7 +41,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest) {
+        authRateLimiter.checkLogin(httpRequest);
         AuthResult result = authService.login(request);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookieService.buildJwtCookie(result.token()).toString())

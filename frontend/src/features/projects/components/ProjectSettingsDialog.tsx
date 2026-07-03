@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUpdateProject } from "../hooks/useUpdateProject";
 import { useDeleteProject } from "../hooks/useDeleteProject";
 import { useUploadCover } from "../hooks/useUploadCover";
+import { describeError } from "@/lib/api";
 import { CoverCropDialog } from "./CoverCropDialog";
 import type { ProjectResponse, UpdateProjectRequest } from "../types";
 import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
@@ -48,7 +49,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
   const onEditSubmit = (data: UpdateProjectRequest) => {
     setEditError(null);
     updateProject.mutate(data, {
-      onError: (err) => setEditError(err instanceof Error ? err.message : "Une erreur est survenue"),
+      onError: (err) => setEditError(describeError(err, "Impossible de sauvegarder. Réessaie.")),
     });
   };
 
@@ -60,7 +61,7 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
         navigate({ to: "/dashboard" });
       },
       onError: (err) => {
-        setDeleteError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setDeleteError(describeError(err, "Impossible de supprimer le projet. Réessaie."));
         setConfirming(false);
       },
     });
@@ -74,7 +75,6 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
           <DialogTitle className="text-xl font-heading font-bold">Paramètres du projet</DialogTitle>
         </DialogHeader>
 
-        {/* Informations */}
         <form onSubmit={handleSubmit(onEditSubmit)} className="flex flex-col gap-4 mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informations</p>
           <div className="flex flex-col gap-1.5">
@@ -107,7 +107,6 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
 
         <Separator className="mb-6" />
 
-        {/* Cover image */}
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Image de couverture</p>
           <div className="flex items-center gap-4">
@@ -149,7 +148,6 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
 
         <Separator className="mb-6" />
 
-        {/* Danger zone */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Zone dangereuse</p>
           <p className="text-xs text-muted-foreground mb-4">

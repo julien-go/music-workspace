@@ -23,7 +23,9 @@ export function register(data: RegisterRequest) {
 }
 
 export function fetchMe() {
-  return fetchApi<UserResponse>("/auth/me");
+  // Session rehydration is a silent probe: an anonymous visitor on a public
+  // page must not be bounced to /login — route guards handle protected pages.
+  return fetchApi<UserResponse>("/auth/me", { skipAuthRedirect: true });
 }
 
 export function logout() {

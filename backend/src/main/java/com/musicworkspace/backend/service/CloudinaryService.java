@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.musicworkspace.backend.exception.CloudinaryUploadException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,13 @@ public class CloudinaryService {
 
     public String upload(MultipartFile file, String folder, String publicId,
                          String resourceType, boolean overwrite) {
-        try {
+        // uploadLarge + InputStream: heap usage stays bounded by the 20MB
+        // chunk size instead of the full file (audio uploads go up to 70MB).
+        // The SDK does not close the stream — try-with-resources does.
+        try (InputStream input = file.getInputStream()) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> result = cloudinary.uploader().upload(
-                    file.getBytes(),
+            Map<String, Object> result = cloudinary.uploader().uploadLarge(
+                    input,
                     ObjectUtils.asMap(
                             "folder", folder,
                             "public_id", publicId,
@@ -39,6 +43,20 @@ public class CloudinaryService {
             cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
         } catch (IOException ignored) {
             // best-effort cleanup — failure here does not affect the caller's error path
+        }
+    }
+
+    /**
+     * Best-effort: a failure leaves orphaned assets in Cloudinary but must
+     * never fail the project deletion itself.
+     */
+    public void deleteFolder(String folder) {
+        try {
+            cloudinary.api().deleteResourcesByPrefix(folder + "/", ObjectUtils.asMap("resource_type", "image"));
+            cloudinary.api().deleteResourcesByPrefix(folder + "/", ObjectUtils.asMap("resource_type", "video"));
+            cloudinary.api().deleteFolder(folder, ObjectUtils.emptyMap());
+        } catch (Exception ignored) {
+            // best-effort cleanup
         }
     }
 }

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useInviteMember } from "../hooks/useInviteMember";
+import { ApiException, describeError } from "@/lib/api";
 import type { InviteMemberRequest, ProjectRole } from "../types";
 import { dialogInputClass } from "./dialogStyles";
 
@@ -33,7 +34,13 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
         onClose();
       },
       onError: (err) => {
-        setServerError(err instanceof Error ? err.message : "Utilisateur introuvable ou déjà membre");
+        if (err instanceof ApiException && err.apiError.status === 404) {
+          setServerError("Aucun utilisateur avec cet email.");
+        } else if (err instanceof ApiException && err.apiError.status === 409) {
+          setServerError("Cet utilisateur est déjà membre du projet.");
+        } else {
+          setServerError(describeError(err, "Impossible d'envoyer l'invitation. Réessaie."));
+        }
       },
     });
   };

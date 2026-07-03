@@ -13,6 +13,9 @@ export default defineConfig({
     },
   },
   test: {
+    // globals is required for @testing-library/react's automatic DOM cleanup
+    // between tests (it registers itself on the global afterEach).
+    globals: true,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
   },

@@ -1,6 +1,5 @@
-package com.musicworkspace.backend.config;
+package com.musicworkspace.backend.security;
 
-import com.musicworkspace.backend.security.JwtService;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +17,13 @@ public class CookieService {
     @Value("${app.cookie.secure}")
     private boolean secure;
 
+    // Lax everywhere: dev is same-origin via the Vite proxy, prod stays
+    // first-party through the Netlify proxy (see netlify.toml). Switch to None
+    // + Secure only if the frontend ever calls the API cross-site — CSRF then
+    // rests on OriginValidationFilter alone.
+    @Value("${app.cookie.same-site:Lax}")
+    private String sameSite;
+
     public ResponseCookie buildJwtCookie(String token) {
         return baseCookie(token)
                 .maxAge(Duration.ofMillis(jwtService.getExpirationMs()))
@@ -34,7 +40,7 @@ public class CookieService {
         return ResponseCookie.from(JWT_COOKIE, value)
                 .httpOnly(true)
                 .secure(secure)
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .path("/");
     }
 }

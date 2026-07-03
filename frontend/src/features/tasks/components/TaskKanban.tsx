@@ -15,6 +15,8 @@ import { useTasks } from "../hooks/useTasks";
 import { useCreateTask } from "../hooks/useCreateTask";
 import { useUpdateTask } from "../hooks/useUpdateTask";
 import { useDeleteTask } from "../hooks/useDeleteTask";
+import { toastError } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 import type { TaskResponse, TaskStatus } from "../types";
 
 interface Props {
@@ -28,10 +30,8 @@ const columns: { status: TaskStatus; label: string; titleClass: string }[] = [
   { status: "DONE", label: "Terminé", titleClass: "text-emerald-500" },
 ];
 
-// Stops an interactive control (delete button, status select) from starting a
-// card drag. Must cover every activator event of the active sensors —
-// MouseSensor listens on mousedown, TouchSensor on touchstart — not just
-// pointerdown, otherwise the guard is a no-op.
+// Keeps interactive controls from starting a card drag. Must cover every
+// sensor activator (mousedown, touchstart), not just pointerdown.
 const stopDnd = {
   onPointerDown: (e: React.SyntheticEvent) => e.stopPropagation(),
   onMouseDown: (e: React.SyntheticEvent) => e.stopPropagation(),
@@ -109,34 +109,36 @@ function DraggableCard({
         )}
       </div>
 
-      {/* Mobile-only status control — reliable alternative to cross-column drag,
-          which is impractical when columns are stacked vertically. */}
+      {/* Only keyboard-operable way to move a task (drag is pointer-based) —
+          sr-only on desktop but kept in the tab order, revealed on focus. */}
       {canEdit && (
-        <div className="md:hidden relative mt-2.5">
-          <select
-            value={task.status}
-            onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-            {...stopDnd}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Changer le statut de : ${task.title}`}
-            className={`w-full appearance-none cursor-pointer rounded-md border border-border bg-surface py-2 pl-3 pr-9 text-sm font-medium transition-colors hover:border-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent ${
-              columns.find((c) => c.status === task.status)?.titleClass ?? ""
-            }`}
-          >
-            {columns.map((c) => (
-              <option
-                key={c.status}
-                value={c.status}
-                className="bg-surface text-foreground"
-              >
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            aria-hidden="true"
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-          />
+        <div className="mt-2.5 md:sr-only md:focus-within:not-sr-only">
+          <div className="relative">
+            <select
+              value={task.status}
+              onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
+              {...stopDnd}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Changer le statut de : ${task.title}`}
+              className={`w-full appearance-none cursor-pointer rounded-md border border-border bg-surface py-2 pl-3 pr-9 text-sm font-medium transition-colors hover:border-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent ${
+                columns.find((c) => c.status === task.status)?.titleClass ?? ""
+              }`}
+            >
+              {columns.map((c) => (
+                <option
+                  key={c.status}
+                  value={c.status}
+                  className="bg-surface text-foreground"
+                >
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            />
+          </div>
         </div>
       )}
     </div>
@@ -171,7 +173,14 @@ function DroppableColumn({
     if (!newTitle.trim()) return;
     createTask.mutate(
       { title: newTitle.trim() },
-      { onSuccess: () => setNewTitle("") },
+      {
+        onSuccess: () => setNewTitle(""),
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de créer la tâche."));
+          }
+        },
+      },
     );
   };
 
@@ -222,13 +231,35 @@ function DroppableColumn({
 }
 
 export function TaskKanban({ projectId, canEdit }: Props) {
-  const { data: tasks = [] } = useTasks(projectId);
+  const { data: tasks = [], isLoading, isError } = useTasks(projectId);
   const updateTask = useUpdateTask(projectId);
   const deleteTask = useDeleteTask(projectId);
 
-  // Separate sensors per input type: the whole card is the drag handle, so on touch
-  // we require a short press-and-hold (delay) to start a drag — a quick swipe scrolls
-  // the page instead. The tolerance lets the finger jitter slightly during the hold.
+  const mutateStatus = (taskId: string, status: TaskStatus) => {
+    updateTask.mutate(
+      { taskId, data: { status } },
+      {
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de changer le statut de la tâche."));
+          }
+        },
+      },
+    );
+  };
+
+  const handleDelete = (taskId: string) => {
+    deleteTask.mutate(taskId, {
+      onError: (err) => {
+        if (!isUnauthorizedError(err)) {
+          toastError(describeError(err, "Impossible de supprimer la tâche."));
+        }
+      },
+    });
+  };
+
+  // The whole card is the drag handle: on touch a press-and-hold starts the
+  // drag so a quick swipe still scrolls the page.
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {
@@ -242,17 +273,33 @@ export function TaskKanban({ projectId, canEdit }: Props) {
     const newStatus = over.id as TaskStatus;
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === newStatus) return;
-    updateTask.mutate({ taskId, data: { status: newStatus } });
+    mutateStatus(taskId, newStatus);
   };
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === status) return;
-    updateTask.mutate({ taskId, data: { status } });
+    mutateStatus(taskId, status);
   };
 
   const byStatus = (status: TaskStatus) =>
     tasks.filter((t) => t.status === status);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4 md:flex-row animate-pulse">
+        {columns.map(({ status }) => (
+          <div key={status} className="w-full md:flex-1 h-56 bg-surface rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-destructive">Impossible de charger les tâches.</p>
+    );
+  }
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -266,7 +313,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
             tasks={byStatus(status)}
             canEdit={canEdit}
             projectId={projectId}
-            onDelete={(taskId) => deleteTask.mutate(taskId)}
+            onDelete={handleDelete}
             onStatusChange={handleStatusChange}
           />
         ))}

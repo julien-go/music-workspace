@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@tanstack/react-router";
 import { useLogin } from "./hooks/useLogin";
 import { loginSchema, type LoginFormData } from "./validation";
-import { ApiException } from "@/lib/api";
+import { ApiException, describeError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 const inputClass =
@@ -21,10 +21,11 @@ export default function LoginPage() {
     login.mutate(data);
   }
 
-  const serverError =
-    login.error instanceof ApiException
-      ? login.error.apiError.message
-      : login.error?.message;
+  const serverError = login.error
+    ? login.error instanceof ApiException && login.error.apiError.status === 401
+      ? "Email ou mot de passe incorrect."
+      : describeError(login.error, "Impossible de se connecter. Réessaie.")
+    : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

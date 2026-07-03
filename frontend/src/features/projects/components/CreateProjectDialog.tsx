@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateProject } from "../hooks/useCreateProject";
+import { describeError } from "@/lib/api";
 import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
 
 const schema = z.object({
@@ -92,7 +93,9 @@ export function CreateProjectDialog({ open, onClose }: Props) {
           </div>
 
           {create.error && (
-            <p role="alert" className="text-sm text-destructive">{create.error.message}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {describeError(create.error, "Impossible de créer le projet. Réessaie.")}
+            </p>
           )}
 
           <div className="flex justify-end gap-2 pt-1">

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface TrackVersionRepository extends JpaRepository<TrackVersion, UUID> {
 
-    List<TrackVersion> findByTrackId(UUID trackId);
+    List<TrackVersion> findByTrackIdOrderByVersionNumberDesc(UUID trackId);
 
     Optional<TrackVersion> findByIdAndTrackId(UUID id, UUID trackId);
 

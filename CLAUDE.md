@@ -144,7 +144,8 @@ no useEffect for data fetching or derived state — use TanStack Query and useMe
 Apply optimistic updates on lightweight actions only:
 
 - Task status change
-- Track archive toggle
+- Track archive / unarchive toggle
+- Track reorder (DnD without optimistic feedback is unusable — rollback on error is implemented)
 
 Do NOT use optimistic updates on: audio upload, project deletion, member management.
 

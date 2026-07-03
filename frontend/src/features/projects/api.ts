@@ -1,4 +1,5 @@
 import { fetchApi } from "@/lib/api";
+import type { CommentResponse } from "@/features/comments/types";
 import type {
   ProjectResponse,
   CreateProjectRequest,
@@ -56,6 +57,23 @@ export function updateMemberRole(projectId: string, userId: string, role: Exclud
 
 export function removeMember(projectId: string, userId: string) {
   return fetchApi<void>(`/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export function getProjectComments(projectId: string) {
+  return fetchApi<CommentResponse[]>(`/projects/${projectId}/comments`);
+}
+
+export function addProjectComment(projectId: string, content: string) {
+  return fetchApi<CommentResponse>(`/projects/${projectId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function deleteProjectComment(projectId: string, commentId: string) {
+  return fetchApi<void>(`/projects/${projectId}/comments/${commentId}`, {
     method: "DELETE",
   });
 }
