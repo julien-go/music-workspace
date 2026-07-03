@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createTrack, createTrackVersion } from "../api";
+import { validateAudioFile } from "../utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
@@ -22,6 +23,7 @@ type FormData = {
 export function CreateTrackDialog({ projectId, open, onClose }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTrackId, setCreatedTrackId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,8 +32,25 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
   const handleClose = () => {
     reset();
     setAudioFile(null);
+    setFileError(null);
     setCreatedTrackId(null);
     onClose();
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setAudioFile(null);
+      return;
+    }
+    const validationError = validateAudioFile(file);
+    if (validationError) {
+      setFileError(validationError);
+      setAudioFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setFileError(null);
+    setAudioFile(file);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -121,8 +140,11 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               type="file"
               accept="audio/*"
               className="sr-only"
-              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
             />
+            {fileError && (
+              <p role="alert" className="text-xs text-destructive">{fileError}</p>
+            )}
             <p className="text-xs text-muted-foreground">Optionnel — une première version sera créée automatiquement.</p>
           </div>
 

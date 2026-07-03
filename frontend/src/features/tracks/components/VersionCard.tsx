@@ -53,11 +53,11 @@ export function VersionCard({
     : null;
   const title = version.label ?? fallbackName;
 
-  const { data: comments = [], isLoading: commentsLoading } = useVersionComments(
-    projectId,
-    trackId,
-    version.id,
-  );
+  const {
+    data: comments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useVersionComments(projectId, trackId, version.id);
   const addComment = useAddVersionComment(projectId, trackId, version.id);
   const deleteComment = useDeleteVersionComment(projectId, trackId, version.id);
 
@@ -175,6 +175,7 @@ export function VersionCard({
             <CommentThread
               comments={comments}
               isLoading={commentsLoading}
+              loadError={commentsError}
               currentUserId={currentUser?.id}
               isOwner={isOwner}
               onAdd={(content) => addComment.mutateAsync(content)}

@@ -5,6 +5,8 @@ import type { CommentResponse } from "@/features/comments/types";
 interface Props {
   comments: CommentResponse[];
   isLoading: boolean;
+  /** True when loading the comment list itself failed. */
+  loadError?: boolean;
   currentUserId?: string;
   isOwner: boolean;
   onAdd: (content: string) => Promise<unknown>;
@@ -17,6 +19,7 @@ interface Props {
 export function CommentThread({
   comments,
   isLoading,
+  loadError,
   currentUserId,
   isOwner,
   onAdd,
@@ -51,11 +54,17 @@ export function CommentThread({
         </div>
       )}
 
-      {!isLoading && comments.length === 0 && (
+      {!isLoading && loadError && (
+        <p className="text-sm text-destructive">
+          Impossible de charger les commentaires.
+        </p>
+      )}
+
+      {!isLoading && !loadError && comments.length === 0 && (
         <p className="text-sm text-muted-foreground italic">Aucun commentaire.</p>
       )}
 
-      {!isLoading && comments.length > 0 && (
+      {!isLoading && !loadError && comments.length > 0 && (
         <div className="space-y-3">
           {comments.map((comment) => {
             const isAuthor = currentUserId != null && currentUserId === comment.author.id;

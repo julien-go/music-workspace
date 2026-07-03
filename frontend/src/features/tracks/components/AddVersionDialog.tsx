@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
+import { validateAudioFile } from "../utils";
 import { dialogInputClass, dialogTextareaClass } from "@/features/projects/components/dialogStyles";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
@@ -28,6 +29,22 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
     setError(null);
     createVersion.reset();
     onClose();
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setAudioFile(null);
+      return;
+    }
+    const validationError = validateAudioFile(file);
+    if (validationError) {
+      setError(validationError);
+      setAudioFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setError(null);
+    setAudioFile(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,7 +112,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
               type="file"
               accept="audio/*"
               className="sr-only"
-              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
             />
           </div>
 

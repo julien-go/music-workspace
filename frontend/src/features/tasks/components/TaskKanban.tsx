@@ -15,6 +15,8 @@ import { useTasks } from "../hooks/useTasks";
 import { useCreateTask } from "../hooks/useCreateTask";
 import { useUpdateTask } from "../hooks/useUpdateTask";
 import { useDeleteTask } from "../hooks/useDeleteTask";
+import { toastError } from "@/lib/toast";
+import { isUnauthorizedError, describeError } from "@/lib/api";
 import type { TaskResponse, TaskStatus } from "../types";
 
 interface Props {
@@ -109,10 +111,11 @@ function DraggableCard({
         )}
       </div>
 
-      {/* Mobile-only status control — reliable alternative to cross-column drag,
-          which is impractical when columns are stacked vertically. */}
+      {/* Status control — the only keyboard-operable way to move a task (the
+          drag sensors are pointer-based), and the reliable alternative to
+          cross-column drag on mobile where columns stack vertically. */}
       {canEdit && (
-        <div className="md:hidden relative mt-2.5">
+        <div className="relative mt-2.5">
           <select
             value={task.status}
             onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
@@ -171,7 +174,14 @@ function DroppableColumn({
     if (!newTitle.trim()) return;
     createTask.mutate(
       { title: newTitle.trim() },
-      { onSuccess: () => setNewTitle("") },
+      {
+        onSuccess: () => setNewTitle(""),
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de créer la tâche."));
+          }
+        },
+      },
     );
   };
 
@@ -222,9 +232,32 @@ function DroppableColumn({
 }
 
 export function TaskKanban({ projectId, canEdit }: Props) {
-  const { data: tasks = [] } = useTasks(projectId);
+  const { data: tasks = [], isLoading, isError } = useTasks(projectId);
   const updateTask = useUpdateTask(projectId);
   const deleteTask = useDeleteTask(projectId);
+
+  const mutateStatus = (taskId: string, status: TaskStatus) => {
+    updateTask.mutate(
+      { taskId, data: { status } },
+      {
+        onError: (err) => {
+          if (!isUnauthorizedError(err)) {
+            toastError(describeError(err, "Impossible de changer le statut de la tâche."));
+          }
+        },
+      },
+    );
+  };
+
+  const handleDelete = (taskId: string) => {
+    deleteTask.mutate(taskId, {
+      onError: (err) => {
+        if (!isUnauthorizedError(err)) {
+          toastError(describeError(err, "Impossible de supprimer la tâche."));
+        }
+      },
+    });
+  };
 
   // Separate sensors per input type: the whole card is the drag handle, so on touch
   // we require a short press-and-hold (delay) to start a drag — a quick swipe scrolls
@@ -242,17 +275,33 @@ export function TaskKanban({ projectId, canEdit }: Props) {
     const newStatus = over.id as TaskStatus;
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === newStatus) return;
-    updateTask.mutate({ taskId, data: { status: newStatus } });
+    mutateStatus(taskId, newStatus);
   };
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === status) return;
-    updateTask.mutate({ taskId, data: { status } });
+    mutateStatus(taskId, status);
   };
 
   const byStatus = (status: TaskStatus) =>
     tasks.filter((t) => t.status === status);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4 md:flex-row animate-pulse">
+        {columns.map(({ status }) => (
+          <div key={status} className="w-full md:flex-1 h-56 bg-surface rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-destructive">Impossible de charger les tâches.</p>
+    );
+  }
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -266,7 +315,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
             tasks={byStatus(status)}
             canEdit={canEdit}
             projectId={projectId}
-            onDelete={(taskId) => deleteTask.mutate(taskId)}
+            onDelete={handleDelete}
             onStatusChange={handleStatusChange}
           />
         ))}

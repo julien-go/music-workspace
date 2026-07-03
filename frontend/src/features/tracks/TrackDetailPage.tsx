@@ -62,12 +62,16 @@ export default function TrackDetailPage() {
     error: trackErrorObj,
     refetch: refetchTrack,
   } = useTrack(projectId, trackId);
-  const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(
-    projectId,
-    trackId,
-  );
-  const { data: trackComments = [], isLoading: commentsLoading } =
-    useTrackComments(projectId, trackId);
+  const {
+    data: versions = [],
+    isLoading: versionsLoading,
+    isError: versionsError,
+  } = useTrackVersions(projectId, trackId);
+  const {
+    data: trackComments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useTrackComments(projectId, trackId);
 
   const updateTrack = useUpdateTrack(projectId, trackId);
   const addTrackComment = useAddTrackComment(projectId, trackId);
@@ -101,9 +105,12 @@ export default function TrackDetailPage() {
 
   if (!project || !track) return null;
 
-  const canEdit =
+  const hasWriteRole =
     project.currentUserRole === "OWNER" ||
     project.currentUserRole === "COLLABORATOR";
+  // Everything on an archived track is read-only server-side (409) — don't
+  // show edit affordances that can only fail.
+  const canEdit = hasWriteRole && !track.archived;
   const isOwner = project.currentUserRole === "OWNER";
 
   const handleDeleteTrackComment = (commentId: string) => {
@@ -281,7 +288,13 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            {!versionsLoading && versions.length === 0 && (
+            {!versionsLoading && versionsError && (
+              <p className="text-sm text-destructive">
+                Impossible de charger les versions.
+              </p>
+            )}
+
+            {!versionsLoading && !versionsError && versions.length === 0 && (
               <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
                 <p className="text-base">Aucune version pour le moment.</p>
                 {canEdit && (
@@ -292,7 +305,7 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            {!versionsLoading && sortedVersions.length > 0 && (
+            {!versionsLoading && !versionsError && sortedVersions.length > 0 && (
               <div className="flex flex-col gap-3">
                 {sortedVersions.map((version) => (
                   <VersionCard
@@ -320,6 +333,7 @@ export default function TrackDetailPage() {
             <CommentThread
               comments={trackComments}
               isLoading={commentsLoading}
+              loadError={commentsError}
               currentUserId={currentUser?.id}
               isOwner={isOwner}
               onAdd={(content) => addTrackComment.mutateAsync(content)}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,9 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const unarchiveTrack = useUnarchiveTrack(projectId);
   const updateTrack = useUpdateTrack(projectId, track.id);
 
+  // Editing an archived track is rejected server-side (409) — hide the affordances.
+  const canEditContent = canEdit && !track.archived;
+
   const handleNavigate = () => {
     navigate({
       to: "/projects/$projectId/tracks/$trackId",
@@ -105,7 +108,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <InlineEdit
           value={track.name}
-          onSave={canEdit ? (name) => updateTrack.mutateAsync({ name }) : undefined}
+          onSave={canEditContent ? (name) => updateTrack.mutateAsync({ name }) : undefined}
           ariaLabel="Nom de la track"
           className="font-semibold text-foreground text-lg leading-tight"
         />
@@ -122,19 +125,29 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
           >
             {statusLabel[track.status]}
           </Badge>
-          <ChevronRight className="w-5 h-5 text-muted-foreground/40" aria-hidden="true" />
+          {/* The card's onClick div is invisible to keyboards — this link is the
+              focusable way in. */}
+          <Link
+            to="/projects/$projectId/tracks/$trackId"
+            params={{ projectId, trackId: track.id }}
+            aria-label={`Ouvrir ${track.name}`}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded text-muted-foreground/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+          >
+            <ChevronRight className="w-5 h-5" aria-hidden="true" />
+          </Link>
         </div>
       </div>
 
       <div className="mb-3" onClick={(e) => e.stopPropagation()}>
         <InlineEdit
           value={track.description ?? ""}
-          onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
+          onSave={canEditContent ? (description) => updateTrack.mutateAsync({ description }) : undefined}
           multiline
           ariaLabel="Description de la track"
           className="text-base text-muted-foreground"
           displayClassName="line-clamp-2"
-          emptyLabel={canEdit ? "Ajouter une description" : undefined}
+          emptyLabel={canEditContent ? "Ajouter une description" : undefined}
         />
       </div>
 
@@ -154,7 +167,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       )}
 
       <div className="flex flex-col items-start gap-2 mt-1 md:flex-row md:items-center">
-        {track.versionCount === 0 && canEdit ? (
+        {track.versionCount === 0 && canEditContent ? (
           <Button
             variant="ghost"
             size="sm"
