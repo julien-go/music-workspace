@@ -91,7 +91,7 @@ export function VersionCard({
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-5">
+    <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
       <h3 className="sr-only">
         Version {version.versionNumber} — {trackName}
       </h3>

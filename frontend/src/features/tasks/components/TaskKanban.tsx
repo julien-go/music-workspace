@@ -25,7 +25,7 @@ interface Props {
 const columns: { status: TaskStatus; label: string; titleClass: string }[] = [
   { status: "TODO", label: "À faire", titleClass: "text-muted-foreground" },
   { status: "DOING", label: "En cours", titleClass: "text-accent" },
-  { status: "DONE", label: "Terminé", titleClass: "text-emerald-500" },
+  { status: "DONE", label: "Terminé", titleClass: "text-emerald-400" },
 ];
 
 // Stops an interactive control (delete button, status select) from starting a

@@ -47,7 +47,7 @@ export function ProjectCard({ project }: { project: ProjectResponse }) {
       to="/projects/$projectId"
       params={{ projectId: project.id }}
       aria-label={`Ouvrir le projet ${project.name}, par ${project.owner.username}, rôle : ${ROLE_LABEL[project.currentUserRole]}`}
-      className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card hover:bg-surface-elevated transition-colors duration-150 cursor-pointer"
+      className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card shadow-card hover:bg-surface-elevated hover:border-border-hover transition-colors duration-150 cursor-pointer"
     >
       <CoverAvatar name={project.name} coverUrl={project.coverUrl} />
 

@@ -34,6 +34,14 @@
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --color-accent-hover: var(--accent-hover);
+  --color-border-hover: var(--border-hover);
+
+  /* Shadows — on dark surfaces depth needs shadow + border together; these
+     are tuned for near-black backgrounds (higher alpha than Tailwind's
+     defaults, which disappear on dark). */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 2px 8px -1px rgb(0 0 0 / 0.35);
+  --shadow-overlay:
+    0 16px 40px -8px rgb(0 0 0 / 0.6), 0 4px 12px -2px rgb(0 0 0 / 0.45);
 
   /* Radius */
   --radius-sm: calc(var(--radius) * 0.6);
@@ -54,42 +62,57 @@
 }
 
 :root {
-  /* === Design tokens === */
-  --background: #0f0f0f;
-  --surface: #1c1c1c;
-  --surface-elevated: #282828;
-  --border: #3a3a3a;
-  --foreground: #f5f5f5;
-  /* WCAG 1.4.3: #888 failed 4.5:1 on surface-elevated (4.16). #9a9a9a clears
-     4.5:1 on every dark surface (≥5.24 on surface-elevated, 6.8 on background). */
-  --muted-foreground: #9a9a9a;
-  --accent: #e8642a;
-  --accent-hover: #f07340;
-  /* WCAG 1.4.3: text-destructive (#dc2626) was only 3.97:1 on the dark
-     background. #f87171 (red-400) clears 4.5:1 on every dark surface (6.96 on
-     background, 5.35 on surface-elevated). A single token can't also carry white
-     button text, so the destructive button now uses a dark foreground below. */
+  /* === Design tokens ===
+     "Monochrome" — near-monochrome cool darks with hairline borders, white
+     primary buttons (dark label) and a quiet periwinkle accent reserved for
+     links, icons and focus. Amber/emerald/red stay reserved for track & task
+     status colors. Every ratio below is computed for these surfaces
+     (WCAG 1.4.3 threshold: 4.5:1 for text). */
+  /* Native widgets (scrollbars, form controls, <select> popups) follow the
+     dark theme instead of rendering white. */
+  color-scheme: dark;
+  --background: #101013;
+  --surface: #17181d;
+  --surface-elevated: #23242b;
+  /* Visible hairline — the surface steps alone were too subtle, so borders
+     carry part of the separation between panels. */
+  --border: #34353e;
+  /* Hover state for interactive cards — one step lighter than --border so
+     the affordance reads without relying on the background shift alone. */
+  --border-hover: #42434e;
+  --foreground: #f7f8f8;
+  /* WCAG 1.4.3: 6.5:1 on surface-elevated, 7.5:1 on surface. */
+  --muted-foreground: #a6a8b3;
+  /* periwinkle — 6.2:1 on surface-elevated, 7.7:1 on background. */
+  --accent: #949dfa;
+  --accent-hover: #aeb5ff;
+  /* WCAG 1.4.3: red-400 clears 4.5:1 on every surface (6.9:1 on background,
+     5.6:1 on surface-elevated). A single token can't also carry white button
+     text, so the destructive button uses a dark foreground. */
   --destructive: #f87171;
-  --destructive-foreground: #0f0f0f;
-  --radius: 6px;
-  --radius-card: 10px;
+  --destructive-foreground: #101013;
+  --radius: 8px;
+  --radius-card: 14px;
 
   /* === shadcn mappings === */
-  --card: #111111;
-  --card-foreground: #f5f5f5;
-  --popover: #1a1a1a;
-  --popover-foreground: #f5f5f5;
-  --primary: #e8642a;
-  /* WCAG 1.4.3: white on the orange accent is only 3.34:1 (fails 4.5 for the
-     button label). A near-black label on the same accent is 5.74:1. The accent
-     stays vivid; only the label color changes. */
-  --primary-foreground: #0f0f0f;
+  /* Cards sit a full surface step above the background so they read as
+     distinct panels. */
+  --card: #17181d;
+  --card-foreground: #f7f8f8;
+  --popover: #1e1f26;
+  --popover-foreground: #f7f8f8;
+  /* Primary CTAs are white-on-black (Vercel/Linear style): the accent color
+     is kept for links and focus, never for solid buttons. Pure white fill,
+     near-black label — ~20:1. */
+  --primary: #ffffff;
+  --primary-foreground: #09090b;
   --secondary: var(--surface-elevated);
-  --secondary-foreground: #f5f5f5;
+  --secondary-foreground: #f7f8f8;
   --muted: var(--surface-elevated);
-  --accent-foreground: #f5f5f5;
-  --input: #2a2a2a;
-  --ring: #e8642a;
+  /* Dark text for bg-accent hover fills — 7.7:1 on the periwinkle accent. */
+  --accent-foreground: #101013;
+  --input: #26272f;
+  --ring: #949dfa;
 
   /* Sidebar */
   --sidebar: var(--surface);
@@ -108,7 +131,7 @@
   }
   /* WCAG 2.4.7: guarantee a visible focus indicator on every interactive
      element (links, buttons, inputs, custom role="button" elements). The ring
-     colour (#e8642a) is 5.74:1 on the base background, well above the 3:1 for
+     colour (#949dfa) is 7.7:1 on the base background, well above the 3:1 for
      non-text UI indicators. */
   *:focus-visible {
     outline: 2px solid var(--ring);
@@ -116,6 +139,11 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+  /* Periwinkle selection — dark text on the accent is 7.7:1. */
+  ::selection {
+    background: var(--accent);
+    color: #101013;
   }
   h1,
   h2,

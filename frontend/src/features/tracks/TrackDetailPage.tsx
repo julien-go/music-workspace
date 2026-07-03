@@ -36,9 +36,9 @@ const statusLabel: Record<TrackStatus, string> = {
 };
 
 const statusClass: Record<TrackStatus, string> = {
-  DRAFT: "text-muted-foreground border-border",
-  IN_PROGRESS: "text-amber-400 border-amber-400/40",
-  DONE: "text-emerald-400 border-emerald-400/40",
+  DRAFT: "bg-muted/50 text-muted-foreground border-border",
+  IN_PROGRESS: "bg-amber-400/10 text-amber-400 border-amber-400/25",
+  DONE: "bg-emerald-400/10 text-emerald-400 border-emerald-400/25",
 };
 
 export default function TrackDetailPage() {
@@ -121,7 +121,7 @@ export default function TrackDetailPage() {
       <MembersSidebar projectId={projectId} isOwner={isOwner} />
 
       {/* Track info */}
-      <div className="bg-surface border border-border rounded-lg p-5">
+      <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
         <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
         <Separator className="mb-4" />
         <dl className="space-y-2 text-sm">

@@ -36,7 +36,7 @@ export function Navbar({
       >
         Aller au contenu
       </a>
-      <header className="bg-surface border-b border-border h-20 shrink-0">
+      <header className="bg-surface border-b border-border h-16 shrink-0">
       <div
         className={cn(
           "mx-auto h-full px-4 md:px-6 flex items-center justify-between",

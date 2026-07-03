@@ -1,6 +1,6 @@
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card">
+    <div className="flex items-center gap-4 px-5 py-4 bg-surface border border-border rounded-card shadow-card">
       <div className="w-12 h-12 rounded-md bg-muted shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-3.5 w-40 rounded bg-muted" />

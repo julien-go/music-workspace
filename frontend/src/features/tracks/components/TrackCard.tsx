@@ -30,9 +30,9 @@ const statusLabel: Record<string, string> = {
 };
 
 const statusClass: Record<string, string> = {
-  DRAFT: "text-muted-foreground border-border",
-  IN_PROGRESS: "text-amber-400 border-amber-400/40",
-  DONE: "text-emerald-400 border-emerald-400/40",
+  DRAFT: "bg-muted/50 text-muted-foreground border-border",
+  IN_PROGRESS: "bg-amber-400/10 text-amber-400 border-amber-400/25",
+  DONE: "bg-emerald-400/10 text-emerald-400 border-emerald-400/25",
 };
 
 export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
@@ -99,7 +99,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
 
   return (
     <div
-      className="bg-surface border border-border rounded-lg p-5 cursor-pointer hover:bg-surface-elevated transition-colors"
+      className="bg-surface border border-border rounded-lg p-5 shadow-card cursor-pointer hover:bg-surface-elevated hover:border-border-hover transition-colors"
       onClick={handleNavigate}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
