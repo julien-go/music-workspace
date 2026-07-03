@@ -136,7 +136,7 @@ class ProjectMemberServiceTest {
     void findAll_returnsAllMembersForProjectMember() {
         ProjectMember memberEntry = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(collaborator).role(ProjectRole.COLLABORATOR).build();
 
-        when(permissionService.checkProjectPermission(projectId, MEMBER_EMAIL, ProjectRolecd.VIEWER)).thenReturn(project);
+        when(permissionService.checkProjectPermission(projectId, MEMBER_EMAIL, ProjectRole.VIEWER)).thenReturn(project);
         when(projectMemberRepository.findByProjectId(projectId)).thenReturn(List.of(ownerMember, memberEntry, collabMember));
         when(projectMemberMapper.toResponse(ownerMember)).thenReturn(
                 new ProjectMemberResponse(ownerMember.getId(), new UserSummary(owner.getId(), "owner"),

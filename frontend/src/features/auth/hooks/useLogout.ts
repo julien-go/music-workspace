@@ -13,7 +13,7 @@ export function useLogout() {
     onSuccess: () => {
       clearUser();
       queryClient.clear();
-      navigate({ to: "/login" });
+      navigate({ to: "/" });
     },
   });
 }
