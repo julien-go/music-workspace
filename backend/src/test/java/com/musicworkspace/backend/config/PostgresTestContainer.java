@@ -6,11 +6,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 public abstract class PostgresTestContainer {
 
+    // Singleton container shared across all integration tests, required for Spring context caching
     static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("testdb")
-                    .withUsername("test")
-                    .withPassword("test");
+            new PostgreSQLContainer<>("postgres:16-alpine");
 
     static {
         postgres.start();
@@ -21,6 +19,5 @@ public abstract class PostgresTestContainer {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName);
     }
 }

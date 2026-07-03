@@ -3,8 +3,14 @@ name: Frontend CI
 on:
   pull_request:
     branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
   push:
     branches: [develop, main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
 
 jobs:
   test-build:
@@ -29,7 +35,10 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build

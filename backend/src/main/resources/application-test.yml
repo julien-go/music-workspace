@@ -1,8 +1,13 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: validate
+  flyway:
+    enabled: true
 
-cloudinary:
-  enabled: false
+jwt:
+  secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm
+
+app:
+  cookie:
+    secure: false
