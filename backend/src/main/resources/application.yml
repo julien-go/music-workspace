@@ -12,6 +12,11 @@ spring:
 jwt:
   expiration-ms: ${JWT_EXPIRATION_MS:604800000}
 
+app:
+  cors:
+    # Dev default: the Vite dev server. Overridden per profile — prod requires FRONTEND_URL.
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
+
 cloudinary:
   folder:
     project: music-workspace/projects/%s

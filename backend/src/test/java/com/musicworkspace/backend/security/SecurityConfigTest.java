@@ -26,7 +26,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * default 403 empty body — the frontend redirects to /login on 401 only.
  */
 @WebMvcTest(ProjectController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, RestAuthenticationEntryPoint.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, RestAuthenticationEntryPoint.class,
+        OriginValidationFilter.class})
 class SecurityConfigTest {
 
     @Autowired

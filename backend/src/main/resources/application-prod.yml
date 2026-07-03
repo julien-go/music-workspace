@@ -19,3 +19,12 @@ jwt:
 app:
   cookie:
     secure: true
+    # The browser only ever talks to the Netlify origin — the API is reached
+    # through the Netlify proxy (see netlify.toml) — so the cookie stays
+    # first-party and Lax works everywhere, including Safari. Switch to None
+    # only if the frontend ever calls the Railway domain directly.
+    same-site: Lax
+  cors:
+    # No localhost fallback in prod: an empty value makes CorsConfig fail fast
+    # at startup with an explicit "FRONTEND_URL is not set" error.
+    allowed-origin: ${FRONTEND_URL:}
