@@ -31,13 +31,18 @@ import { toastError } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
 import { useProject } from "./hooks/useProject";
 import { useUpdateProject } from "./hooks/useUpdateProject";
+import { useProjectComments } from "./hooks/useProjectComments";
+import { useAddProjectComment } from "./hooks/useAddProjectComment";
+import { useDeleteProjectComment } from "./hooks/useDeleteProjectComment";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
 import { useArchivedTracks } from "@/features/tracks/hooks/useArchivedTracks";
 import { useReorderTracks } from "@/features/tracks/hooks/useReorderTracks";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { CreateTrackDialog } from "@/features/tracks/components/CreateTrackDialog";
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { MembersSidebar } from "./components/MembersSidebar";
+import { useAuthStore } from "@/store/authStore";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
 import { Button } from "@/components/ui/button";
@@ -177,6 +182,21 @@ export default function ProjectDetailPage() {
   } = useTracks(projectId);
   const updateProject = useUpdateProject(projectId);
   const reorderTracks = useReorderTracks(projectId);
+  const currentUser = useAuthStore((s) => s.user);
+
+  const {
+    data: projectComments = [],
+    isLoading: commentsLoading,
+    isError: commentsError,
+  } = useProjectComments(projectId);
+  const addProjectComment = useAddProjectComment(projectId);
+  const deleteProjectComment = useDeleteProjectComment(projectId);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null,
+  );
+  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(
+    null,
+  );
 
   // useState (not setQueryData) so the update batches synchronously with dnd-kit's own state cleanup.
   const [orderedIds, setOrderedIds] = useState<string[]>(() =>
@@ -258,6 +278,16 @@ export default function ProjectDetailPage() {
     project.currentUserRole === "OWNER" ||
     project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
+
+  const handleDeleteProjectComment = (commentId: string) => {
+    setDeletingCommentId(commentId);
+    setDeleteCommentError(null);
+    deleteProjectComment.mutate(commentId, {
+      onSettled: () => setDeletingCommentId(null),
+      onError: () =>
+        setDeleteCommentError("Impossible de supprimer ce commentaire."),
+    });
+  };
 
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
@@ -481,11 +511,32 @@ export default function ProjectDetailPage() {
           <Separator className="mb-8" />
 
           {/* Tasks section */}
-          <div>
+          <div className="mb-10">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
               Tâches
             </h2>
             <TaskKanban projectId={projectId} canEdit={canEdit} />
+          </div>
+
+          <Separator className="mb-8" />
+
+          {/* Project comments */}
+          <div>
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
+              Commentaires
+            </h2>
+            <CommentThread
+              comments={projectComments}
+              isLoading={commentsLoading}
+              loadError={commentsError}
+              currentUserId={currentUser?.id}
+              isOwner={isOwner}
+              onAdd={(content) => addProjectComment.mutateAsync(content)}
+              isAdding={addProjectComment.isPending}
+              onDelete={handleDeleteProjectComment}
+              deletingId={deletingCommentId}
+              deleteError={deleteCommentError}
+            />
           </div>
         </div>
 

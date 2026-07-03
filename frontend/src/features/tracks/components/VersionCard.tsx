@@ -7,7 +7,7 @@ import { useVersionComments } from "../hooks/useVersionComments";
 import { useAddVersionComment } from "../hooks/useAddVersionComment";
 import { useDeleteVersionComment } from "../hooks/useDeleteVersionComment";
 import { useUpdateTrackVersion } from "../hooks/useUpdateTrackVersion";
-import { CommentThread } from "./CommentThread";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { InlineEdit } from "@/components/InlineEdit";
 import { formatRelativeTime, getFileExtension, stripFileExtension } from "@/lib/utils";
 import type { TrackVersionResponse } from "../types";

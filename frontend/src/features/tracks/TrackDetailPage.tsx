@@ -21,7 +21,7 @@ import { useAddTrackComment } from "./hooks/useAddTrackComment";
 import { useDeleteTrackComment } from "./hooks/useDeleteTrackComment";
 import { VersionCard } from "./components/VersionCard";
 import { AddVersionDialog } from "./components/AddVersionDialog";
-import { CommentThread } from "./components/CommentThread";
+import { CommentThread } from "@/features/comments/components/CommentThread";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
 import { describeError } from "@/lib/api";
