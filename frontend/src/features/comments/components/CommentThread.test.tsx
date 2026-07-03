@@ -28,7 +28,7 @@ function renderThread(overrides: Partial<Parameters<typeof CommentThread>[0]> = 
       isOwner={false}
       onAdd={vi.fn().mockResolvedValue(undefined)}
       isAdding={false}
-      onDelete={vi.fn()}
+      onDelete={vi.fn().mockResolvedValue(undefined)}
       {...overrides}
     />,
   );
@@ -54,6 +54,21 @@ describe("CommentThread", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Supprimer le commentaire de jane" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an error when deletion fails", async () => {
+    const onDelete = vi.fn().mockRejectedValue(new Error("boom"));
+    renderThread({ onDelete });
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole("button", { name: "Supprimer le commentaire de john" }),
+    );
+
+    expect(onDelete).toHaveBeenCalledWith("c1");
+    expect(
+      await screen.findByText("Impossible de supprimer ce commentaire."),
     ).toBeInTheDocument();
   });
 

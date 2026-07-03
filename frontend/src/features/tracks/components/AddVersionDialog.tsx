@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
-import { validateAudioFile } from "../utils";
+import { useAudioFileInput } from "../hooks/useAudioFileInput";
 import { dialogInputClass, dialogTextareaClass } from "@/features/projects/components/dialogStyles";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { isUnauthorizedError, describeError } from "@/lib/api";
@@ -17,34 +17,23 @@ interface Props {
 export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
-  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    file: audioFile,
+    fileError,
+    inputRef: fileInputRef,
+    onChange: onFileChange,
+    clear: clearFile,
+  } = useAudioFileInput();
   const createVersion = useCreateTrackVersion(projectId, trackId);
 
   const handleClose = () => {
     setLabel("");
     setNotes("");
-    setAudioFile(null);
     setError(null);
+    clearFile();
     createVersion.reset();
     onClose();
-  };
-
-  const handleFileChange = (file: File | null) => {
-    if (!file) {
-      setAudioFile(null);
-      return;
-    }
-    const validationError = validateAudioFile(file);
-    if (validationError) {
-      setError(validationError);
-      setAudioFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-    setError(null);
-    setAudioFile(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,8 +85,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setAudioFile(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    clearFile();
                   }}
                   aria-label="Retirer le fichier"
                   className="text-muted-foreground/50 hover:text-foreground text-xs"
@@ -112,7 +100,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
               type="file"
               accept="audio/*"
               className="sr-only"
-              onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
             />
           </div>
 
@@ -140,8 +128,8 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
             />
           </div>
 
-          {error && (
-            <p role="alert" className="text-xs text-destructive">{error}</p>
+          {(fileError ?? error) && (
+            <p role="alert" className="text-xs text-destructive">{fileError ?? error}</p>
           )}
 
           {/* Announces upload progress to screen readers (success is announced by the toast). */}

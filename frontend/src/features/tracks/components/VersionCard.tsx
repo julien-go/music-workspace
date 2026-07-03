@@ -32,8 +32,6 @@ export function VersionCard({
   canEdit,
 }: Props) {
   const [commentsOpen, setCommentsOpen] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(null);
 
   const play = usePlayerStore((s) => s.play);
   const pause = usePlayerStore((s) => s.pause);
@@ -78,15 +76,6 @@ export function VersionCard({
       notes: version.notes,
       label: version.label,
       originalFileName: version.originalFileName,
-    });
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    setDeletingId(commentId);
-    setDeleteCommentError(null);
-    deleteComment.mutate(commentId, {
-      onSettled: () => setDeletingId(null),
-      onError: () => setDeleteCommentError("Impossible de supprimer ce commentaire."),
     });
   };
 
@@ -180,9 +169,7 @@ export function VersionCard({
               isOwner={isOwner}
               onAdd={(content) => addComment.mutateAsync(content)}
               isAdding={addComment.isPending}
-              onDelete={handleDeleteComment}
-              deletingId={deletingId}
-              deleteError={deleteCommentError}
+              onDelete={(commentId) => deleteComment.mutateAsync(commentId)}
             />
           </div>
         )}

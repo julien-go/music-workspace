@@ -63,12 +63,6 @@ export default function TrackDetailPage() {
   const updateTrack = useUpdateTrack(projectId, trackId);
   const addTrackComment = useAddTrackComment(projectId, trackId);
   const deleteTrackComment = useDeleteTrackComment(projectId, trackId);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
-    null,
-  );
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(
-    null,
-  );
   const [addVersionOpen, setAddVersionOpen] = useState(false);
 
   const sortedVersions = useMemo(
@@ -99,16 +93,6 @@ export default function TrackDetailPage() {
   // show edit affordances that can only fail.
   const canEdit = hasWriteRole && !track.archived;
   const isOwner = project.currentUserRole === "OWNER";
-
-  const handleDeleteTrackComment = (commentId: string) => {
-    setDeletingCommentId(commentId);
-    setDeleteCommentError(null);
-    deleteTrackComment.mutate(commentId, {
-      onSettled: () => setDeletingCommentId(null),
-      onError: () =>
-        setDeleteCommentError("Impossible de supprimer ce commentaire."),
-    });
-  };
 
   const sidebarContent = (
     <>
@@ -318,9 +302,7 @@ export default function TrackDetailPage() {
               isOwner={isOwner}
               onAdd={(content) => addTrackComment.mutateAsync(content)}
               isAdding={addTrackComment.isPending}
-              onDelete={handleDeleteTrackComment}
-              deletingId={deletingCommentId}
-              deleteError={deleteCommentError}
+              onDelete={(commentId) => deleteTrackComment.mutateAsync(commentId)}
             />
           </div>
         </div>

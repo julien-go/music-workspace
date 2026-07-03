@@ -191,12 +191,6 @@ export default function ProjectDetailPage() {
   } = useProjectComments(projectId);
   const addProjectComment = useAddProjectComment(projectId);
   const deleteProjectComment = useDeleteProjectComment(projectId);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
-    null,
-  );
-  const [deleteCommentError, setDeleteCommentError] = useState<string | null>(
-    null,
-  );
 
   // useState (not setQueryData) so the update batches synchronously with dnd-kit's own state cleanup.
   const [orderedIds, setOrderedIds] = useState<string[]>(() =>
@@ -278,16 +272,6 @@ export default function ProjectDetailPage() {
     project.currentUserRole === "OWNER" ||
     project.currentUserRole === "COLLABORATOR";
   const isOwner = project.currentUserRole === "OWNER";
-
-  const handleDeleteProjectComment = (commentId: string) => {
-    setDeletingCommentId(commentId);
-    setDeleteCommentError(null);
-    deleteProjectComment.mutate(commentId, {
-      onSettled: () => setDeletingCommentId(null),
-      onError: () =>
-        setDeleteCommentError("Impossible de supprimer ce commentaire."),
-    });
-  };
 
   return (
     <div className="max-w-300 mx-auto px-4 md:px-6 py-8">
@@ -525,9 +509,7 @@ export default function ProjectDetailPage() {
               isOwner={isOwner}
               onAdd={(content) => addProjectComment.mutateAsync(content)}
               isAdding={addProjectComment.isPending}
-              onDelete={handleDeleteProjectComment}
-              deletingId={deletingCommentId}
-              deleteError={deleteCommentError}
+              onDelete={(commentId) => deleteProjectComment.mutateAsync(commentId)}
             />
           </div>
         </div>

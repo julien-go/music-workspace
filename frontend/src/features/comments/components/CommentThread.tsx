@@ -11,9 +11,7 @@ interface Props {
   isOwner: boolean;
   onAdd: (content: string) => Promise<unknown>;
   isAdding: boolean;
-  onDelete: (commentId: string) => void;
-  deletingId?: string | null;
-  deleteError?: string | null;
+  onDelete: (commentId: string) => Promise<unknown>;
 }
 
 export function CommentThread({
@@ -25,11 +23,19 @@ export function CommentThread({
   onAdd,
   isAdding,
   onDelete,
-  deletingId,
-  deleteError,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = (commentId: string) => {
+    setDeletingId(commentId);
+    setDeleteError(null);
+    Promise.resolve(onDelete(commentId))
+      .catch(() => setDeleteError("Impossible de supprimer ce commentaire."))
+      .finally(() => setDeletingId(null));
+  };
 
   const submitDraft = () => {
     if (!draft.trim() || isAdding) return;
@@ -86,7 +92,7 @@ export function CommentThread({
                 </div>
                 {canDelete && (
                   <button
-                    onClick={() => onDelete(comment.id)}
+                    onClick={() => handleDelete(comment.id)}
                     disabled={deletingId === comment.id}
                     aria-label={`Supprimer le commentaire de ${comment.author.username}`}
                     className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-red-400 text-xs shrink-0 mt-0.5 disabled:opacity-50"
