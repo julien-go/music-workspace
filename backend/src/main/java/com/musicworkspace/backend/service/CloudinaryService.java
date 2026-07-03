@@ -18,9 +18,13 @@ public class CloudinaryService {
     public String upload(MultipartFile file, String folder, String publicId,
                          String resourceType, boolean overwrite) {
         try {
+            // uploadLarge streams the file in 20MB chunks: heap usage is bounded
+            // by the chunk size instead of the full file size (audio uploads can
+            // reach 70MB, and several concurrent uploads were enough to exhaust
+            // the Railway container's heap with getBytes()).
             @SuppressWarnings("unchecked")
-            Map<String, Object> result = cloudinary.uploader().upload(
-                    file.getBytes(),
+            Map<String, Object> result = cloudinary.uploader().uploadLarge(
+                    file.getInputStream(),
                     ObjectUtils.asMap(
                             "folder", folder,
                             "public_id", publicId,
