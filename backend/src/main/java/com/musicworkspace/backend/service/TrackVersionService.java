@@ -97,7 +97,7 @@ public class TrackVersionService {
     @Transactional(readOnly = true)
     public List<TrackVersionResponse> findAll(UUID projectId, UUID trackId, String email) {
         permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.VIEWER);
-        return trackVersionRepository.findByTrackId(trackId).stream()
+        return trackVersionRepository.findByTrackIdOrderByVersionNumberDesc(trackId).stream()
                 .map(trackVersionMapper::toResponse)
                 .toList();
     }

@@ -11,6 +11,8 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
+import com.musicworkspace.backend.exception.ConflictException;
+import com.musicworkspace.backend.exception.InvalidReorderException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.repository.TrackCommentRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
@@ -23,10 +25,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,12 @@ public class TrackService {
         if (track.getStatus() == null) {
             track.setStatus(TrackStatus.DRAFT);
         }
-        return buildResponse(trackRepository.saveAndFlush(track));
+        try {
+            return buildResponse(trackRepository.saveAndFlush(track));
+        } catch (DataIntegrityViolationException e) {
+            // Two concurrent creates computed the same MAX(position) + 1.
+            throw new ConflictException("Track position conflict, please retry");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -115,18 +121,14 @@ public class TrackService {
         List<Track> existingTracks = trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId);
 
         if (request.trackIds().size() != existingTracks.size()) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Track IDs must match all non-archived tracks of the project");
+            throw new InvalidReorderException("Track IDs must match all non-archived tracks of the project");
         }
 
         Set<UUID> existingIds = existingTracks.stream().map(Track::getId).collect(Collectors.toSet());
         Set<UUID> requestIds = new HashSet<>(request.trackIds());
 
         if (!existingIds.equals(requestIds)) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Track IDs must match all non-archived tracks of the project");
+            throw new InvalidReorderException("Track IDs must match all non-archived tracks of the project");
         }
 
         Map<UUID, Track> trackById = existingTracks.stream()

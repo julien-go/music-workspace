@@ -207,7 +207,7 @@ class TrackVersionServiceTest {
     @Test
     void findAll_returnsMappedListForTrack() {
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.VIEWER)).thenReturn(track);
-        when(trackVersionRepository.findByTrackId(trackId)).thenReturn(List.of(version));
+        when(trackVersionRepository.findByTrackIdOrderByVersionNumberDesc(trackId)).thenReturn(List.of(version));
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
         List<TrackVersionResponse> result = trackVersionService.findAll(projectId, trackId, EMAIL);

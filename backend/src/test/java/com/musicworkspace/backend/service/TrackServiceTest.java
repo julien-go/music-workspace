@@ -19,6 +19,8 @@ import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectRole;
 import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.TrackStatus;
+import com.musicworkspace.backend.exception.ConflictException;
+import com.musicworkspace.backend.exception.InvalidReorderException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.TrackAlreadyArchivedException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
@@ -35,7 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class TrackServiceTest {
@@ -115,6 +117,19 @@ class TrackServiceTest {
         trackService.create(projectId, request, EMAIL);
 
         assertThat(mapped.getStatus()).isEqualTo(TrackStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void create_throwsConflictWhenPositionRaceLost() {
+        CreateTrackRequest request = new CreateTrackRequest("Intro", null, null);
+        Track mapped = Track.builder().name("Intro").build();
+
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(trackMapper.toEntity(request)).thenReturn(mapped);
+        when(trackRepository.saveAndFlush(mapped)).thenThrow(new DataIntegrityViolationException("duplicate position"));
+
+        assertThatThrownBy(() -> trackService.create(projectId, request, EMAIL))
+                .isInstanceOf(ConflictException.class);
     }
 
     @Test
@@ -293,8 +308,7 @@ class TrackServiceTest {
         ReorderTracksRequest request = new ReorderTracksRequest(List.of(trackId, UUID.randomUUID()));
 
         assertThatThrownBy(() -> trackService.reorder(projectId, request, EMAIL))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(422));
+                .isInstanceOf(InvalidReorderException.class);
     }
 
     @Test
@@ -305,7 +319,6 @@ class TrackServiceTest {
         ReorderTracksRequest request = new ReorderTracksRequest(List.of(UUID.randomUUID()));
 
         assertThatThrownBy(() -> trackService.reorder(projectId, request, EMAIL))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(422));
+                .isInstanceOf(InvalidReorderException.class);
     }
 }
