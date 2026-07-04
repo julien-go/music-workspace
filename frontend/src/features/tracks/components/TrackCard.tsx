@@ -1,19 +1,12 @@
-import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/InlineEdit";
-import { usePlayerStore } from "@/store/playerStore";
-import { useQueryClient } from "@tanstack/react-query";
-import { getTrackVersions } from "../api";
-import { useArchiveTrack } from "../hooks/useArchiveTrack";
-import { useUnarchiveTrack } from "../hooks/useUnarchiveTrack";
-import { useUpdateTrack } from "../hooks/useUpdateTrack";
-import { AddVersionDialog } from "./AddVersionDialog";
 import { formatRelativeTime } from "@/lib/utils";
-import { toastError } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { useUpdateTrack } from "../hooks/useUpdateTrack";
+import { useTrackCard } from "../hooks/useTrackCard";
+import { useTrackActions } from "../hooks/useTrackActions";
+import { TrackActions } from "./TrackActions";
 import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackResponse } from "../types";
 
 interface Props {
@@ -25,67 +18,16 @@ interface Props {
 
 export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const navigate = useNavigate();
-  const play = usePlayerStore((s) => s.play);
-  const pause = usePlayerStore((s) => s.pause);
-  const resume = usePlayerStore((s) => s.resume);
-  const current = usePlayerStore((s) => s.current);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isCurrentTrack = current?.trackId === track.id;
-  const isCurrentlyPlaying = isCurrentTrack && isPlaying;
-  const queryClient = useQueryClient();
-
-  const [isLoadingPlay, setIsLoadingPlay] = useState(false);
-  const [playError, setPlayError] = useState(false);
-  const [confirmArchive, setConfirmArchive] = useState(false);
-  const [addVersionOpen, setAddVersionOpen] = useState(false);
-  const archiveTrack = useArchiveTrack(projectId);
-  const unarchiveTrack = useUnarchiveTrack(projectId);
   const updateTrack = useUpdateTrack(projectId, track.id);
-
-  // Editing an archived track is rejected server-side (409) — hide the affordances.
-  const canEditContent = canEdit && !track.archived;
+  const { isCurrentTrack, isCurrentlyPlaying, canEditContent, versionsLabel } =
+    useTrackCard(track, canEdit);
+  const actions = useTrackActions(projectId, projectName, track);
 
   const handleNavigate = () => {
     navigate({
       to: "/projects/$projectId/tracks/$trackId",
       params: { projectId, trackId: track.id },
     });
-  };
-
-  const handlePlay = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (track.versionCount === 0 || isLoadingPlay) return;
-    if (isCurrentTrack) {
-      if (isPlaying) pause();
-      else resume();
-      return;
-    }
-    setIsLoadingPlay(true);
-    try {
-      const versions = await queryClient.fetchQuery({
-        queryKey: ["trackVersions", projectId, track.id],
-        queryFn: () => getTrackVersions(projectId, track.id),
-      });
-      const latest = versions.sort((a, b) => b.versionNumber - a.versionNumber)[0];
-      if (latest) {
-        play({
-          projectId,
-          projectName,
-          trackId: track.id,
-          trackName: track.name,
-          versionId: latest.id,
-          versionNumber: latest.versionNumber,
-          audioUrl: latest.audioUrl,
-          notes: latest.notes,
-          label: latest.label,
-          originalFileName: latest.originalFileName,
-        });
-      }
-    } catch {
-      setPlayError(true);
-    } finally {
-      setIsLoadingPlay(false);
-    }
   };
 
   return (
@@ -140,7 +82,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       </div>
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-        <span>{track.versionCount} version{track.versionCount !== 1 ? "s" : ""}</span>
+        <span>{versionsLabel}</span>
         {track.lastVersionNote && (
           <span className="truncate italic">"{track.lastVersionNote}"</span>
         )}
@@ -154,96 +96,14 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         </div>
       )}
 
-      <div className="flex flex-col items-start gap-2 mt-1 md:flex-row md:items-center">
-        {track.versionCount === 0 && canEditContent ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setAddVersionOpen(true); }}
-            className="text-sm h-8 px-3"
-          >
-            + Ajouter une version
-          </Button>
-        ) : (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePlay}
-              disabled={track.versionCount === 0 || isLoadingPlay}
-              className={`text-sm h-8 px-3 ${isCurrentlyPlaying ? "text-accent" : ""}`}
-            >
-              {isLoadingPlay ? "…" : isCurrentlyPlaying ? "⏸ En lecture" : isCurrentTrack ? "▶ Reprendre" : "▶ Écouter dernière version"}
-            </Button>
-            {playError && (
-              <span className="text-xs text-destructive">Impossible de charger l'audio.</span>
-            )}
-          </>
-        )}
-
-        {canEdit && !track.archived && !confirmArchive && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setConfirmArchive(true); }}
-            aria-label={`Archiver ${track.name}`}
-            className="text-sm h-8 px-3 text-muted-foreground hover:text-foreground"
-          >
-            Archiver
-          </Button>
-        )}
-        {canEdit && !track.archived && confirmArchive && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Archiver cette track ?</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); setConfirmArchive(false); }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                archiveTrack.mutate(track.id, {
-                  onError: (err) => {
-                    setConfirmArchive(false);
-                    if (!isUnauthorizedError(err)) toastError(describeError(err, "Impossible d'archiver la track."));
-                  },
-                });
-              }}
-              disabled={archiveTrack.isPending}
-              className="text-sm text-amber-400 hover:text-amber-300 transition-colors font-medium"
-            >
-              {archiveTrack.isPending ? "…" : "Confirmer"}
-            </button>
-          </div>
-        )}
-        {canEdit && track.archived && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              unarchiveTrack.mutate(track.id, {
-                onError: (err) => {
-                  if (!isUnauthorizedError(err)) toastError(describeError(err, "Impossible de désarchiver la track."));
-                },
-              });
-            }}
-            disabled={unarchiveTrack.isPending}
-            aria-label={`Désarchiver ${track.name}`}
-            className="text-sm h-8 px-3 text-muted-foreground hover:text-foreground"
-          >
-            Désarchiver
-          </Button>
-        )}
-      </div>
-
-      <AddVersionDialog
+      <TrackActions
+        track={track}
         projectId={projectId}
-        trackId={track.id}
-        open={addVersionOpen}
-        onClose={() => setAddVersionOpen(false)}
+        canEdit={canEdit}
+        canEditContent={canEditContent}
+        isCurrentTrack={isCurrentTrack}
+        isCurrentlyPlaying={isCurrentlyPlaying}
+        actions={actions}
       />
     </div>
   );
