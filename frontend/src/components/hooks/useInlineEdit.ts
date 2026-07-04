@@ -43,6 +43,7 @@ export function useInlineEdit(
   };
 
   const save = async () => {
+    if (!onSave) return;
     const trimmed = draft.trim();
     if (trimmed === value.trim()) {
       cancel();
@@ -52,7 +53,7 @@ export function useInlineEdit(
     setIsPending(true);
     setError(null);
     try {
-      await onSave!(trimmed);
+      await onSave(trimmed);
       setIsEditing(false);
     } catch (err) {
       setError(describeError(err, "Impossible d'enregistrer. Réessaie."));

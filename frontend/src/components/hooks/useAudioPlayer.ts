@@ -27,7 +27,9 @@ export function useAudioPlayer(
 
     if (!current) {
       audio.pause();
-      audio.src = "";
+      // removeAttribute (not src="") to avoid the resource-selection algorithm
+      // firing an error event on an empty URL.
+      audio.removeAttribute("src");
       prevVersionIdRef.current = null;
       return;
     }
