@@ -20,6 +20,9 @@ public class AuthRateLimiter {
 
     private static final int LOGIN_PER_MINUTE = 5;
     private static final int REGISTER_PER_MINUTE = 3;
+    // Public share links are meant to circulate widely, so the ceiling only
+    // exists to bound UUID enumeration / flood, not to throttle real viewers.
+    private static final int PUBLIC_PROJECT_PER_MINUTE = 60;
 
     private final int trustedProxies;
 
@@ -31,6 +34,7 @@ public class AuthRateLimiter {
     // fully restored it, so a fresh bucket is equivalent.
     private final Cache<String, Bucket> loginBuckets = newCache();
     private final Cache<String, Bucket> registerBuckets = newCache();
+    private final Cache<String, Bucket> publicProjectBuckets = newCache();
 
     private static Cache<String, Bucket> newCache() {
         return Caffeine.newBuilder()
@@ -45,6 +49,10 @@ public class AuthRateLimiter {
 
     public void checkRegister(HttpServletRequest request) {
         check(registerBuckets, clientIp(request), REGISTER_PER_MINUTE);
+    }
+
+    public void checkPublicProject(HttpServletRequest request) {
+        check(publicProjectBuckets, clientIp(request), PUBLIC_PROJECT_PER_MINUTE);
     }
 
     private void check(Cache<String, Bucket> buckets, String ip, int perMinute) {

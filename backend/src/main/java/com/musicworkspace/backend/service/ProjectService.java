@@ -4,18 +4,26 @@ package com.musicworkspace.backend.service;
 import com.musicworkspace.backend.dto.CreateProjectRequest;
 import com.musicworkspace.backend.dto.ProjectMapper;
 import com.musicworkspace.backend.dto.ProjectResponse;
+import com.musicworkspace.backend.dto.PublicProjectResponse;
 import com.musicworkspace.backend.dto.UpdateProjectRequest;
 import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
+import com.musicworkspace.backend.entity.Track;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.FileValidationException;
+import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
+import com.musicworkspace.backend.repository.TrackRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository.LatestVersionProjection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +37,8 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final TrackRepository trackRepository;
+    private final TrackVersionRepository trackVersionRepository;
     private final ProjectMapper projectMapper;
     private final PermissionService permissionService;
     private final CloudinaryService cloudinaryService;
@@ -75,13 +85,50 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse update(UUID id, UpdateProjectRequest request, String email) {
-        ProjectMember member = permissionService.resolveMembership(id, email, ProjectRole.COLLABORATOR);
+        // Visibility exposes the project to anonymous visitors — OWNER only,
+        // unlike name/description which any COLLABORATOR can edit.
+        ProjectRole requiredRole = request.isPublic() != null ? ProjectRole.OWNER : ProjectRole.COLLABORATOR;
+        ProjectMember member = permissionService.resolveMembership(id, email, requiredRole);
         Project project = member.getProject();
 
         if (request.name() != null) project.setName(request.name());
         if (request.description() != null) project.setDescription(request.description());
+        if (request.isPublic() != null) project.setPublic(request.isPublic());
 
         return projectMapper.toResponse(project, member.getRole());
+    }
+
+    @Transactional(readOnly = true)
+    public PublicProjectResponse findPublic(UUID id) {
+        Project project = projectRepository.findByIdAndIsPublicTrue(id)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        List<Track> tracks = trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(id);
+        return projectMapper.toPublicResponse(project, toPublicTracks(tracks));
+    }
+
+    private List<PublicProjectResponse.PublicTrackResponse> toPublicTracks(List<Track> tracks) {
+        if (tracks.isEmpty()) return List.of();
+        List<UUID> trackIds = tracks.stream().map(Track::getId).toList();
+
+        Map<UUID, LatestVersionProjection> latestByTrackId = trackVersionRepository
+                .findLatestVersionsByTrackIds(trackIds).stream()
+                .collect(Collectors.toMap(LatestVersionProjection::getTrackId, p -> p));
+
+        return tracks.stream()
+                .map(track -> {
+                    // Absent when the track has no versions yet.
+                    LatestVersionProjection latest = latestByTrackId.get(track.getId());
+                    return new PublicProjectResponse.PublicTrackResponse(
+                            track.getId(),
+                            track.getName(),
+                            track.getStatus(),
+                            latest != null ? (int) latest.getVersionCount() : 0,
+                            latest != null ? latest.getLatestVersionId() : null,
+                            latest != null ? latest.getLatestVersionNumber() : 0,
+                            latest != null ? latest.getLatestAudioUrl() : null);
+                })
+                .toList();
     }
 
     @Transactional

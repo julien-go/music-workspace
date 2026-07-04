@@ -62,7 +62,7 @@ class ProjectControllerTest {
     void setUp() {
         projectId = UUID.randomUUID();
         projectResponse = new ProjectResponse(
-                projectId, "My Album", "A description", null,
+                projectId, "My Album", "A description", null, false,
                 new UserSummary(UUID.randomUUID(), "testuser"),
                 ProjectRole.OWNER, Instant.now(), Instant.now());
     }
@@ -125,7 +125,7 @@ class ProjectControllerTest {
 
     @Test
     void updateProject_returnsOk() throws Exception {
-        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
+        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null, null);
         when(projectService.update(eq(projectId), any(), any())).thenReturn(projectResponse);
 
         mockMvc.perform(patch("/api/v1/projects/{id}", projectId)

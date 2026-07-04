@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import type { CommentResponse } from "@/features/comments/types";
 import type {
   ProjectResponse,
+  PublicProjectResponse,
   CreateProjectRequest,
   UpdateProjectRequest,
   ProjectMemberResponse,
@@ -15,6 +16,10 @@ export function getProjects() {
 
 export function getProject(projectId: string) {
   return fetchApi<ProjectResponse>(`/projects/${projectId}`);
+}
+
+export function fetchPublicProject(projectId: string) {
+  return fetchApi<PublicProjectResponse>(`/public/projects/${projectId}`);
 }
 
 export function createProject(data: CreateProjectRequest) {

@@ -78,6 +78,16 @@ Validation errors (422) — `errors` is a flat array of `"field: message"` strin
 | DELETE | `/projects/{id}` | Delete a project | Yes |
 | POST | `/projects/{id}/cover` | Upload cover image | Yes |
 
+> `isPublic` in the PATCH body is OWNER-only (name/description stay COLLABORATOR) — a non-owner sending it gets 404, per the masking rule.
+
+### Public sharing
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | `/public/projects/{id}` | Public read-only project view | No |
+
+> Returns 404 if the project does not exist **or** `is_public = false` (same masking policy). Only active (non-archived) tracks are included. Never exposes members, tasks, comments or internal user IDs.
+
 ### Tracks
 
 | Method | Endpoint | Description | Auth |
@@ -183,9 +193,11 @@ Validation errors (422) — `errors` is a flat array of `"field: message"` strin
 }
 
 // UpdateProjectRequest (all fields optional — PATCH)
+// isPublic is OWNER-only; name/description are COLLABORATOR+
 {
   "name": "New name",
-  "description": "New description"
+  "description": "New description",
+  "isPublic": true
 }
 
 // ProjectResponse
@@ -194,11 +206,35 @@ Validation errors (422) — `errors` is a flat array of `"field: message"` strin
   "name": "My album",
   "description": "Description",
   "coverUrl": null,
+  "isPublic": false,
   "owner": { "id": "uuid", "username": "john" },
   "currentUserRole": "OWNER",
   "createdAt": "2024-01-01T00:00:00Z",
   "updatedAt": "2024-01-01T00:00:00Z"
 }
+
+// PublicProjectResponse (GET /public/projects/{id} — no auth)
+// owner is a bare username; tracks are active only, latest version audio only
+{
+  "id": "uuid",
+  "name": "My album",
+  "description": "Description",
+  "coverUrl": null,
+  "owner": "john",
+  "tracks": [
+    {
+      "id": "uuid",
+      "name": "Intro",
+      "status": "DRAFT",
+      "versionCount": 3,
+      "latestVersionId": "uuid",
+      "latestVersionNumber": 3,
+      "latestAudioUrl": "https://cloudinary.com/..."
+    }
+  ]
+}
+// latestVersionId/latestAudioUrl are null and latestVersionNumber is 0 when the track has no versions
+// Response carries Cache-Control: public, max-age=60; rate-limited per IP (60/min)
 ```
 
 ### Tracks
