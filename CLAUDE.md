@@ -6,7 +6,7 @@ Collaborative music project management platform. Portfolio project to learn Spri
 
 ## Stack
 
-- **Backend**: Java 17+, Spring Boot 3, Spring Web, Spring Data JPA, Spring Security (JWT), PostgreSQL, Flyway, Bean Validation, MapStruct, Lombok
+- **Backend**: Java 21, Spring Boot 3, Spring Web, Spring Data JPA, Spring Security (JWT), PostgreSQL, Flyway, Bean Validation, MapStruct, Lombok
 - **Testing**: JUnit 5, Mockito, MockMvc
 - **Docs**: Springdoc OpenAPI (Swagger UI)
 - **Storage**: Cloudinary (audio files + cover images)
