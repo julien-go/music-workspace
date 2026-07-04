@@ -29,6 +29,7 @@
 | name | VARCHAR(255) | NOT NULL |
 | description | TEXT | nullable |
 | cover_url | VARCHAR(500) | nullable |
+| is_public | BOOLEAN | NOT NULL, default false — enables the anonymous `/public/projects/{id}` view |
 | created_at | TIMESTAMP | NOT NULL |
 | updated_at | TIMESTAMP | NOT NULL |
 

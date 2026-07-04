@@ -42,6 +42,7 @@ import { CreateTrackDialog } from "@/features/tracks/components/CreateTrackDialo
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
 import { CommentThread } from "@/features/comments/components/CommentThread";
 import { MembersSidebar } from "./components/MembersSidebar";
+import { ShareProjectButton } from "./components/ShareProjectButton";
 import { useAuthStore } from "@/store/authStore";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
@@ -347,6 +348,11 @@ export default function ProjectDetailPage() {
                 className="text-sm text-muted-foreground whitespace-pre-wrap"
                 emptyLabel={canEdit ? "Ajouter une description" : undefined}
               />
+              {isOwner && (
+                <div className="mt-3">
+                  <ShareProjectButton project={project} />
+                </div>
+              )}
             </div>
           </div>
 

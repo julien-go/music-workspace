@@ -67,7 +67,7 @@ class ProjectServiceTest {
         owner = User.builder().id(UUID.randomUUID()).email(EMAIL).username("testuser").build();
         projectId = UUID.randomUUID();
         project = Project.builder().id(projectId).owner(owner).name("My Album").build();
-        response = new ProjectResponse(projectId, "My Album", null, null,
+        response = new ProjectResponse(projectId, "My Album", null, null, false,
                 new UserSummary(owner.getId(), "testuser"),
                 ProjectRole.OWNER, Instant.now(), Instant.now());
         ownerMember = ProjectMember.builder()
@@ -128,7 +128,7 @@ class ProjectServiceTest {
 
     @Test
     void update_updatesOnlyProvidedFields() {
-        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
+        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null, null);
         ProjectMember collaboratorMember = ProjectMember.builder()
                 .project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
 
@@ -144,7 +144,7 @@ class ProjectServiceTest {
 
     @Test
     void update_throwsNotFoundWhenNotMember() {
-        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null);
+        UpdateProjectRequest request = new UpdateProjectRequest("New Name", null, null);
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));

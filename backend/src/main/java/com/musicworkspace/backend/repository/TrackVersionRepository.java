@@ -27,6 +27,9 @@ public interface TrackVersionRepository extends JpaRepository<TrackVersion, UUID
     @Query("SELECT tv.track.id AS trackId, tv.notes AS notes FROM TrackVersion tv WHERE tv.track.id IN :trackIds AND tv.versionNumber = (SELECT MAX(tv2.versionNumber) FROM TrackVersion tv2 WHERE tv2.track.id = tv.track.id)")
     List<TrackVersionNotesProjection> findLatestNotesByTrackIds(@Param("trackIds") List<UUID> trackIds);
 
+    @Query("SELECT tv.track.id AS trackId, tv.audioUrl AS audioUrl FROM TrackVersion tv WHERE tv.track.id IN :trackIds AND tv.versionNumber = (SELECT MAX(tv2.versionNumber) FROM TrackVersion tv2 WHERE tv2.track.id = tv.track.id)")
+    List<TrackVersionAudioUrlProjection> findLatestAudioUrlsByTrackIds(@Param("trackIds") List<UUID> trackIds);
+
     interface TrackVersionCountProjection {
         UUID getTrackId();
         long getCount();
@@ -35,5 +38,10 @@ public interface TrackVersionRepository extends JpaRepository<TrackVersion, UUID
     interface TrackVersionNotesProjection {
         UUID getTrackId();
         String getNotes();
+    }
+
+    interface TrackVersionAudioUrlProjection {
+        UUID getTrackId();
+        String getAudioUrl();
     }
 }
