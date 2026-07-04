@@ -72,7 +72,7 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-5">
+    <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-foreground text-base">Membres</h2>
         {isOwner && (

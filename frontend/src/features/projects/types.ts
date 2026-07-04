@@ -1,3 +1,5 @@
+import type { TrackStatus } from "@/features/tracks/types";
+
 export type ProjectRole = "OWNER" | "COLLABORATOR" | "VIEWER";
 
 export interface ProjectOwner {
@@ -10,6 +12,7 @@ export interface ProjectResponse {
   name: string;
   description: string | null;
   coverUrl: string | null;
+  isPublic: boolean;
   owner: ProjectOwner;
   currentUserRole: ProjectRole;
   createdAt: string;
@@ -24,6 +27,26 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
+  isPublic?: boolean;
+}
+
+export interface PublicTrackResponse {
+  id: string;
+  name: string;
+  status: TrackStatus;
+  versionCount: number;
+  latestVersionId: string | null;
+  latestVersionNumber: number;
+  latestAudioUrl: string | null;
+}
+
+export interface PublicProjectResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  coverUrl: string | null;
+  owner: string;
+  tracks: PublicTrackResponse[];
 }
 
 export interface ProjectMemberUser {

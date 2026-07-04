@@ -45,6 +45,9 @@ public class Project {
     @Column(name = "cover_url", length = 500)
     private String coverUrl;
 
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

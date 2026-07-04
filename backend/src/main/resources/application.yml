@@ -7,6 +7,15 @@ spring:
     multipart:
       max-file-size: 70MB
       max-request-size: 70MB
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          # Group multi-row writes (e.g. track reorder) into batched round-trips.
+          batch_size: 30
+          fetch_size: 50
+        order_updates: true
+        order_inserts: true
 
 # 7 days — no refresh token by design (see CLAUDE.md, Frontend — Auth)
 jwt:

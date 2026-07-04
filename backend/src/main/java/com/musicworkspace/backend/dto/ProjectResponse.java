@@ -9,6 +9,7 @@ public record ProjectResponse(
         String name,
         String description,
         String coverUrl,
+        boolean isPublic,
         UserSummary owner,
         ProjectRole currentUserRole,
         Instant createdAt,

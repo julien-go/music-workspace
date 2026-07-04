@@ -90,7 +90,7 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
 
   return (
     <div
-      className="bg-surface border border-border rounded-lg p-5 cursor-pointer hover:bg-surface-elevated transition-colors"
+      className="bg-surface border border-border rounded-lg p-5 shadow-card cursor-pointer hover:bg-surface-elevated hover:border-border-hover transition-colors"
       onClick={handleNavigate}
     >
       <div className="flex items-start justify-between gap-3 mb-3">

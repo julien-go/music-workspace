@@ -98,7 +98,8 @@ export default function TrackDetailPage() {
     <>
       <MembersSidebar projectId={projectId} isOwner={isOwner} />
 
-      <div className="bg-surface border border-border rounded-lg p-5">
+      <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
+
         <h2 className="font-semibold text-foreground text-base mb-4">Infos</h2>
         <Separator className="mb-4" />
         <dl className="space-y-2 text-sm">
