@@ -1,10 +1,10 @@
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Music } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ErrorState } from "@/components/ErrorState";
+import { ProjectCover } from "@/components/ProjectCover";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { ApiException, describeError } from "@/lib/api";
 import { usePlayerStore } from "@/store/playerStore";
@@ -44,15 +44,18 @@ function PublicTrackRow({
   const play = usePlayerStore((s) => s.play);
   const pause = usePlayerStore((s) => s.pause);
   const resume = usePlayerStore((s) => s.resume);
-  const current = usePlayerStore((s) => s.current);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isCurrentTrack = current?.trackId === track.id;
-  const isCurrentlyPlaying = isCurrentTrack && isPlaying;
+  // Primitive selectors so only the rows whose state actually changed re-render.
+  const isCurrentVersion = usePlayerStore(
+    (s) => s.current?.versionId === track.latestVersionId,
+  );
+  const isThisPlaying = usePlayerStore(
+    (s) => s.isPlaying && s.current?.versionId === track.latestVersionId,
+  );
 
   const handlePlay = () => {
-    if (!track.latestAudioUrl) return;
-    if (isCurrentTrack) {
-      if (isPlaying) pause();
+    if (!track.latestVersionId || !track.latestAudioUrl) return;
+    if (isCurrentVersion) {
+      if (isThisPlaying) pause();
       else resume();
       return;
     }
@@ -61,10 +64,8 @@ function PublicTrackRow({
       projectName: project.name,
       trackId: track.id,
       trackName: track.name,
-      // The public payload has no version details — versions are immutable
-      // (no deletion), so the latest version number equals the count.
-      versionId: `${track.id}-latest`,
-      versionNumber: track.versionCount,
+      versionId: track.latestVersionId,
+      versionNumber: track.latestVersionNumber,
       audioUrl: track.latestAudioUrl,
     });
   };
@@ -93,11 +94,11 @@ function PublicTrackRow({
           variant="ghost"
           size="sm"
           onClick={handlePlay}
-          className={`mt-2 text-sm h-8 px-3 ${isCurrentlyPlaying ? "text-accent" : ""}`}
+          className={`mt-2 text-sm h-8 px-3 ${isThisPlaying ? "text-accent" : ""}`}
         >
-          {isCurrentlyPlaying
+          {isThisPlaying
             ? "⏸ En lecture"
-            : isCurrentTrack
+            : isCurrentVersion
               ? "▶ Reprendre"
               : "▶ Écouter dernière version"}
         </Button>
@@ -106,44 +107,8 @@ function PublicTrackRow({
   );
 }
 
-function PublicProjectCover({
-  name,
-  coverUrl,
-}: {
-  name: string;
-  coverUrl: string | null;
-}) {
-  if (coverUrl) {
-    return (
-      <img
-        src={coverUrl}
-        alt={name}
-        className="w-32 h-32 object-cover rounded-lg shrink-0"
-      />
-    );
-  }
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return (
-    <div className="w-32 h-32 rounded-lg bg-surface border border-border flex items-center justify-center shrink-0">
-      {initials ? (
-        <span className="text-2xl font-semibold text-muted-foreground">
-          {initials}
-        </span>
-      ) : (
-        <Music className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
-      )}
-    </div>
-  );
-}
-
 export default function PublicProjectPage() {
   const { projectId } = routeApi.useParams();
-  const currentVersion = usePlayerStore((s) => s.current);
 
   const {
     data: project,
@@ -159,39 +124,43 @@ export default function PublicProjectPage() {
   const notFound =
     isError && error instanceof ApiException && error.apiError.status === 404;
 
-  if (notFound) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 px-4 text-center gap-4">
-        <p role="alert" className="text-lg font-semibold text-foreground">
-          Projet introuvable
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Ce projet n'existe pas ou n'est plus partagé publiquement.
-        </p>
-        <Button variant="ghost" asChild>
-          <Link to="/">Retour à l'accueil</Link>
-        </Button>
-      </div>
-    );
-  }
-
+  // The player renders unconditionally (below) so a state change on this page
+  // — e.g. the project turning private mid-playback — never unmounts it,
+  // which would cut the audio and strand the store in a playing state.
   return (
-    <div
-      className={`max-w-3xl mx-auto px-4 md:px-6 py-10 ${currentVersion ? "pb-44" : ""}`}
-    >
-      {isLoading && <PublicProjectSkeleton />}
+    <>
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-10 pb-28">
+        {isLoading && <PublicProjectSkeleton />}
 
-      {!isLoading && isError && (
-        <ErrorState
-          message={describeError(error, "Impossible de charger ce projet.")}
-          onRetry={() => refetch()}
-        />
-      )}
+        {notFound && (
+          <div className="flex flex-col items-center justify-center py-24 px-4 text-center gap-4">
+            <p role="alert" className="text-lg font-semibold text-foreground">
+              Projet introuvable
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Ce projet n'existe pas ou n'est plus partagé publiquement.
+            </p>
+            <Button variant="ghost" asChild>
+              <Link to="/">Retour à l'accueil</Link>
+            </Button>
+          </div>
+        )}
 
-      {!isLoading && !isError && project && (
+        {isError && !notFound && (
+          <ErrorState
+            message={describeError(error, "Impossible de charger ce projet.")}
+            onRetry={() => refetch()}
+          />
+        )}
+
+        {!isLoading && !isError && project && (
         <>
           <div className="flex items-start gap-4 mb-10">
-            <PublicProjectCover name={project.name} coverUrl={project.coverUrl} />
+            <ProjectCover
+              name={project.name}
+              coverUrl={project.coverUrl}
+              className="shrink-0"
+            />
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold font-heading text-foreground leading-tight">
                 {project.name}
@@ -241,10 +210,8 @@ export default function PublicProjectPage() {
           </div>
         </>
       )}
-
-      {/* PublicLayout doesn't mount the player (it lives in AuthLayout) — the
-          public page needs its own instance for track playback. */}
+      </div>
       <PersistentPlayer />
-    </div>
+    </>
   );
 }

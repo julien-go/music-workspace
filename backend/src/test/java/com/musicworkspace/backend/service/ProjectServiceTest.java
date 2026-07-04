@@ -3,26 +3,37 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.musicworkspace.backend.dto.CreateProjectRequest;
 import com.musicworkspace.backend.dto.ProjectMapper;
 import com.musicworkspace.backend.dto.ProjectResponse;
+import com.musicworkspace.backend.dto.PublicProjectResponse;
 import com.musicworkspace.backend.dto.UpdateProjectRequest;
 import com.musicworkspace.backend.dto.UserSummary;
 import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectMember;
 import com.musicworkspace.backend.entity.ProjectRole;
+import com.musicworkspace.backend.entity.Track;
+import com.musicworkspace.backend.entity.TrackStatus;
 import com.musicworkspace.backend.entity.User;
 import com.musicworkspace.backend.exception.FileValidationException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
+import com.musicworkspace.backend.repository.TrackRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository.LatestVersionProjection;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +60,12 @@ class ProjectServiceTest {
 
     @Mock
     private CloudinaryService cloudinaryService;
+
+    @Mock
+    private TrackRepository trackRepository;
+
+    @Mock
+    private TrackVersionRepository trackVersionRepository;
 
     @InjectMocks
     private ProjectService projectService;
@@ -151,6 +168,80 @@ class ProjectServiceTest {
 
         assertThatThrownBy(() -> projectService.update(projectId, request, EMAIL))
                 .isInstanceOf(ProjectNotFoundException.class);
+    }
+
+    @Test
+    void update_isPublicRequiresOwnerRole() {
+        UpdateProjectRequest request = new UpdateProjectRequest(null, null, true);
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.OWNER))
+                .thenReturn(ownerMember);
+        when(projectMapper.toResponse(project, ProjectRole.OWNER)).thenReturn(response);
+
+        projectService.update(projectId, request, EMAIL);
+
+        assertThat(project.isPublic()).isTrue();
+        verify(permissionService).resolveMembership(projectId, EMAIL, ProjectRole.OWNER);
+    }
+
+    @Test
+    void update_isPublicByNonOwnerIsMaskedAsNotFound() {
+        UpdateProjectRequest request = new UpdateProjectRequest(null, null, true);
+        // A COLLABORATOR sending isPublic must be resolved against OWNER and 404.
+        when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.OWNER))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
+
+        assertThatThrownBy(() -> projectService.update(projectId, request, EMAIL))
+                .isInstanceOf(ProjectNotFoundException.class);
+        assertThat(project.isPublic()).isFalse();
+    }
+
+    @Test
+    void findPublic_masksPrivateOrMissingAsNotFound() {
+        when(projectRepository.findByIdAndIsPublicTrue(projectId)).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> projectService.findPublic(projectId))
+                .isInstanceOf(ProjectNotFoundException.class);
+        verifyNoInteractions(trackRepository);
+    }
+
+    @Test
+    void findPublic_returnsActiveTracksWithLatestVersionData() {
+        UUID trackId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+        Track track = Track.builder().id(trackId).name("Intro").status(TrackStatus.DRAFT).build();
+
+        when(projectRepository.findByIdAndIsPublicTrue(projectId)).thenReturn(java.util.Optional.of(project));
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId))
+                .thenReturn(List.of(track));
+
+        LatestVersionProjection latest = mock(LatestVersionProjection.class);
+        when(latest.getTrackId()).thenReturn(trackId);
+        when(latest.getLatestVersionId()).thenReturn(versionId);
+        when(latest.getLatestVersionNumber()).thenReturn(3);
+        when(latest.getLatestAudioUrl()).thenReturn("https://cloud/audio.mp3");
+        when(latest.getVersionCount()).thenReturn(3L);
+        when(trackVersionRepository.findLatestVersionsByTrackIds(List.of(trackId)))
+                .thenReturn(List.of(latest));
+
+        PublicProjectResponse expected = new PublicProjectResponse(
+                projectId, "My Album", null, null, "testuser", List.of());
+        when(projectMapper.toPublicResponse(eq(project), anyList())).thenReturn(expected);
+
+        PublicProjectResponse result = projectService.findPublic(projectId);
+
+        assertThat(result).isEqualTo(expected);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PublicProjectResponse.PublicTrackResponse>> captor =
+                ArgumentCaptor.forClass(List.class);
+        verify(projectMapper).toPublicResponse(eq(project), captor.capture());
+        assertThat(captor.getValue()).singleElement().satisfies(t -> {
+            assertThat(t.id()).isEqualTo(trackId);
+            assertThat(t.versionCount()).isEqualTo(3);
+            assertThat(t.latestVersionId()).isEqualTo(versionId);
+            assertThat(t.latestVersionNumber()).isEqualTo(3);
+            assertThat(t.latestAudioUrl()).isEqualTo("https://cloud/audio.mp3");
+        });
     }
 
     @Test

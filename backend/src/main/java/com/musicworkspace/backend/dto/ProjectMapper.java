@@ -2,7 +2,6 @@ package com.musicworkspace.backend.dto;
 
 import com.musicworkspace.backend.entity.Project;
 import com.musicworkspace.backend.entity.ProjectRole;
-import com.musicworkspace.backend.entity.Track;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -27,6 +26,4 @@ public interface ProjectMapper {
 
     @Mapping(source = "project.owner.username", target = "owner")
     PublicProjectResponse toPublicResponse(Project project, List<PublicProjectResponse.PublicTrackResponse> tracks);
-
-    PublicProjectResponse.PublicTrackResponse toPublicTrackResponse(Track track, int versionCount, String latestAudioUrl);
 }

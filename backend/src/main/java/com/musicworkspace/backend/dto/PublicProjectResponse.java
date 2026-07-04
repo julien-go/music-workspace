@@ -20,6 +20,8 @@ public record PublicProjectResponse(
             String name,
             TrackStatus status,
             int versionCount,
+            UUID latestVersionId,
+            int latestVersionNumber,
             String latestAudioUrl
     ) {
     }

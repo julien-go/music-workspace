@@ -35,6 +35,8 @@ export interface PublicTrackResponse {
   name: string;
   status: TrackStatus;
   versionCount: number;
+  latestVersionId: string | null;
+  latestVersionNumber: number;
   latestAudioUrl: string | null;
 }
 

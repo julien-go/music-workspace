@@ -17,12 +17,13 @@ import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.ProjectRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
+import com.musicworkspace.backend.repository.TrackVersionRepository.LatestVersionProjection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,19 +111,23 @@ public class ProjectService {
         if (tracks.isEmpty()) return List.of();
         List<UUID> trackIds = tracks.stream().map(Track::getId).toList();
 
-        Map<UUID, Integer> versionCounts = new HashMap<>();
-        trackVersionRepository.countsByTrackIds(trackIds)
-                .forEach(p -> versionCounts.put(p.getTrackId(), (int) p.getCount()));
-
-        Map<UUID, String> latestAudioUrls = new HashMap<>();
-        trackVersionRepository.findLatestAudioUrlsByTrackIds(trackIds)
-                .forEach(p -> latestAudioUrls.put(p.getTrackId(), p.getAudioUrl()));
+        Map<UUID, LatestVersionProjection> latestByTrackId = trackVersionRepository
+                .findLatestVersionsByTrackIds(trackIds).stream()
+                .collect(Collectors.toMap(LatestVersionProjection::getTrackId, p -> p));
 
         return tracks.stream()
-                .map(track -> projectMapper.toPublicTrackResponse(
-                        track,
-                        versionCounts.getOrDefault(track.getId(), 0),
-                        latestAudioUrls.get(track.getId())))
+                .map(track -> {
+                    // Absent when the track has no versions yet.
+                    LatestVersionProjection latest = latestByTrackId.get(track.getId());
+                    return new PublicProjectResponse.PublicTrackResponse(
+                            track.getId(),
+                            track.getName(),
+                            track.getStatus(),
+                            latest != null ? (int) latest.getVersionCount() : 0,
+                            latest != null ? latest.getLatestVersionId() : null,
+                            latest != null ? latest.getLatestVersionNumber() : 0,
+                            latest != null ? latest.getLatestAudioUrl() : null);
+                })
                 .toList();
     }
 

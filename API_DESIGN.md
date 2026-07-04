@@ -227,11 +227,14 @@ Validation errors (422) — `errors` is a flat array of `"field: message"` strin
       "name": "Intro",
       "status": "DRAFT",
       "versionCount": 3,
+      "latestVersionId": "uuid",
+      "latestVersionNumber": 3,
       "latestAudioUrl": "https://cloudinary.com/..."
     }
   ]
 }
-// latestAudioUrl is null when the track has no versions
+// latestVersionId/latestAudioUrl are null and latestVersionNumber is 0 when the track has no versions
+// Response carries Cache-Control: public, max-age=60; rate-limited per IP (60/min)
 ```
 
 ### Tracks

@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Music, Settings, Users } from "lucide-react";
+import { GripVertical, Settings, Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -43,6 +43,7 @@ import { TaskKanban } from "@/features/tasks/components/TaskKanban";
 import { CommentThread } from "@/features/comments/components/CommentThread";
 import { MembersSidebar } from "./components/MembersSidebar";
 import { ShareProjectButton } from "./components/ShareProjectButton";
+import { ProjectCover } from "@/components/ProjectCover";
 import { useAuthStore } from "@/store/authStore";
 import { ProjectSettingsDialog } from "./components/ProjectSettingsDialog";
 import { useStopPlayerOnProjectChange } from "./hooks/useStopPlayerOnProjectChange";
@@ -112,7 +113,7 @@ function SortableTrackCard({
   );
 }
 
-function ProjectCover({
+function ProjectCoverWithLightbox({
   name,
   coverUrl,
 }: {
@@ -120,48 +121,32 @@ function ProjectCover({
   coverUrl: string | null;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
-  if (coverUrl) {
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => setLightboxOpen(true)}
-          className="shrink-0 rounded-lg overflow-hidden hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-          title="Voir en grand"
-        >
-          <img src={coverUrl} alt={name} className="w-32 h-32 object-cover" />
-        </button>
-        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-          <DialogContent className="bg-surface p-3 sm:max-w-md">
-            <DialogTitle className="sr-only">{name}</DialogTitle>
-            <img
-              src={coverUrl}
-              alt={name}
-              className="w-full aspect-square object-cover rounded-md"
-            />
-          </DialogContent>
-        </Dialog>
-      </>
-    );
+  if (!coverUrl) {
+    return <ProjectCover name={name} coverUrl={null} className="shrink-0" />;
   }
 
   return (
-    <div className="w-32 h-32 rounded-lg bg-surface border border-border flex items-center justify-center shrink-0">
-      {initials ? (
-        <span className="text-2xl font-semibold text-muted-foreground">
-          {initials}
-        </span>
-      ) : (
-        <Music className="w-8 h-8 text-muted-foreground" />
-      )}
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setLightboxOpen(true)}
+        className="shrink-0 rounded-lg overflow-hidden hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+        title="Voir en grand"
+      >
+        <ProjectCover name={name} coverUrl={coverUrl} />
+      </button>
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="bg-surface p-3 sm:max-w-md">
+          <DialogTitle className="sr-only">{name}</DialogTitle>
+          <img
+            src={coverUrl}
+            alt={name}
+            className="w-full aspect-square object-cover rounded-md"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -311,7 +296,10 @@ export default function ProjectDetailPage() {
           </div>
 
           <div className="flex items-start gap-4 mb-8">
-            <ProjectCover name={project.name} coverUrl={project.coverUrl} />
+            <ProjectCoverWithLightbox
+              name={project.name}
+              coverUrl={project.coverUrl}
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <InlineEdit
