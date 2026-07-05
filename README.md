@@ -1,5 +1,10 @@
 # Music Workspace
 
+![Frontend CI](https://github.com/julien-go/music-workspace/actions/workflows/frontend-ci.yml/badge.svg)
+![Backend CI](https://github.com/julien-go/url-shortener/actions/workflows/backend-ci.yml/badge.svg)
+
+**Live App** [https://music-workspace.netlify.app/](https://music-workspace.netlify.app/)
+
 Collaborative platform for managing music projects — organize tracks, audio versions, tasks and feedback with your collaborators.
 
 **Objective:** a portfolio project demonstrating a robust **Spring Boot + React** architecture (clean layering, JWT security, optimized queries, deployment).
