@@ -1,0 +1,23 @@
+# Standalone backend run for the E2E CI job. Env-driven like prod, but the
+# cookie is non-Secure so the browser keeps it over http://localhost, and the
+# Cloudinary URL is a well-formed dummy (the smoke test never uploads).
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+
+cloudinary:
+  url: ${CLOUDINARY_URL}
+
+app:
+  cookie:
+    secure: false

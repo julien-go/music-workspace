@@ -18,6 +18,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
+    // Keep Vitest inside src/ so it never picks up the Playwright specs in e2e/.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
   server: {
     proxy: {
