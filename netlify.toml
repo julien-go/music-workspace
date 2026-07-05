@@ -10,7 +10,7 @@
 # Replace the target with the actual Railway URL once the service exists.
 [[redirects]]
   from = "/api/*"
-  to = "https://REPLACE-WITH-RAILWAY-APP.up.railway.app/api/:splat"
+  to = "music-workspace-production.up.railway.app"
   status = 200
   force = true
 
