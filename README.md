@@ -2,7 +2,7 @@
 
 Collaborative platform for managing music projects — organize tracks, audio versions, tasks and feedback with your collaborators.
 
-**Objective:** a portfolio project demonstrating a robust **Spring Boot + React** architecture (clean layering, JWT security, optimized queries, IaC-friendly deployment.
+**Objective:** a portfolio project demonstrating a robust **Spring Boot + React** architecture (clean layering, JWT security, optimized queries, deployment).
 
 ---
 
