@@ -5,8 +5,7 @@ spring:
   flyway:
     enabled: true
 
-jwt:
-  secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm
+# jwt.secret is injected per run by PostgresTestContainer — no key literal here.
 
 app:
   cookie:
