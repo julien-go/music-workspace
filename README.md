@@ -1,7 +1,7 @@
 # Music Workspace
 
 ![Frontend CI](https://github.com/julien-go/music-workspace/actions/workflows/frontend-ci.yml/badge.svg)
-![Backend CI](https://github.com/julien-go/url-shortener/actions/workflows/backend-ci.yml/badge.svg)
+![Backend CI](https://github.com/julien-go/music-workspace/actions/workflows/backend-ci.yml/badge.svg)
 
 **Live App** [https://music-workspace.netlify.app/](https://music-workspace.netlify.app/)
 
