@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { describeError } from "@/lib/api";
 import { useUpdateProject } from "./useUpdateProject";
 import { useDeleteProject } from "./useDeleteProject";
 import { useUploadCover } from "./useUploadCover";
-import type { ProjectResponse, UpdateProjectRequest } from "../types";
+import type { ProjectResponse } from "../types";
+
+const schema = z.object({
+  name: z.string().min(1, "Le nom est requis").max(100, "100 caractères max"),
+  description: z.string().max(500, "500 caractères max").optional(),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export function useProjectSettings(project: ProjectResponse, onClose: () => void) {
   const {
@@ -13,7 +22,8 @@ export function useProjectSettings(project: ProjectResponse, onClose: () => void
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<UpdateProjectRequest>({
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
     defaultValues: { name: project.name, description: project.description ?? "" },
   });
   const updateProject = useUpdateProject(project.id);

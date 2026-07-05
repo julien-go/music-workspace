@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useInviteMember } from "../hooks/useInviteMember";
 import { ApiException, describeError } from "@/lib/api";
-import type { InviteMemberRequest, ProjectRole } from "../types";
+import type { InviteMemberRequest } from "../types";
 import { dialogInputClass } from "./dialogStyles";
 
 interface Props {
@@ -13,13 +15,16 @@ interface Props {
   onClose: () => void;
 }
 
-type FormData = {
-  email: string;
-  role: Exclude<ProjectRole, "OWNER">;
-};
+const schema = z.object({
+  email: z.email("Email invalide"),
+  role: z.enum(["COLLABORATOR", "VIEWER"]),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export function InviteMemberDialog({ projectId, open, onClose }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
     defaultValues: { role: "COLLABORATOR" },
   });
   const inviteMember = useInviteMember(projectId);
@@ -56,10 +61,7 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
             <label htmlFor="invite-email" className="text-sm font-medium text-foreground">Email *</label>
             <input
               id="invite-email"
-              {...register("email", {
-                required: "L'email est requis",
-                pattern: { value: /\S+@\S+\.\S+/, message: "Email invalide" },
-              })}
+              {...register("email")}
               type="email"
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
