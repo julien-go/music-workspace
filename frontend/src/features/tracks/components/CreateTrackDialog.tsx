@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createTrack, createTrackVersion } from "../api";
@@ -14,14 +16,18 @@ interface Props {
   onClose: () => void;
 }
 
-type FormData = {
-  name: string;
-  description?: string;
-  versionLabel?: string;
-};
+const schema = z.object({
+  name: z.string().min(1, "Le nom est requis").max(100, "100 caractères max"),
+  description: z.string().max(500, "500 caractères max").optional(),
+  versionLabel: z.string().max(100, "100 caractères max").optional(),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export function CreateTrackDialog({ projectId, open, onClose }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTrackId, setCreatedTrackId] = useState<string | null>(null);
   const {
@@ -77,7 +83,7 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
             <label htmlFor="create-track-name" className="text-sm font-medium text-foreground">Nom *</label>
             <input
               id="create-track-name"
-              {...register("name", { required: "Le nom est requis" })}
+              {...register("name")}
               aria-invalid={errors.name ? true : undefined}
               className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
               placeholder="Ex: Intro, Couplet 1…"
