@@ -1,3 +1,7 @@
+server:
+  # Railway assigns a dynamic port via $PORT; fall back to 8080 locally.
+  port: ${PORT:8080}
+
 spring:
   application:
     name: backend
