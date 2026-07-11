@@ -33,7 +33,7 @@ public class TrackVersionController {
     public ResponseEntity<TrackVersionResponse> create(
             @PathVariable UUID projectId,
             @PathVariable UUID trackId,
-            @RequestParam(required = false) String notes,
+            @RequestParam(required = false) @Size(max = 5000) String notes,
             @RequestParam(required = false) @Size(max = 255) String label,
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
