@@ -4,6 +4,6 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateTrackVersionRequest(
         @Size(max = 255) String label,
-        String notes
+        @Size(max = 5000) String notes
 ) {
 }

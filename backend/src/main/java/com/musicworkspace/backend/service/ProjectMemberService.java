@@ -13,6 +13,7 @@ import com.musicworkspace.backend.exception.MemberNotFoundException;
 import com.musicworkspace.backend.exception.OwnerRoleException;
 import com.musicworkspace.backend.exception.UserNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
+import com.musicworkspace.backend.repository.TaskRepository;
 import com.musicworkspace.backend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class ProjectMemberService {
 
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
     private final PermissionService permissionService;
     private final ProjectMemberMapper projectMemberMapper;
 
@@ -92,6 +94,7 @@ public class ProjectMemberService {
             throw new OwnerRoleException("Cannot remove the project owner");
         }
 
+        taskRepository.clearAssigneeForProjectUser(projectId, userId);
         projectMemberRepository.delete(member);
     }
 

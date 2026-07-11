@@ -12,6 +12,9 @@ spring:
       max-file-size: 70MB
       max-request-size: 70MB
   jpa:
+    # DTO mapping happens inside @Transactional service methods, so OSIV brings
+    # nothing but longer-held connections — disable it.
+    open-in-view: false
     properties:
       hibernate:
         jdbc:
