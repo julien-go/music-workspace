@@ -18,9 +18,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * CSRF defense for the cross-site prod deployment (SameSite=None cookie),
- * covering the "simple" requests that skip the CORS preflight. No Origin
- * header passes: non-browser clients don't carry the victim's cookie.
+ * CSRF defense backing the SameSite=Lax cookie: it rejects state-changing
+ * requests whose Origin doesn't match the frontend, covering the "simple"
+ * requests that skip the CORS preflight. A missing Origin header passes —
+ * non-browser clients don't carry the victim's cookie. Becomes the primary
+ * CSRF barrier if the cookie ever moves to SameSite=None (cross-site setup).
  */
 @Component
 public class OriginValidationFilter extends OncePerRequestFilter {

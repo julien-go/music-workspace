@@ -22,6 +22,7 @@ import com.musicworkspace.backend.exception.OwnerRoleException;
 import com.musicworkspace.backend.exception.ProjectNotFoundException;
 import com.musicworkspace.backend.exception.UserNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
+import com.musicworkspace.backend.repository.TaskRepository;
 import com.musicworkspace.backend.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
@@ -43,6 +44,9 @@ class ProjectMemberServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @Mock
     private PermissionService permissionService;
@@ -215,6 +219,7 @@ class ProjectMemberServiceTest {
 
         projectMemberService.removeMember(projectId, collaborator.getId(), OWNER_EMAIL);
 
+        verify(taskRepository).clearAssigneeForProjectUser(projectId, collaborator.getId());
         verify(projectMemberRepository).delete(collabMember);
     }
 
