@@ -5,9 +5,9 @@
 
 **Voir l'app** [https://music-workspace.netlify.app/](https://music-workspace.netlify.app/)
 
-Une plateforme pour gérer tes projets musicaux en collab. Crée des projets, upload tes versions audio, gère les tâches et les retours avec ton équipe.
+Une plateforme pour gérer les projets musicaux avec des collaborateurs. Crée des projets, upload tes versions audio, gère les tâches et les retours avec ton équipe.
 
-C'est un projet portfolio pour montrer une archi Spring Boot + React bien pensée, sécurisée et optimisée.
+C'est un projet portfolio pour montrer une archi Spring Boot + React sécurisée et optimisée.
 
 ---
 
