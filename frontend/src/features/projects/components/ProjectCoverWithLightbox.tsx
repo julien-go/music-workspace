@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ProjectCover } from "@/components/ProjectCover";
+import { cldOptimized } from "@/lib/cloudinary";
 
 export function ProjectCoverWithLightbox({
   name,
@@ -29,8 +30,9 @@ export function ProjectCoverWithLightbox({
         <DialogContent className="bg-surface p-3 sm:max-w-md">
           <DialogTitle className="sr-only">{name}</DialogTitle>
           <img
-            src={coverUrl}
+            src={cldOptimized(coverUrl)}
             alt={name}
+            decoding="async"
             className="w-full aspect-square object-cover rounded-md"
           />
         </DialogContent>

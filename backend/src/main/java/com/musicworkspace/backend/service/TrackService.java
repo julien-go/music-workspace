@@ -186,16 +186,8 @@ public class TrackService {
     }
 
     private TrackResponse buildResponse(Track track) {
-        UUID id = track.getId();
-        int versionCount = (int) trackVersionRepository.countByTrackId(id);
-        String lastVersionNote = trackVersionRepository
-                .findTopByTrackIdOrderByVersionNumberDesc(id)
-                .map(v -> v.getNotes())
-                .orElse(null);
-        CommentResponse lastComment = trackCommentRepository
-                .findTopByTrackIdOrderByCreatedAtDescIdDesc(id)
-                .map(commentMapper::toResponse)
-                .orElse(null);
-        return trackMapper.toResponse(track, versionCount, lastVersionNote, lastComment);
+        // Same queries as the list view, so the two paths can't diverge on the
+        // last-comment tiebreak.
+        return enrichTracks(List.of(track)).get(0);
     }
 }

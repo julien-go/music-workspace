@@ -15,8 +15,7 @@ import { useTasks } from "../hooks/useTasks";
 import { useCreateTask } from "../hooks/useCreateTask";
 import { useUpdateTask } from "../hooks/useUpdateTask";
 import { useDeleteTask } from "../hooks/useDeleteTask";
-import { toastError } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError } from "@/lib/toast";
 import type { TaskResponse, TaskStatus } from "../types";
 
 interface Props {
@@ -176,9 +175,7 @@ function DroppableColumn({
       {
         onSuccess: () => setNewTitle(""),
         onError: (err) => {
-          if (!isUnauthorizedError(err)) {
-            toastError(describeError(err, "Impossible de créer la tâche."));
-          }
+          notifyError(err, "Impossible de créer la tâche.");
         },
       },
     );
@@ -240,9 +237,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
       { taskId, data: { status } },
       {
         onError: (err) => {
-          if (!isUnauthorizedError(err)) {
-            toastError(describeError(err, "Impossible de changer le statut de la tâche."));
-          }
+          notifyError(err, "Impossible de changer le statut de la tâche.");
         },
       },
     );
@@ -251,9 +246,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
   const handleDelete = (taskId: string) => {
     deleteTask.mutate(taskId, {
       onError: (err) => {
-        if (!isUnauthorizedError(err)) {
-          toastError(describeError(err, "Impossible de supprimer la tâche."));
-        }
+        notifyError(err, "Impossible de supprimer la tâche.");
       },
     });
   };

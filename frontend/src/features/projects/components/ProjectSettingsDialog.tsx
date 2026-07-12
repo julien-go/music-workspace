@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { CoverCropDialog } from "./CoverCropDialog";
 import { useProjectSettings } from "../hooks/useProjectSettings";
+import { cldThumb } from "@/lib/cloudinary";
 import type { ProjectResponse } from "../types";
 import { dialogInputClass, dialogTextareaClass } from "./dialogStyles";
 
@@ -68,8 +69,10 @@ function CoverSection({ project, settings }: { project: ProjectResponse; setting
       <div className="flex items-center gap-4">
         {project.coverUrl ? (
           <img
-            src={project.coverUrl}
+            src={cldThumb(project.coverUrl, 64)}
             alt={project.name}
+            loading="lazy"
+            decoding="async"
             className="w-16 h-16 rounded-md object-cover shrink-0"
           />
         ) : (

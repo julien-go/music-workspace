@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePlayerStore } from "@/store/playerStore";
-import { toastError } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError } from "@/lib/toast";
+import { queryKeys } from "@/lib/queryKeys";
 import { getTrackVersions } from "../api";
 import { useArchiveTrack } from "./useArchiveTrack";
 import { useUnarchiveTrack } from "./useUnarchiveTrack";
 import type { TrackResponse } from "../types";
 
-// Playback + archive/unarchive side effects for a single track card.
 export function useTrackActions(
   projectId: string,
   projectName: string,
@@ -40,7 +39,7 @@ export function useTrackActions(
     setIsLoadingPlay(true);
     try {
       const versions = await queryClient.fetchQuery({
-        queryKey: ["trackVersions", projectId, track.id],
+        queryKey: queryKeys.trackVersions(projectId, track.id),
         queryFn: () => getTrackVersions(projectId, track.id),
       });
       const latest = versions.sort((a, b) => b.versionNumber - a.versionNumber)[0];
@@ -69,18 +68,14 @@ export function useTrackActions(
     archiveTrack.mutate(track.id, {
       onError: (err) => {
         setConfirmArchive(false);
-        if (!isUnauthorizedError(err)) {
-          toastError(describeError(err, "Impossible d'archiver la track."));
-        }
+        notifyError(err, "Impossible d'archiver la track.");
       },
     });
 
   const unarchiveAction = () =>
     unarchiveTrack.mutate(track.id, {
       onError: (err) => {
-        if (!isUnauthorizedError(err)) {
-          toastError(describeError(err, "Impossible de désarchiver la track."));
-        }
+        notifyError(err, "Impossible de désarchiver la track.");
       },
     });
 

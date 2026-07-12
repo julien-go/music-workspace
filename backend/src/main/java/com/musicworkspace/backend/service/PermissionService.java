@@ -14,9 +14,11 @@ import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
+import com.musicworkspace.backend.repository.UserRepository;
 import java.util.UUID;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +28,7 @@ public class PermissionService {
     private final ProjectMemberRepository projectMemberRepository;
     private final TrackRepository trackRepository;
     private final TrackVersionRepository trackVersionRepository;
-    private final ProjectAccessService projectAccessService;
+    private final UserRepository userRepository;
 
     public Project checkProjectPermission(UUID projectId, String email, ProjectRole requiredRole) {
         return resolveMembership(projectId, email, requiredRole).getProject();
@@ -70,7 +72,7 @@ public class PermissionService {
     }
 
     public ProjectMember resolveMembership(UUID projectId, String email, ProjectRole requiredRole) {
-        User user = projectAccessService.resolveUser(email);
+        User user = resolveUser(email);
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId())
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
 
@@ -82,6 +84,7 @@ public class PermissionService {
     }
 
     public User resolveUser(String email) {
-        return projectAccessService.resolveUser(email);
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useCreateTrackVersion } from "../hooks/useCreateTrackVersion";
 import { useAudioFileInput } from "../hooks/useAudioFileInput";
 import { dialogInputClass, dialogTextareaClass } from "@/features/projects/components/dialogStyles";
-import { toastError, toastSuccess } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError, toastSuccess } from "@/lib/toast";
 
 interface Props {
   projectId: string;
@@ -51,7 +50,7 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
           handleClose();
         },
         onError: (err) => {
-          if (!isUnauthorizedError(err)) toastError(describeError(err, "Échec de l'upload, réessaie"));
+          notifyError(err, "Échec de l'upload, réessaie");
         },
       },
     );

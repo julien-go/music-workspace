@@ -1,7 +1,6 @@
 import { Copy, Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toastError, toastSuccess } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError, toastError, toastSuccess } from "@/lib/toast";
 import { useUpdateProject } from "../hooks/useUpdateProject";
 import type { ProjectResponse } from "../types";
 
@@ -18,11 +17,7 @@ export function ShareProjectButton({ project }: Props) {
       { isPublic },
       {
         onError: (err) => {
-          if (!isUnauthorizedError(err)) {
-            toastError(
-              describeError(err, "Impossible de modifier la visibilité du projet."),
-            );
-          }
+          notifyError(err, "Impossible de modifier la visibilité du projet.");
         },
       },
     );
