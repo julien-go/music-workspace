@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import type { FieldError, UseFormRegisterReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useRegisterForm } from "./hooks/useRegisterForm";
@@ -49,6 +50,7 @@ function FormField({
 }
 
 export default function RegisterPage() {
+  useDocumentTitle("Inscription");
   const { register, submit, errors, isPending, serverMessage, serverErrors } =
     useRegisterForm();
 

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@tanstack/react-router";
@@ -10,6 +11,7 @@ const inputClass =
   "w-full rounded-lg border border-border bg-input px-3 py-2 text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors";
 
 export default function LoginPage() {
+  useDocumentTitle("Connexion");
   const login = useLogin();
   const {
     register,
