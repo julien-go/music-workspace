@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Music } from "lucide-react";
+import { cldThumb } from "@/lib/cloudinary";
 import { type ProjectResponse, ROLE_LABEL, ROLE_CLASS } from "../types";
 
 function formatDate(iso: string) {
@@ -23,8 +24,10 @@ function CoverAvatar({ name, coverUrl }: { name: string; coverUrl: string | null
   if (coverUrl) {
     return (
       <img
-        src={coverUrl}
+        src={cldThumb(coverUrl, 48)}
         alt={name}
+        loading="lazy"
+        decoding="async"
         className="w-12 h-12 rounded-md object-cover shrink-0"
       />
     );

@@ -1,5 +1,6 @@
 import { Music } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { cldThumb } from "@/lib/cloudinary";
 
 function initialsOf(name: string): string {
   return name
@@ -21,8 +22,9 @@ export function ProjectCover({ name, coverUrl, className }: Props) {
   if (coverUrl) {
     return (
       <img
-        src={coverUrl}
+        src={cldThumb(coverUrl, 128)}
         alt={name}
+        decoding="async"
         className={cn("w-32 h-32 object-cover rounded-lg", className)}
       />
     );
