@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { createTrack, createTrackVersion } from "../api";
 import { useAudioFileInput } from "../hooks/useAudioFileInput";
 import { useQueryClient } from "@tanstack/react-query";
-import { toastError, toastSuccess } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError, toastSuccess } from "@/lib/toast";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface Props {
   projectId: string;
@@ -59,14 +59,10 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
         await createTrackVersion(projectId, trackId, audioFile, undefined, data.versionLabel?.trim() || undefined);
         toastSuccess("Version uploadée avec succès");
       }
-      queryClient.invalidateQueries({ queryKey: ["tracks", projectId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks(projectId) });
       handleClose();
     } catch (err) {
-      if (!isUnauthorizedError(err)) {
-        toastError(
-          describeError(err, audioFile ? "Échec de l'upload, réessaie" : "Impossible de créer la track, réessaie"),
-        );
-      }
+      notifyError(err, audioFile ? "Échec de l'upload, réessaie" : "Impossible de créer la track, réessaie");
     } finally {
       setIsSubmitting(false);
     }

@@ -30,7 +30,6 @@ import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,9 +80,9 @@ class TrackServiceTest {
     }
 
     private void stubEnrichment(UUID id) {
-        when(trackVersionRepository.countByTrackId(id)).thenReturn(0L);
-        when(trackVersionRepository.findTopByTrackIdOrderByVersionNumberDesc(id)).thenReturn(Optional.empty());
-        when(trackCommentRepository.findTopByTrackIdOrderByCreatedAtDescIdDesc(id)).thenReturn(Optional.empty());
+        when(trackVersionRepository.countsByTrackIds(List.of(id))).thenReturn(List.of());
+        when(trackVersionRepository.findLatestNotesByTrackIds(List.of(id))).thenReturn(List.of());
+        when(trackCommentRepository.findLatestByTrackIds(List.of(id))).thenReturn(List.of());
     }
 
     @Test

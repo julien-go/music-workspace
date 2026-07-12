@@ -1,5 +1,6 @@
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -117,7 +118,7 @@ export default function PublicProjectPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["publicProject", projectId],
+    queryKey: queryKeys.publicProject(projectId),
     queryFn: () => fetchPublicProject(projectId),
   });
 

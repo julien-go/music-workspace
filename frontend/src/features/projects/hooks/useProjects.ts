@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { getProjects } from "../api";
 
 export function useProjects() {
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: queryKeys.projects(),
     queryFn: getProjects,
   });
 }

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { deleteVersionComment } from "../api";
 
 export function useDeleteVersionComment(projectId: string, trackId: string, versionId: string) {
@@ -7,7 +8,7 @@ export function useDeleteVersionComment(projectId: string, trackId: string, vers
     mutationFn: (commentId: string) => deleteVersionComment(projectId, trackId, versionId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["versionComments", projectId, trackId, versionId],
+        queryKey: queryKeys.versionComments(projectId, trackId, versionId),
       });
     },
   });

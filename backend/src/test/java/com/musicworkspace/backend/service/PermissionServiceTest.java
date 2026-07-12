@@ -3,7 +3,6 @@ package com.musicworkspace.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.musicworkspace.backend.entity.Project;
@@ -19,8 +18,10 @@ import com.musicworkspace.backend.exception.TaskNotFoundException;
 import com.musicworkspace.backend.exception.TrackNotFoundException;
 import com.musicworkspace.backend.exception.TrackVersionNotFoundException;
 import com.musicworkspace.backend.repository.ProjectMemberRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
+import com.musicworkspace.backend.repository.UserRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class PermissionServiceTest {
     private TrackVersionRepository trackVersionRepository;
 
     @Mock
-    private ProjectAccessService projectAccessService;
+    private UserRepository userRepository;
 
     @InjectMocks
     private PermissionService permissionService;
@@ -70,13 +71,13 @@ class PermissionServiceTest {
     }
 
     private void stubResolveAndMember(ProjectRole role) {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(user);
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId()))
                 .thenReturn(Optional.of(memberWithRole(role)));
     }
 
     private void stubResolveAndNoMember() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(user);
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId()))
                 .thenReturn(Optional.empty());
     }
@@ -270,12 +271,19 @@ class PermissionServiceTest {
     }
 
     @Test
-    void resolveUser_delegatesToProjectAccessService() {
-        when(projectAccessService.resolveUser(EMAIL)).thenReturn(user);
+    void resolveUser_returnsUserForEmail() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
         User result = permissionService.resolveUser(EMAIL);
 
         assertThat(result).isEqualTo(user);
-        verify(projectAccessService).resolveUser(EMAIL);
+    }
+
+    @Test
+    void resolveUser_throwsWhenUserNotFound() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> permissionService.resolveUser(EMAIL))
+                .isInstanceOf(UsernameNotFoundException.class);
     }
 }
