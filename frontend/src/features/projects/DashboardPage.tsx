@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
@@ -9,6 +10,7 @@ import { ProjectCard } from "./components/ProjectCard";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 
 export default function DashboardPage() {
+  useDocumentTitle("Tableau de bord");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: projects, isLoading, isError, error, refetch } = useProjects();
 

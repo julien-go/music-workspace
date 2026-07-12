@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /$
+Allow: /p/
+Disallow: /dashboard
+Disallow: /projects/
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://music-workspace.netlify.app/sitemap.xml

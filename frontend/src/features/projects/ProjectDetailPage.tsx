@@ -14,6 +14,7 @@ import { describeError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { TaskKanban } from "@/features/tasks/components/TaskKanban";
 import { CommentThread } from "@/features/comments/components/CommentThread";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { useProjectDetail } from "./hooks/useProjectDetail";
 import { useProjectPermissions } from "./hooks/useProjectPermissions";
 import { MembersSidebar } from "./components/MembersSidebar";
@@ -29,6 +30,7 @@ export default function ProjectDetailPage() {
   const { projectId } = routeApi.useParams();
   const d = useProjectDetail(projectId);
   const { canEdit, isOwner } = useProjectPermissions(d.project);
+  useDocumentTitle(d.project?.name);
 
   if (d.projectLoading) return <SkeletonProjectDetail />;
   if (d.projectError)

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { WaveformCanvas } from "./WaveformCanvas";
 
@@ -30,6 +31,7 @@ const features = [
 ];
 
 export default function HomePage() {
+  useDocumentTitle();
   return (
     <div className="flex flex-col">
       <section className="bg-background border-b border-border pt-20 md:pt-28 pb-0">
