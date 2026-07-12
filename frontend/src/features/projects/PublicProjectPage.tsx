@@ -1,6 +1,7 @@
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -121,6 +122,8 @@ export default function PublicProjectPage() {
     queryKey: queryKeys.publicProject(projectId),
     queryFn: () => fetchPublicProject(projectId),
   });
+
+  useDocumentTitle(project?.name);
 
   const notFound =
     isError && error instanceof ApiException && error.apiError.status === 404;

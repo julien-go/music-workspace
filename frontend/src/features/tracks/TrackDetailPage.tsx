@@ -12,6 +12,7 @@ import { CommentThread } from "@/features/comments/components/CommentThread";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
 import { describeError } from "@/lib/api";
+import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { useTrackDetail } from "./hooks/useTrackDetail";
 import { TrackHeader } from "./components/TrackHeader";
 import { TrackVersionsSection } from "./components/TrackVersionsSection";
@@ -23,6 +24,7 @@ const routeApi = getRouteApi("/auth-layout/projects/$projectId/tracks/$trackId")
 export default function TrackDetailPage() {
   const { projectId, trackId } = routeApi.useParams();
   const d = useTrackDetail(projectId, trackId);
+  useDocumentTitle(d.track?.name);
 
   if (d.loading) return <SkeletonTrackDetail />;
   if (d.isError) {
