@@ -17,9 +17,6 @@ public interface TrackCommentRepository extends JpaRepository<TrackComment, UUID
     Optional<TrackComment> findByIdAndTrackId(UUID id, UUID trackId);
 
     @EntityGraph(attributePaths = {"author"})
-    Optional<TrackComment> findTopByTrackIdOrderByCreatedAtDescIdDesc(UUID trackId);
-
-    @EntityGraph(attributePaths = {"author"})
     @Query("SELECT tc FROM TrackComment tc WHERE tc.track.id IN :trackIds AND tc.createdAt = (SELECT MAX(tc2.createdAt) FROM TrackComment tc2 WHERE tc2.track.id = tc.track.id) AND tc.id = (SELECT MIN(tc3.id) FROM TrackComment tc3 WHERE tc3.track.id = tc.track.id AND tc3.createdAt = (SELECT MAX(tc4.createdAt) FROM TrackComment tc4 WHERE tc4.track.id = tc.track.id))")
     List<TrackComment> findLatestByTrackIds(@Param("trackIds") List<UUID> trackIds);
 }
