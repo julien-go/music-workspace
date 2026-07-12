@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   Outlet,
   redirect,
 } from "@tanstack/react-router";
@@ -9,14 +10,17 @@ import { useAuthStore } from "@/store/authStore";
 import { fetchMe } from "@/features/auth/api";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
-import HomePage from "@/features/home/HomePage";
 import NotFoundPage from "@/features/not-found/NotFoundPage";
-import LoginPage from "@/features/auth/LoginPage";
-import RegisterPage from "@/features/auth/RegisterPage";
-import DashboardPage from "@/features/projects/DashboardPage";
-import ProjectDetailPage from "@/features/projects/ProjectDetailPage";
-import PublicProjectPage from "@/features/projects/PublicProjectPage";
-import TrackDetailPage from "@/features/tracks/TrackDetailPage";
+
+// Pages are code-split: each becomes its own chunk, loaded on navigation so the
+// initial bundle no longer carries every route (dnd-kit, forms, the player…).
+const HomePage = lazyRouteComponent(() => import("@/features/home/HomePage"));
+const LoginPage = lazyRouteComponent(() => import("@/features/auth/LoginPage"));
+const RegisterPage = lazyRouteComponent(() => import("@/features/auth/RegisterPage"));
+const DashboardPage = lazyRouteComponent(() => import("@/features/projects/DashboardPage"));
+const ProjectDetailPage = lazyRouteComponent(() => import("@/features/projects/ProjectDetailPage"));
+const PublicProjectPage = lazyRouteComponent(() => import("@/features/projects/PublicProjectPage"));
+const TrackDetailPage = lazyRouteComponent(() => import("@/features/tracks/TrackDetailPage"));
 
 let authChecked = false;
 
