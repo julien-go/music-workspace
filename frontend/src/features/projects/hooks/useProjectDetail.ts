@@ -6,8 +6,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { toastError } from "@/lib/toast";
-import { isUnauthorizedError, describeError } from "@/lib/api";
+import { notifyError } from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
 import { useTracks } from "@/features/tracks/hooks/useTracks";
 import { useArchivedTracks } from "@/features/tracks/hooks/useArchivedTracks";
@@ -90,11 +89,7 @@ export function useProjectDetail(projectId: string) {
       {
         onError: (err) => {
           setOrderedIds(previousIds);
-          if (!isUnauthorizedError(err)) {
-            toastError(
-              describeError(err, "Impossible de réordonner les tracks."),
-            );
-          }
+          notifyError(err, "Impossible de réordonner les tracks.");
         },
       },
     );
