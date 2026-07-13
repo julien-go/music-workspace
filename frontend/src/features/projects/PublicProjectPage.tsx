@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Globe } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import { useDocumentTitle } from "@/components/hooks/useDocumentTitle";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +12,11 @@ import { ProjectCover } from "@/components/ProjectCover";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { ApiException, describeError } from "@/lib/api";
 import { usePlayerStore } from "@/store/playerStore";
-import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS } from "@/features/tracks/types";
+import { useAuthStore } from "@/store/authStore";
+import {
+  TRACK_STATUS_LABEL,
+  TRACK_STATUS_CLASS,
+} from "@/features/tracks/types";
 import { fetchPublicProject } from "./api";
 import type { PublicProjectResponse, PublicTrackResponse } from "./types";
 
@@ -69,6 +75,7 @@ function PublicTrackRow({
       versionId: track.latestVersionId,
       versionNumber: track.latestVersionNumber,
       audioUrl: track.latestAudioUrl,
+      origin: "public",
     });
   };
 
@@ -111,6 +118,18 @@ function PublicTrackRow({
 
 export default function PublicProjectPage() {
   const { projectId } = routeApi.useParams();
+  const user = useAuthStore((s) => s.user);
+
+  // Stop only playback that originated from this public view, so it doesn't carry
+  // into the shared authenticated player when leaving.
+  useEffect(() => {
+    return () => {
+      const { current, stop } = usePlayerStore.getState();
+      if (current?.origin === "public" && current.projectId === projectId) {
+        stop();
+      }
+    };
+  }, [projectId]);
 
   const {
     data: project,
@@ -158,62 +177,81 @@ export default function PublicProjectPage() {
         )}
 
         {!isLoading && !isError && project && (
-        <>
-          <div className="flex items-start gap-4 mb-10">
-            <ProjectCover
-              name={project.name}
-              coverUrl={project.coverUrl}
-              className="shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold font-heading text-foreground leading-tight">
-                {project.name}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                un projet de{" "}
-                <span className="text-foreground/80">{project.owner}</span>
-              </p>
-              {project.description && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-3">
-                  {project.description}
+          <>
+            <Badge
+              variant="outline"
+              className="mb-6 gap-1.5 text-muted-foreground"
+            >
+              <Globe className="size-3.5" aria-hidden="true" />
+              Vue publique
+            </Badge>
+            <div className="flex items-start gap-4 mb-10">
+              <ProjectCover
+                name={project.name}
+                coverUrl={project.coverUrl}
+                className="shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl font-bold font-heading text-foreground leading-tight">
+                  {project.name}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  un projet de{" "}
+                  <span className="text-foreground/80">{project.owner}</span>
                 </p>
+                {project.description && (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-3">
+                    {project.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
+              Tracks
+              {project.tracks.length > 0 && (
+                <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">
+                  {project.tracks.length}
+                </span>
+              )}
+            </h2>
+
+            {project.tracks.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
+                <p className="text-base">Aucune track pour le moment.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {project.tracks.map((track) => (
+                  <PublicTrackRow
+                    key={track.id}
+                    track={track}
+                    project={project}
+                  />
+                ))}
+              </div>
+            )}
+
+            <Separator className="my-10" />
+
+            <div className="text-center pb-4">
+              {user ? (
+                <Button variant="ghost" asChild>
+                  <Link to="/dashboard">Retour au tableau de bord</Link>
+                </Button>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Créez vos propres projets et collaborez en musique.
+                  </p>
+                  <Button asChild>
+                    <Link to="/register">Rejoindre Music Workspace</Link>
+                  </Button>
+                </>
               )}
             </div>
-          </div>
-
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-widest mb-5">
-            Tracks
-            {project.tracks.length > 0 && (
-              <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">
-                {project.tracks.length}
-              </span>
-            )}
-          </h2>
-
-          {project.tracks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-              <p className="text-base">Aucune track pour le moment.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {project.tracks.map((track) => (
-                <PublicTrackRow key={track.id} track={track} project={project} />
-              ))}
-            </div>
-          )}
-
-          <Separator className="my-10" />
-
-          <div className="text-center pb-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Créez vos propres projets et collaborez en musique.
-            </p>
-            <Button asChild>
-              <Link to="/register">Rejoindre Music Workspace</Link>
-            </Button>
-          </div>
-        </>
-      )}
+          </>
+        )}
       </div>
       <PersistentPlayer />
     </>
