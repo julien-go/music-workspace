@@ -1,4 +1,3 @@
-/** Loading placeholder for the project detail view (header + tracks + tasks + sidebar). */
 export function SkeletonProjectDetail() {
   return (
     <div

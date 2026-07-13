@@ -5,7 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Whether the user has requested reduced motion via their OS/browser setting. */
 export function prefersReducedMotion(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -36,7 +35,6 @@ export function getFileExtension(fileName: string | null | undefined): string | 
   return fileName.slice(lastDot).toLowerCase();
 }
 
-/** Removes the file extension from a file name, keeping the base name intact. */
 export function stripFileExtension(fileName: string): string {
   const lastDot = fileName.lastIndexOf(".");
   if (lastDot <= 0) return fileName;

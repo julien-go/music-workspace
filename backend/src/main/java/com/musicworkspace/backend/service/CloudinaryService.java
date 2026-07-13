@@ -56,7 +56,6 @@ public class CloudinaryService {
             cloudinary.api().deleteResourcesByPrefix(folder + "/", ObjectUtils.asMap("resource_type", "video"));
             cloudinary.api().deleteFolder(folder, ObjectUtils.emptyMap());
         } catch (Exception ignored) {
-            // best-effort cleanup
         }
     }
 }

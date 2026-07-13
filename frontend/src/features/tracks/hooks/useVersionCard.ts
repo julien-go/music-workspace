@@ -7,7 +7,6 @@ import { useDeleteVersionComment } from "./useDeleteVersionComment";
 import { useUpdateTrackVersion } from "./useUpdateTrackVersion";
 import type { TrackVersionResponse } from "../types";
 
-// Display/edit state and comment-thread wiring for a version card.
 export function useVersionCard(
   version: TrackVersionResponse,
   projectId: string,

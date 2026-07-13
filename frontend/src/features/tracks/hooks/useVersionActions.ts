@@ -1,8 +1,7 @@
 import { usePlayerStore } from "@/store/playerStore";
 import type { TrackVersionResponse } from "../types";
 
-// Playback action for a single version card. (Versions are immutable by
-// design — no delete/download exists on this card.)
+// Versions are immutable by design — no delete/download exists on this card.
 export function useVersionActions(
   version: TrackVersionResponse,
   ctx: { projectId: string; projectName: string; trackId: string; trackName: string },
