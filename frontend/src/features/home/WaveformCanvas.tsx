@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { prefersReducedMotion } from "@/lib/utils";
 
 export function WaveformCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,15 +18,11 @@ export function WaveformCanvas() {
       getComputedStyle(document.documentElement)
         .getPropertyValue("--accent")
         .trim() || "#949dfa";
-    // Parse the accent hex once so bar opacity can be modulated per amplitude.
-    const r = parseInt(accentColor.slice(1, 3), 16);
-    const g = parseInt(accentColor.slice(3, 5), 16);
-    const b = parseInt(accentColor.slice(5, 7), 16);
 
     const numBars = 96;
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const reduceMotion = prefersReducedMotion();
+    // roundRect is unavailable on older engines (Safari ≤ 15) — fall back to rect().
+    const hasRoundRect = typeof ctx.roundRect === "function";
 
     let time = 0;
     let animId = 0;
@@ -66,6 +63,8 @@ export function WaveformCanvas() {
       const radius = barWidth / 2;
       const maxHeight = h * 0.9;
 
+      ctx!.fillStyle = accentColor;
+
       for (let i = 0; i < numBars; i++) {
         const x = i * gap;
         const t = i / numBars;
@@ -79,25 +78,37 @@ export function WaveformCanvas() {
 
         // Old animation: gaussian bump around the cursor, faded by hoverStrength.
         const dist = Math.abs(t - smoothMouseX.current);
-        const boost = Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
+        const boost =
+          Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
 
         const amp = Math.min(1, Math.abs(raw) + boost);
 
         // New form: rounded, vertically centered symmetric bar; opacity tracks amplitude.
         const barHeight = Math.max(barWidth, amp * maxHeight);
         const y = centerY - barHeight / 2;
-        ctx!.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.3 + amp * 0.6})`;
+        ctx!.globalAlpha = 0.3 + amp * 0.6;
         ctx!.beginPath();
-        ctx!.roundRect(x, y, barWidth, barHeight, radius);
+        if (hasRoundRect) {
+          ctx!.roundRect(x, y, barWidth, barHeight, radius);
+        } else {
+          ctx!.rect(x, y, barWidth, barHeight);
+        }
         ctx!.fill();
       }
+      ctx!.globalAlpha = 1;
 
       time += 0.008;
       if (!reduceMotion) animId = requestAnimationFrame(draw);
     }
 
+    function handleResize() {
+      setupCanvas();
+      // No rAF loop in reduced-motion mode, so repaint the static frame on resize.
+      if (reduceMotion) draw();
+    }
+
     setupCanvas();
-    window.addEventListener("resize", setupCanvas);
+    window.addEventListener("resize", handleResize);
     if (!reduceMotion) {
       canvas.addEventListener("mousemove", handleMouseMove);
       canvas.addEventListener("mouseleave", handleMouseLeave);
@@ -106,7 +117,7 @@ export function WaveformCanvas() {
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", setupCanvas);
+      window.removeEventListener("resize", handleResize);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };

@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+import { cn, prefersReducedMotion } from "@/lib/utils";
 
 type RevealProps = {
   children: ReactNode;
@@ -14,7 +10,11 @@ type RevealProps = {
 
 export function Reveal({ children, delay = 0, className }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(prefersReducedMotion);
+  // Reveal upfront when animation is unwanted or unobservable (reduced motion,
+  // or no IntersectionObserver on very old engines) so nothing stays at opacity 0.
+  const [shown, setShown] = useState(
+    () => prefersReducedMotion() || typeof IntersectionObserver === "undefined"
+  );
 
   useEffect(() => {
     if (shown) return;
@@ -28,7 +28,7 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
         observer.disconnect();
         timeout = window.setTimeout(() => setShown(true), delay);
       },
-      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
+      { threshold: 0 }
     );
     observer.observe(el);
 

@@ -46,7 +46,6 @@ export default function HomePage() {
   useDocumentTitle();
   return (
     <div className="flex flex-col overflow-x-hidden">
-      {/* HERO */}
       <section className="relative flex flex-col items-center px-6 lg:px-16 pt-20 lg:pt-30 pb-16 lg:pb-22 text-center">
         <Reveal delay={50}>
           <h1 className="mt-8 max-w-230 text-[2.75rem] sm:text-6xl lg:text-[76px] font-semibold leading-[1.05] tracking-[-0.03em]">
@@ -77,7 +76,6 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* APP SHOWCASE */}
       <section className="flex justify-center px-6 lg:px-16 pb-24 lg:pb-30">
         <Reveal className="w-full max-w-230 text-center">
           <p className={eyebrow}>L'espace de travail</p>
@@ -106,7 +104,6 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* FEATURES */}
       <section className="px-6 lg:px-16 pb-10">
         <Reveal className="mx-auto max-w-280 border-b border-border pb-14">
           <p className={eyebrow}>Fonctionnalités</p>
@@ -139,7 +136,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
       <section className="flex justify-center px-6 lg:px-16 py-24 lg:py-25">
         <Reveal className="w-full max-w-280">
           <div className="relative overflow-hidden rounded-[14px] border border-border bg-surface px-8 py-16 text-center lg:p-16">
@@ -162,7 +158,6 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* FOOTER */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-280 items-center justify-between px-6 py-8 lg:px-0">
           <div className="font-heading text-[15px] font-semibold">
