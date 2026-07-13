@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import type { ProjectResponse } from "../types";
 
-// Resolves the current user's capabilities from their project role.
 export function useProjectPermissions(project: ProjectResponse | undefined) {
   return useMemo(() => {
     const role = project?.currentUserRole;

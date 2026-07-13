@@ -51,7 +51,6 @@ export function WaveformCanvas() {
       const h = rect.height;
       ctx!.clearRect(0, 0, w, h);
 
-      // Old animation: smooth (lerped) mouse tracking + gradual hover fade.
       smoothMouseX.current +=
         (targetMouseX.current - smoothMouseX.current) * 0.04;
       hoverStrength.current +=
@@ -69,21 +68,18 @@ export function WaveformCanvas() {
         const x = i * gap;
         const t = i / numBars;
 
-        // Old animation: 4 layered sines for the perpetual undulation.
         const raw =
           Math.sin(t * 9 + time * 0.8) * 0.42 +
           Math.sin(t * 17 + time * 0.5) * 0.26 +
           Math.sin(t * 5 - time * 0.6) * 0.2 +
           Math.sin(t * 28 + time * 0.35) * 0.12;
 
-        // Old animation: gaussian bump around the cursor, faded by hoverStrength.
         const dist = Math.abs(t - smoothMouseX.current);
         const boost =
           Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
 
         const amp = Math.min(1, Math.abs(raw) + boost);
 
-        // New form: rounded, vertically centered symmetric bar; opacity tracks amplitude.
         const barHeight = Math.max(barWidth, amp * maxHeight);
         const y = centerY - barHeight / 2;
         ctx!.globalAlpha = 0.3 + amp * 0.6;

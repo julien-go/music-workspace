@@ -17,7 +17,6 @@ interface Props {
   className?: string;
 }
 
-/** Project thumbnail: the cover image, or an initials/Music-icon fallback. */
 export function ProjectCover({ name, coverUrl, className }: Props) {
   if (coverUrl) {
     return (

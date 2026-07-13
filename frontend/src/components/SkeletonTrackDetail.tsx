@@ -1,4 +1,3 @@
-/** Loading placeholder for the track detail view (version cards + comments + sidebar). */
 export function SkeletonTrackDetail() {
   return (
     <div

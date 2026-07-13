@@ -1,7 +1,6 @@
 import { usePlayerStore } from "@/store/playerStore";
 import type { TrackResponse } from "../types";
 
-// Derived, display-only state for a track card.
 export function useTrackCard(track: TrackResponse, canEdit: boolean) {
   const current = usePlayerStore((s) => s.current);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
