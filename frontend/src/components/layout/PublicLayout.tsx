@@ -19,10 +19,10 @@ export function PublicLayout() {
         desktopNav={
           <>
             <Button variant="ghost" asChild>
-              <Link to="/login">Login</Link>
+              <Link to="/login">Connexion</Link>
             </Button>
             <Button asChild>
-              <Link to="/register">Register</Link>
+              <Link to="/register">Créer un compte</Link>
             </Button>
           </>
         }
@@ -30,12 +30,12 @@ export function PublicLayout() {
           <>
             <SheetClose asChild>
               <Button variant="ghost" asChild className="justify-start">
-                <Link to="/login">Login</Link>
+                <Link to="/login">Connexion</Link>
               </Button>
             </SheetClose>
             <SheetClose asChild>
               <Button asChild className="justify-start">
-                <Link to="/register">Register</Link>
+                <Link to="/register">Créer un compte</Link>
               </Button>
             </SheetClose>
           </>

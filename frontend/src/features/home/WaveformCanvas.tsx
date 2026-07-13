@@ -9,25 +9,33 @@ export function WaveformCanvas() {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const canvas = canvasRef.current as HTMLCanvasElement;
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const safeCtx = ctx as CanvasRenderingContext2D;
 
     const accentColor =
       getComputedStyle(document.documentElement)
         .getPropertyValue("--accent")
-        .trim() || "#E8642A";
+        .trim() || "#949dfa";
+    // Parse the accent hex once so bar opacity can be modulated per amplitude.
+    const r = parseInt(accentColor.slice(1, 3), 16);
+    const g = parseInt(accentColor.slice(3, 5), 16);
+    const b = parseInt(accentColor.slice(5, 7), 16);
+
+    const numBars = 96;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
 
     let time = 0;
-    let animId: number;
+    let animId = 0;
 
     function setupCanvas() {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      safeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function handleMouseMove(e: MouseEvent) {
@@ -40,58 +48,60 @@ export function WaveformCanvas() {
       isHovering.current = false;
     }
 
-    setupCanvas();
-    window.addEventListener("resize", setupCanvas);
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseleave", handleMouseLeave);
-
     function draw() {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      safeCtx.clearRect(0, 0, w, h);
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      ctx!.clearRect(0, 0, w, h);
 
-      smoothMouseX.current += (targetMouseX.current - smoothMouseX.current) * 0.04;
+      // Old animation: smooth (lerped) mouse tracking + gradual hover fade.
+      smoothMouseX.current +=
+        (targetMouseX.current - smoothMouseX.current) * 0.04;
       hoverStrength.current +=
         ((isHovering.current ? 1 : 0) - hoverStrength.current) * 0.025;
 
-      const barWidth = 3;
-      const gap = 2;
-      const step = barWidth + gap;
-      const numBars = Math.floor(w / step);
-      const offsetX = (w - numBars * step) / 2;
       const centerY = h / 2;
-      const maxAmplitude = (h / 2) * 0.88;
-
-      safeCtx.fillStyle = accentColor;
-      safeCtx.globalAlpha = 0.55;
+      const gap = w / numBars;
+      const barWidth = Math.max(1.5, gap * 0.45);
+      const radius = barWidth / 2;
+      const maxHeight = h * 0.9;
 
       for (let i = 0; i < numBars; i++) {
-        const x = offsetX + i * step;
+        const x = i * gap;
         const t = i / numBars;
 
+        // Old animation: 4 layered sines for the perpetual undulation.
         const raw =
           Math.sin(t * 9 + time * 0.8) * 0.42 +
           Math.sin(t * 17 + time * 0.5) * 0.26 +
           Math.sin(t * 5 - time * 0.6) * 0.2 +
           Math.sin(t * 28 + time * 0.35) * 0.12;
 
-        const baseHeight = Math.abs(raw) * maxAmplitude;
-
+        // Old animation: gaussian bump around the cursor, faded by hoverStrength.
         const dist = Math.abs(t - smoothMouseX.current);
-        const boost =
-          Math.exp(-dist * dist * 200) * hoverStrength.current * maxAmplitude * 0.32;
+        const boost = Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
 
-        const barHeight = baseHeight + boost;
-        const asym = 0.52 + 0.1 * Math.sin(t * 6.5 + time * 0.18);
+        const amp = Math.min(1, Math.abs(raw) + boost);
 
-        safeCtx.fillRect(x, centerY - barHeight * asym, barWidth, barHeight * asym);
-        safeCtx.fillRect(x, centerY, barWidth, barHeight * (1 - asym));
+        // New form: rounded, vertically centered symmetric bar; opacity tracks amplitude.
+        const barHeight = Math.max(barWidth, amp * maxHeight);
+        const y = centerY - barHeight / 2;
+        ctx!.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.3 + amp * 0.6})`;
+        ctx!.beginPath();
+        ctx!.roundRect(x, y, barWidth, barHeight, radius);
+        ctx!.fill();
       }
 
       time += 0.008;
-      animId = requestAnimationFrame(draw);
+      if (!reduceMotion) animId = requestAnimationFrame(draw);
     }
 
+    setupCanvas();
+    window.addEventListener("resize", setupCanvas);
+    if (!reduceMotion) {
+      canvas.addEventListener("mousemove", handleMouseMove);
+      canvas.addEventListener("mouseleave", handleMouseLeave);
+    }
     draw();
 
     return () => {
@@ -103,6 +113,10 @@ export function WaveformCanvas() {
   }, []);
 
   return (
-    <canvas ref={canvasRef} aria-hidden="true" className="w-full h-30 block" />
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="block w-full h-[110px] cursor-crosshair"
+    />
   );
 }
