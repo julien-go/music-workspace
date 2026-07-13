@@ -1,9 +1,12 @@
 import { Outlet, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
-import { SheetClose } from "@/components/ui/sheet";
+import { useAuthStore } from "@/store/authStore";
+import { SessionNavDesktop, SessionNavMobile } from "./SessionNav";
+import { GuestNavDesktop, GuestNavMobile } from "./GuestNav";
 
 export function PublicLayout() {
+  const user = useAuthStore((s) => s.user);
+
   const brand = (
     <Link to="/" className="font-heading font-bold text-xl">
       <span className="text-accent">Music</span>
@@ -16,30 +19,8 @@ export function PublicLayout() {
       <Navbar
         brand={brand}
         maxWidthClassName="max-w-5xl"
-        desktopNav={
-          <>
-            <Button variant="ghost" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/register">Register</Link>
-            </Button>
-          </>
-        }
-        mobileNav={
-          <>
-            <SheetClose asChild>
-              <Button variant="ghost" asChild className="justify-start">
-                <Link to="/login">Login</Link>
-              </Button>
-            </SheetClose>
-            <SheetClose asChild>
-              <Button asChild className="justify-start">
-                <Link to="/register">Register</Link>
-              </Button>
-            </SheetClose>
-          </>
-        }
+        desktopNav={user ? <SessionNavDesktop /> : <GuestNavDesktop />}
+        mobileNav={user ? <SessionNavMobile /> : <GuestNavMobile />}
       />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         <Outlet />

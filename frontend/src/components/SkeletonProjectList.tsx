@@ -14,7 +14,6 @@ function SkeletonRow() {
   );
 }
 
-/** Loading placeholder for the dashboard project list. */
 export function SkeletonProjectList() {
   return (
     <div className="space-y-3 animate-pulse" role="status">

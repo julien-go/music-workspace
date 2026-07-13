@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: "Outfit", sans-serif;
+  --font-heading: "Space Grotesk", sans-serif;
   --font-sans: "DM Sans", sans-serif;
 
   --color-background: var(--background);
@@ -112,6 +112,6 @@
   h2,
   h3,
   h4 {
-    font-family: "Outfit", sans-serif;
+    font-family: "Space Grotesk", sans-serif;
   }
 }

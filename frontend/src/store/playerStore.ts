@@ -8,6 +8,9 @@ export interface PlayingVersion {
   versionId: string;
   versionNumber: number;
   audioUrl: string;
+  // Set when playback starts from the public project view, so it can be stopped
+  // on leaving instead of carrying into the shared authenticated player.
+  origin?: "public";
   notes?: string | null;
   label?: string | null;
   originalFileName?: string | null;

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { prefersReducedMotion } from "@/lib/utils";
 
 export function WaveformCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -9,25 +10,29 @@ export function WaveformCanvas() {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const canvas = canvasRef.current as HTMLCanvasElement;
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const safeCtx = ctx as CanvasRenderingContext2D;
 
     const accentColor =
       getComputedStyle(document.documentElement)
         .getPropertyValue("--accent")
-        .trim() || "#E8642A";
+        .trim() || "#949dfa";
+
+    const numBars = 96;
+    const reduceMotion = prefersReducedMotion();
+    // roundRect is unavailable on older engines (Safari ≤ 15) — fall back to rect().
+    const hasRoundRect = typeof ctx.roundRect === "function";
 
     let time = 0;
-    let animId: number;
+    let animId = 0;
 
     function setupCanvas() {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      safeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function handleMouseMove(e: MouseEvent) {
@@ -40,33 +45,27 @@ export function WaveformCanvas() {
       isHovering.current = false;
     }
 
-    setupCanvas();
-    window.addEventListener("resize", setupCanvas);
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseleave", handleMouseLeave);
-
     function draw() {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      safeCtx.clearRect(0, 0, w, h);
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      ctx!.clearRect(0, 0, w, h);
 
-      smoothMouseX.current += (targetMouseX.current - smoothMouseX.current) * 0.04;
+      smoothMouseX.current +=
+        (targetMouseX.current - smoothMouseX.current) * 0.04;
       hoverStrength.current +=
         ((isHovering.current ? 1 : 0) - hoverStrength.current) * 0.025;
 
-      const barWidth = 3;
-      const gap = 2;
-      const step = barWidth + gap;
-      const numBars = Math.floor(w / step);
-      const offsetX = (w - numBars * step) / 2;
       const centerY = h / 2;
-      const maxAmplitude = (h / 2) * 0.88;
+      const gap = w / numBars;
+      const barWidth = Math.max(1.5, gap * 0.45);
+      const radius = barWidth / 2;
+      const maxHeight = h * 0.9;
 
-      safeCtx.fillStyle = accentColor;
-      safeCtx.globalAlpha = 0.55;
+      ctx!.fillStyle = accentColor;
 
       for (let i = 0; i < numBars; i++) {
-        const x = offsetX + i * step;
+        const x = i * gap;
         const t = i / numBars;
 
         const raw =
@@ -75,34 +74,56 @@ export function WaveformCanvas() {
           Math.sin(t * 5 - time * 0.6) * 0.2 +
           Math.sin(t * 28 + time * 0.35) * 0.12;
 
-        const baseHeight = Math.abs(raw) * maxAmplitude;
-
         const dist = Math.abs(t - smoothMouseX.current);
         const boost =
-          Math.exp(-dist * dist * 200) * hoverStrength.current * maxAmplitude * 0.32;
+          Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
 
-        const barHeight = baseHeight + boost;
-        const asym = 0.52 + 0.1 * Math.sin(t * 6.5 + time * 0.18);
+        const amp = Math.min(1, Math.abs(raw) + boost);
 
-        safeCtx.fillRect(x, centerY - barHeight * asym, barWidth, barHeight * asym);
-        safeCtx.fillRect(x, centerY, barWidth, barHeight * (1 - asym));
+        const barHeight = Math.max(barWidth, amp * maxHeight);
+        const y = centerY - barHeight / 2;
+        ctx!.globalAlpha = 0.3 + amp * 0.6;
+        ctx!.beginPath();
+        if (hasRoundRect) {
+          ctx!.roundRect(x, y, barWidth, barHeight, radius);
+        } else {
+          ctx!.rect(x, y, barWidth, barHeight);
+        }
+        ctx!.fill();
       }
+      ctx!.globalAlpha = 1;
 
       time += 0.008;
-      animId = requestAnimationFrame(draw);
+      if (!reduceMotion) animId = requestAnimationFrame(draw);
     }
 
+    function handleResize() {
+      setupCanvas();
+      // No rAF loop in reduced-motion mode, so repaint the static frame on resize.
+      if (reduceMotion) draw();
+    }
+
+    setupCanvas();
+    window.addEventListener("resize", handleResize);
+    if (!reduceMotion) {
+      canvas.addEventListener("mousemove", handleMouseMove);
+      canvas.addEventListener("mouseleave", handleMouseLeave);
+    }
     draw();
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", setupCanvas);
+      window.removeEventListener("resize", handleResize);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
 
   return (
-    <canvas ref={canvasRef} aria-hidden="true" className="w-full h-30 block" />
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="block w-full h-[110px] cursor-crosshair"
+    />
   );
 }

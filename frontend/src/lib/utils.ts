@@ -5,6 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export function formatRelativeTime(isoDate: string): string {
   const diffMs = Date.now() - new Date(isoDate).getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
@@ -28,7 +35,6 @@ export function getFileExtension(fileName: string | null | undefined): string | 
   return fileName.slice(lastDot).toLowerCase();
 }
 
-/** Removes the file extension from a file name, keeping the base name intact. */
 export function stripFileExtension(fileName: string): string {
   const lastDot = fileName.lastIndexOf(".");
   if (lastDot <= 0) return fileName;
