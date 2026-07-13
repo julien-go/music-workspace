@@ -327,6 +327,17 @@ class TrackVersionServiceTest {
     }
 
     @Test
+    void create_checksPermissionBeforeValidatingFile() {
+        MockMultipartFile invalid = new MockMultipartFile("file", "note.txt", "text/plain", new byte[0]);
+
+        when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
+                .thenThrow(new ProjectNotFoundException("Project not found"));
+
+        assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, invalid, EMAIL))
+                .isInstanceOf(ProjectNotFoundException.class);
+    }
+
+    @Test
     void create_throwsWhenFileIsEmpty() {
         MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", new byte[0]);
 

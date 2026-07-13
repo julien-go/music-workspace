@@ -39,8 +39,9 @@ public class TrackVersionService {
 
     @Transactional
     public TrackVersionResponse create(UUID projectId, UUID trackId, String notes, String label, MultipartFile file, String email) {
-        validateAudioFile(file);
+        // Authorize before running Tika over an unauthorized caller's upload.
         Track track = permissionService.checkTrackPermission(projectId, trackId, email, ProjectRole.COLLABORATOR);
+        validateAudioFile(file);
 
         if (track.isArchived()) {
             throw new TrackAlreadyArchivedException("Cannot add a version to an archived track");
