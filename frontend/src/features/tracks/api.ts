@@ -87,14 +87,24 @@ export function deleteTrackComment(projectId: string, trackId: string, commentId
 }
 
 export function getVersionComments(projectId: string, trackId: string, versionId: string) {
-  return fetchApi<CommentResponse[]>(`/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`);
+  return fetchApi<CommentResponse[]>(
+    `/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`,
+  );
 }
 
-export function addVersionComment(projectId: string, trackId: string, versionId: string, content: string) {
-  return fetchApi<CommentResponse>(`/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`, {
-    method: "POST",
-    body: JSON.stringify({ content }),
-  });
+export function addVersionComment(
+  projectId: string,
+  trackId: string,
+  versionId: string,
+  content: string,
+) {
+  return fetchApi<CommentResponse>(
+    `/projects/${projectId}/tracks/${trackId}/versions/${versionId}/comments`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    },
+  );
 }
 
 export function deleteVersionComment(

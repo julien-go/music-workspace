@@ -113,9 +113,7 @@ function DisplayField({
   return (
     <div className="group flex items-start gap-1.5 min-w-0">
       {value ? (
-        <span className={`${className} ${displayClassName} block min-w-0`}>
-          {value}
-        </span>
+        <span className={`${className} ${displayClassName} block min-w-0`}>{value}</span>
       ) : emptyLabel ? (
         <span className="text-sm text-muted-foreground italic">{emptyLabel}</span>
       ) : null}

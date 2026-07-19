@@ -23,7 +23,12 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function InviteMemberDialog({ projectId, open, onClose }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { role: "COLLABORATOR" },
   });
@@ -58,7 +63,9 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="invite-email" className="text-sm font-medium text-foreground">Email *</label>
+            <label htmlFor="invite-email" className="text-sm font-medium text-foreground">
+              Email *
+            </label>
             <input
               id="invite-email"
               {...register("email")}
@@ -68,22 +75,30 @@ export function InviteMemberDialog({ projectId, open, onClose }: Props) {
               className={dialogInputClass}
               placeholder="collaborateur@example.com"
             />
-            {errors.email && <p role="alert" className="text-xs text-red-400">{errors.email.message}</p>}
+            {errors.email && (
+              <p role="alert" className="text-xs text-red-400">
+                {errors.email.message}
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="invite-role" className="text-sm font-medium text-foreground">Rôle</label>
-            <select
-              id="invite-role"
-              {...register("role")}
-              className={dialogInputClass}
-            >
+            <label htmlFor="invite-role" className="text-sm font-medium text-foreground">
+              Rôle
+            </label>
+            <select id="invite-role" {...register("role")} className={dialogInputClass}>
               <option value="COLLABORATOR">Collaborateur</option>
               <option value="VIEWER">Lecteur</option>
             </select>
           </div>
-          {serverError && <p role="alert" className="text-xs text-red-400">{serverError}</p>}
+          {serverError && (
+            <p role="alert" className="text-xs text-red-400">
+              {serverError}
+            </p>
+          )}
           <div className="flex justify-end gap-3 pt-1">
-            <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
             <Button type="submit" disabled={inviteMember.isPending}>
               {inviteMember.isPending ? "Invitation…" : "Inviter"}
             </Button>

@@ -2,12 +2,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CommentThread } from "@/features/comments/components/CommentThread";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonTrackDetail } from "@/components/SkeletonTrackDetail";
@@ -120,9 +115,7 @@ export default function TrackDetailPage() {
           </div>
         </div>
 
-        <div className="hidden md:flex w-72 shrink-0 sticky top-8 flex-col gap-4">
-          {sidebar}
-        </div>
+        <div className="hidden md:flex w-72 shrink-0 sticky top-8 flex-col gap-4">{sidebar}</div>
       </div>
 
       {d.canEdit && (

@@ -33,7 +33,11 @@ function InfoForm({ settings }: { settings: Settings }) {
           aria-invalid={errors.name ? true : undefined}
           className={dialogInputClass}
         />
-        {errors.name && <p role="alert" className="text-xs text-red-400">{errors.name.message}</p>}
+        {errors.name && (
+          <p role="alert" className="text-xs text-red-400">
+            {errors.name.message}
+          </p>
+        )}
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="project-settings-desc" className="text-sm font-medium text-foreground">
@@ -46,9 +50,15 @@ function InfoForm({ settings }: { settings: Settings }) {
           className={dialogTextareaClass}
         />
       </div>
-      {editError && <p role="alert" className="text-xs text-red-400">{editError}</p>}
+      {editError && (
+        <p role="alert" className="text-xs text-red-400">
+          {editError}
+        </p>
+      )}
       {updateProject.isSuccess && (
-        <p role="status" className="text-xs text-emerald-400">Sauvegardé.</p>
+        <p role="status" className="text-xs text-emerald-400">
+          Sauvegardé.
+        </p>
       )}
       <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={updateProject.isPending}>
@@ -102,9 +112,7 @@ function CoverSection({ project, settings }: { project: ProjectResponse; setting
                   : "Choisir une image"}
             </span>
           </label>
-          {uploadCover.isError && (
-            <p className="text-xs text-red-400">Erreur lors de l'upload.</p>
-          )}
+          {uploadCover.isError && <p className="text-xs text-red-400">Erreur lors de l'upload.</p>}
         </div>
       </div>
     </div>
@@ -123,7 +131,12 @@ function DangerZone({ project, settings }: { project: ProjectResponse; settings:
       </p>
       {deleteError && <p className="text-xs text-red-400 mb-3">{deleteError}</p>}
       {!confirming ? (
-        <Button variant="destructive" size="sm" onClick={() => setConfirming(true)} className="w-full">
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setConfirming(true)}
+          className="w-full"
+        >
           Supprimer le projet
         </Button>
       ) : (
@@ -132,7 +145,12 @@ function DangerZone({ project, settings }: { project: ProjectResponse; settings:
             Confirmer la suppression de « {project.name} » ?
           </p>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" className="flex-1" onClick={() => setConfirming(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1"
+              onClick={() => setConfirming(false)}
+            >
               Annuler
             </Button>
             <Button
@@ -156,7 +174,12 @@ export function ProjectSettingsDialog({ project, open, onClose }: Props) {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(v) => { if (!v) settings.handleClose(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) settings.handleClose();
+        }}
+      >
         <DialogContent className="bg-surface ring-border sm:max-w-md p-8 gap-0">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-xl font-heading font-bold">

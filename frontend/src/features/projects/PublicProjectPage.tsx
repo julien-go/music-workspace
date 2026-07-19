@@ -13,10 +13,7 @@ import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { ApiException, describeError } from "@/lib/api";
 import { usePlayerStore } from "@/store/playerStore";
 import { useAuthStore } from "@/store/authStore";
-import {
-  TRACK_STATUS_LABEL,
-  TRACK_STATUS_CLASS,
-} from "@/features/tracks/types";
+import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS } from "@/features/tracks/types";
 import { fetchPublicProject } from "./api";
 import type { PublicProjectResponse, PublicTrackResponse } from "./types";
 
@@ -53,9 +50,7 @@ function PublicTrackRow({
   const pause = usePlayerStore((s) => s.pause);
   const resume = usePlayerStore((s) => s.resume);
   // Primitive selectors so only the rows whose state actually changed re-render.
-  const isCurrentVersion = usePlayerStore(
-    (s) => s.current?.versionId === track.latestVersionId,
-  );
+  const isCurrentVersion = usePlayerStore((s) => s.current?.versionId === track.latestVersionId);
   const isThisPlaying = usePlayerStore(
     (s) => s.isPlaying && s.current?.versionId === track.latestVersionId,
   );
@@ -144,8 +139,7 @@ export default function PublicProjectPage() {
 
   useDocumentTitle(project?.name);
 
-  const notFound =
-    isError && error instanceof ApiException && error.apiError.status === 404;
+  const notFound = isError && error instanceof ApiException && error.apiError.status === 404;
 
   // The player renders unconditionally (below) so a state change on this page
   // — e.g. the project turning private mid-playback — never unmounts it,
@@ -178,26 +172,18 @@ export default function PublicProjectPage() {
 
         {!isLoading && !isError && project && (
           <>
-            <Badge
-              variant="outline"
-              className="mb-6 gap-1.5 text-muted-foreground"
-            >
+            <Badge variant="outline" className="mb-6 gap-1.5 text-muted-foreground">
               <Globe className="size-3.5" aria-hidden="true" />
               Vue publique
             </Badge>
             <div className="flex items-start gap-4 mb-10">
-              <ProjectCover
-                name={project.name}
-                coverUrl={project.coverUrl}
-                className="shrink-0"
-              />
+              <ProjectCover name={project.name} coverUrl={project.coverUrl} className="shrink-0" />
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold font-heading text-foreground leading-tight">
                   {project.name}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  un projet de{" "}
-                  <span className="text-foreground/80">{project.owner}</span>
+                  un projet de <span className="text-foreground/80">{project.owner}</span>
                 </p>
                 {project.description && (
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-3">
@@ -223,11 +209,7 @@ export default function PublicProjectPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 {project.tracks.map((track) => (
-                  <PublicTrackRow
-                    key={track.id}
-                    track={track}
-                    project={project}
-                  />
+                  <PublicTrackRow key={track.id} track={track} project={project} />
                 ))}
               </div>
             )}

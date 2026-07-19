@@ -1,14 +1,5 @@
-import {
-  DndContext,
-  closestCenter,
-  useDndContext,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { DndContext, closestCenter, useDndContext, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { SensorDescriptor, SensorOptions } from "@dnd-kit/core";
@@ -31,8 +22,10 @@ function SortableTrackCard({
   reorderPending: boolean;
 }) {
   const { active } = useDndContext();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: track.id, disabled: !canEdit || reorderPending });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: track.id,
+    disabled: !canEdit || reorderPending,
+  });
 
   return (
     <div
@@ -94,31 +87,19 @@ function ActiveTracks({
     );
   }
   if (isTracksError) {
-    return (
-      <p className="text-sm text-destructive">
-        Impossible de charger les tracks.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Impossible de charger les tracks.</p>;
   }
   if (tracks.length === 0) {
     if (showArchived) return null;
     return (
       <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
         <p className="text-base">Aucune track pour le moment.</p>
-        {canEdit && (
-          <p className="text-sm mt-1">
-            Créez votre première track pour commencer.
-          </p>
-        )}
+        {canEdit && <p className="text-sm mt-1">Créez votre première track pour commencer.</p>}
       </div>
     );
   }
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onDragEnd}
-    >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-3">
           {orderedTracks.map((track) => (

@@ -34,7 +34,8 @@ export function describeError(error: unknown, fallback: string): string {
     // 429 carries a user-facing French message from the rate limiter — hiding
     // it behind the fallback would invite the user to retry immediately.
     if (status === 429) return message || "Trop de tentatives, réessaie dans un instant.";
-    if (status >= 500) return "Le service est momentanément indisponible. Réessaie dans un instant.";
+    if (status >= 500)
+      return "Le service est momentanément indisponible. Réessaie dans un instant.";
   }
   return fallback;
 }
@@ -90,10 +91,7 @@ async function throwForErrorResponse(response: Response): Promise<never> {
   }
 }
 
-export async function fetchApi<T>(
-  endpoint: string,
-  options?: FetchApiOptions,
-): Promise<T> {
+export async function fetchApi<T>(endpoint: string, options?: FetchApiOptions): Promise<T> {
   const { skipAuthRedirect, ...requestInit } = options ?? {};
   const headers: Record<string, string> = {};
 

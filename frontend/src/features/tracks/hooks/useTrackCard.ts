@@ -9,9 +9,7 @@ export function useTrackCard(track: TrackResponse, canEdit: boolean) {
   const isCurrentlyPlaying = isCurrentTrack && isPlaying;
   // Editing an archived track is rejected server-side (409) — hide the affordances.
   const canEditContent = canEdit && !track.archived;
-  const versionsLabel = `${track.versionCount} version${
-    track.versionCount !== 1 ? "s" : ""
-  }`;
+  const versionsLabel = `${track.versionCount} version${track.versionCount !== 1 ? "s" : ""}`;
 
   return { isCurrentTrack, isCurrentlyPlaying, canEditContent, versionsLabel };
 }

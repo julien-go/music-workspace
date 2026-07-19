@@ -53,7 +53,11 @@ export function addMember(projectId: string, data: InviteMemberRequest) {
   });
 }
 
-export function updateMemberRole(projectId: string, userId: string, role: Exclude<ProjectRole, "OWNER">) {
+export function updateMemberRole(
+  projectId: string,
+  userId: string,
+  role: Exclude<ProjectRole, "OWNER">,
+) {
   return fetchApi<ProjectMemberResponse>(`/projects/${projectId}/members/${userId}`, {
     method: "PATCH",
     body: JSON.stringify({ role }),

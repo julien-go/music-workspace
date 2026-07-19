@@ -11,10 +11,7 @@ function getVolumeIcon(isMuted: boolean, volume: number) {
 // Owns the <audio> element and all playback state (progress, volume, mute).
 // The component stays presentational: wire `audioProps` onto <audio> and read
 // the returned state/handlers.
-export function useAudioPlayer(
-  current: PlayingVersion | null,
-  isPlaying: boolean,
-) {
+export function useAudioPlayer(current: PlayingVersion | null, isPlaying: boolean) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const prevVersionIdRef = useRef<string | null>(null);
   const volumeRef = useRef(0.8);
@@ -23,9 +20,7 @@ export function useAudioPlayer(
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [shownVersionId, setShownVersionId] = useState<string | null>(
-    current?.versionId ?? null,
-  );
+  const [shownVersionId, setShownVersionId] = useState<string | null>(current?.versionId ?? null);
 
   useEffect(() => {
     const audio = audioRef.current;

@@ -30,11 +30,7 @@ function PlayPauseButton({
       title={isPlaying ? "Pause" : "Lecture"}
       aria-label={label}
     >
-      {isPlaying ? (
-        <Pause className={iconClassName} />
-      ) : (
-        <Play className={iconClassName} />
-      )}
+      {isPlaying ? <Pause className={iconClassName} /> : <Play className={iconClassName} />}
     </button>
   );
 }
@@ -103,16 +99,12 @@ function PlayerBody(props: PlayerBodyProps) {
   const { current, isPlaying, onToggle, onStop, progress, duration } = props;
 
   const trackLabel = `${current.trackName} v${current.versionNumber}`;
-  const playLabel = isPlaying
-    ? `Mettre en pause ${trackLabel}`
-    : `Lire ${trackLabel}`;
+  const playLabel = isPlaying ? `Mettre en pause ${trackLabel}` : `Lire ${trackLabel}`;
   const progressValueText = `${formatTime(progress)} sur ${formatTime(duration)}`;
 
   const versionTitle =
     current.label ??
-    (current.originalFileName
-      ? stripFileExtension(current.originalFileName)
-      : null);
+    (current.originalFileName ? stripFileExtension(current.originalFileName) : null);
   const versionExt = getFileExtension(current.originalFileName);
 
   return (
@@ -161,16 +153,10 @@ function PlayerBody(props: PlayerBodyProps) {
         <div className="flex flex-col items-center gap-3">
           <div className="flex flex-col items-center gap-0.5">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-semibold text-foreground">
-                {current.trackName}
-              </span>
-              <span className="text-xl font-mono text-accent">
-                v{current.versionNumber}
-              </span>
+              <span className="text-xl font-semibold text-foreground">{current.trackName}</span>
+              <span className="text-xl font-mono text-accent">v{current.versionNumber}</span>
               {versionTitle && (
-                <span className="text-lg text-foreground/80 max-w-60 truncate">
-                  {versionTitle}
-                </span>
+                <span className="text-lg text-foreground/80 max-w-60 truncate">{versionTitle}</span>
               )}
               {versionExt && (
                 <span className="text-xs font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
@@ -183,9 +169,7 @@ function PlayerBody(props: PlayerBodyProps) {
                 </span>
               )}
             </div>
-            <span className="text-xs text-muted-foreground/60">
-              {current.projectName}
-            </span>
+            <span className="text-xs text-muted-foreground/60">{current.projectName}</span>
           </div>
 
           <div className="flex items-center gap-4">

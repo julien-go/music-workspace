@@ -64,7 +64,9 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="add-version-file" className="text-sm font-medium text-foreground">Fichier audio *</label>
+            <label htmlFor="add-version-file" className="text-sm font-medium text-foreground">
+              Fichier audio *
+            </label>
             <div
               className="border border-dashed border-border rounded-md px-4 py-3 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors"
               onClick={() => fileInputRef.current?.click()}
@@ -104,7 +106,9 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="add-version-label" className="text-sm font-medium text-foreground">Nom de la version</label>
+            <label htmlFor="add-version-label" className="text-sm font-medium text-foreground">
+              Nom de la version
+            </label>
             <input
               id="add-version-label"
               type="text"
@@ -116,7 +120,9 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="add-version-notes" className="text-sm font-medium text-foreground">Notes</label>
+            <label htmlFor="add-version-notes" className="text-sm font-medium text-foreground">
+              Notes
+            </label>
             <textarea
               id="add-version-notes"
               value={notes}
@@ -128,7 +134,9 @@ export function AddVersionDialog({ projectId, trackId, open, onClose }: Props) {
           </div>
 
           {(fileError ?? error) && (
-            <p role="alert" className="text-xs text-destructive">{fileError ?? error}</p>
+            <p role="alert" className="text-xs text-destructive">
+              {fileError ?? error}
+            </p>
           )}
 
           {/* Announces upload progress to screen readers (success is announced by the toast). */}

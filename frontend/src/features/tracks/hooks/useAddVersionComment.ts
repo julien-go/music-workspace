@@ -7,7 +7,9 @@ export function useAddVersionComment(projectId: string, trackId: string, version
   return useMutation({
     mutationFn: (content: string) => addVersionComment(projectId, trackId, versionId, content),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.versionComments(projectId, trackId, versionId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.versionComments(projectId, trackId, versionId),
+      });
     },
   });
 }
