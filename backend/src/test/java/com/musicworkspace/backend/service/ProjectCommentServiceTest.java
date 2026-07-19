@@ -131,7 +131,8 @@ class ProjectCommentServiceTest {
         ProjectMember ownerMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.OWNER).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(ownerMember);
-        when(projectCommentRepository.findByIdAndProjectId(otherComment.getId(), projectId)).thenReturn(Optional.of(otherComment));
+        when(projectCommentRepository.findByIdAndProjectId(otherComment.getId(), projectId))
+                .thenReturn(Optional.of(otherComment));
 
         projectCommentService.delete(projectId, otherComment.getId(), EMAIL);
 
@@ -145,9 +146,11 @@ class ProjectCommentServiceTest {
         ProjectMember collabMember = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(author).role(ProjectRole.COLLABORATOR).build();
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(collabMember);
-        when(projectCommentRepository.findByIdAndProjectId(otherComment.getId(), projectId)).thenReturn(Optional.of(otherComment));
+        when(projectCommentRepository.findByIdAndProjectId(otherComment.getId(), projectId))
+                .thenReturn(Optional.of(otherComment));
         doThrow(new CommentNotFoundException("Comment not found"))
-                .when(permissionService).checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
+                .when(permissionService)
+                .checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
 
         assertThatThrownBy(() -> projectCommentService.delete(projectId, otherComment.getId(), EMAIL))
                 .isInstanceOf(CommentNotFoundException.class);

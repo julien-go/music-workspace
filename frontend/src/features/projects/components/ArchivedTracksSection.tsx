@@ -27,16 +27,10 @@ function ArchivedList({
     );
   }
   if (isArchivedError) {
-    return (
-      <p className="text-sm text-destructive">
-        Impossible de charger les tracks archivées.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Impossible de charger les tracks archivées.</p>;
   }
   if (archivedTracks.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-4">Aucune track archivée.</p>
-    );
+    return <p className="text-sm text-muted-foreground py-4">Aucune track archivée.</p>;
   }
   return (
     <div className="space-y-3 opacity-70">
@@ -81,13 +75,9 @@ export function ArchivedTracksSection({
         className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
       >
         <span aria-hidden="true">{showArchived ? "▾" : "▸"}</span>
-        {showArchived
-          ? "Masquer les tracks archivées"
-          : "Afficher les tracks archivées"}
+        {showArchived ? "Masquer les tracks archivées" : "Afficher les tracks archivées"}
         {archivedTracks.length > 0 && (
-          <span className="text-muted-foreground/60">
-            ({archivedTracks.length})
-          </span>
+          <span className="text-muted-foreground/60">({archivedTracks.length})</span>
         )}
       </button>
 

@@ -15,9 +15,7 @@ export function WaveformCanvas() {
     if (!ctx) return;
 
     const accentColor =
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--accent")
-        .trim() || "#949dfa";
+      getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#949dfa";
 
     const numBars = 96;
     const reduceMotion = prefersReducedMotion();
@@ -51,10 +49,8 @@ export function WaveformCanvas() {
       const h = rect.height;
       ctx!.clearRect(0, 0, w, h);
 
-      smoothMouseX.current +=
-        (targetMouseX.current - smoothMouseX.current) * 0.04;
-      hoverStrength.current +=
-        ((isHovering.current ? 1 : 0) - hoverStrength.current) * 0.025;
+      smoothMouseX.current += (targetMouseX.current - smoothMouseX.current) * 0.04;
+      hoverStrength.current += ((isHovering.current ? 1 : 0) - hoverStrength.current) * 0.025;
 
       const centerY = h / 2;
       const gap = w / numBars;
@@ -75,8 +71,7 @@ export function WaveformCanvas() {
           Math.sin(t * 28 + time * 0.35) * 0.12;
 
         const dist = Math.abs(t - smoothMouseX.current);
-        const boost =
-          Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
+        const boost = Math.exp(-dist * dist * 200) * hoverStrength.current * 0.32;
 
         const amp = Math.min(1, Math.abs(raw) + boost);
 

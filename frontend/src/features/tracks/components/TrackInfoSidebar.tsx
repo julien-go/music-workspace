@@ -26,10 +26,7 @@ export function TrackInfoSidebar({
           <div className="flex justify-between items-center gap-2">
             <dt className="text-muted-foreground">Statut</dt>
             <dd>
-              <Badge
-                variant="outline"
-                className={`text-xs ${TRACK_STATUS_CLASS[track.status]}`}
-              >
+              <Badge variant="outline" className={`text-xs ${TRACK_STATUS_CLASS[track.status]}`}>
                 {TRACK_STATUS_LABEL[track.status]}
               </Badge>
             </dd>
@@ -40,9 +37,7 @@ export function TrackInfoSidebar({
           </div>
           <div className="flex justify-between items-center gap-2">
             <dt className="text-muted-foreground">Créée</dt>
-            <dd className="text-foreground">
-              {formatRelativeTime(track.createdAt)}
-            </dd>
+            <dd className="text-foreground">{formatRelativeTime(track.createdAt)}</dd>
           </div>
         </dl>
         {track.archived && (

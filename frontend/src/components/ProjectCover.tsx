@@ -38,9 +38,7 @@ export function ProjectCover({ name, coverUrl, className }: Props) {
       )}
     >
       {initials ? (
-        <span className="text-2xl font-semibold text-muted-foreground">
-          {initials}
-        </span>
+        <span className="text-2xl font-semibold text-muted-foreground">{initials}</span>
       ) : (
         <Music className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
       )}

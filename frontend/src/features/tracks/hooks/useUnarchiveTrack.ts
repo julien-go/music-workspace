@@ -12,17 +12,21 @@ export function useUnarchiveTrack(projectId: string) {
       await queryClient.cancelQueries({ queryKey: queryKeys.archivedTracks(projectId) });
 
       const previousActive = queryClient.getQueryData<TrackResponse[]>(queryKeys.tracks(projectId));
-      const previousArchived = queryClient.getQueryData<TrackResponse[]>(queryKeys.archivedTracks(projectId));
+      const previousArchived = queryClient.getQueryData<TrackResponse[]>(
+        queryKeys.archivedTracks(projectId),
+      );
 
       const unarchivedTrack = previousArchived?.find((t) => t.id === trackId);
       if (unarchivedTrack) {
         queryClient.setQueryData<TrackResponse[]>(queryKeys.tracks(projectId), (old) =>
-          old ? [...old, { ...unarchivedTrack, archived: false }] : [{ ...unarchivedTrack, archived: false }]
+          old
+            ? [...old, { ...unarchivedTrack, archived: false }]
+            : [{ ...unarchivedTrack, archived: false }],
         );
       }
 
       queryClient.setQueryData<TrackResponse[]>(queryKeys.archivedTracks(projectId), (old) =>
-        old ? old.filter((t) => t.id !== trackId) : []
+        old ? old.filter((t) => t.id !== trackId) : [],
       );
 
       return { previousActive, previousArchived };

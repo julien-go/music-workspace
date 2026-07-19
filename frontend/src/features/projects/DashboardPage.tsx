@@ -18,10 +18,7 @@ export default function DashboardPage() {
     <div className="max-w-300 mx-auto px-4 md:px-6 py-10">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-foreground">Mes projets</h1>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="w-full md:w-auto"
-        >
+        <Button onClick={() => setDialogOpen(true)} className="w-full md:w-auto">
           Nouveau projet
         </Button>
       </div>
@@ -43,9 +40,7 @@ export default function DashboardPage() {
             aria-hidden="true"
           />
           <div className="space-y-1" role="status">
-            <p className="text-foreground font-medium">
-              Aucun projet pour le moment
-            </p>
+            <p className="text-foreground font-medium">Aucun projet pour le moment</p>
             <p className="text-sm text-muted-foreground">
               Créez votre premier projet pour commencer
             </p>
@@ -62,10 +57,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <CreateProjectDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-      />
+      <CreateProjectDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </div>
   );
 }

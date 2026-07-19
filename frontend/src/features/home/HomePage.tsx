@@ -9,26 +9,22 @@ const features = [
   {
     number: "01",
     title: "Projets centralisés",
-    description:
-      "Pistes, versions et tâches dans un seul espace de travail partagé par l'équipe.",
+    description: "Pistes, versions et tâches dans un seul espace de travail partagé par l'équipe.",
   },
   {
     number: "02",
     title: "Versioning audio",
-    description:
-      "Chaque upload est historisé. Comparez les versions, rien ne se perd.",
+    description: "Chaque upload est historisé. Comparez les versions, rien ne se perd.",
   },
   {
     number: "03",
     title: "Rôles & permissions",
-    description:
-      "Owner, Collaborateur, Viewer : le bon niveau d'accès pour chaque membre.",
+    description: "Owner, Collaborateur, Viewer : le bon niveau d'accès pour chaque membre.",
   },
   {
     number: "04",
     title: "Retours ciblés",
-    description:
-      "Commentez au bon niveau : le projet, une piste ou une version précise.",
+    description: "Commentez au bon niveau : le projet, une piste ou une version précise.",
   },
 ];
 
@@ -39,8 +35,7 @@ const featureCellClasses = [
   "md:pl-12",
 ];
 
-const eyebrow =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-accent mb-3.5";
+const eyebrow = "text-[13px] font-semibold uppercase tracking-[0.06em] text-accent mb-3.5";
 
 export default function HomePage() {
   useDocumentTitle();
@@ -56,9 +51,8 @@ export default function HomePage() {
         </Reveal>
         <Reveal delay={100}>
           <p className="mt-7 max-w-130 text-lg leading-relaxed text-muted-foreground">
-            La plateforme de gestion de projets musicaux pour les équipes
-            créatives. Un seul espace pour vos pistes, vos versions et votre
-            équipe.
+            La plateforme de gestion de projets musicaux pour les équipes créatives. Un seul espace
+            pour vos pistes, vos versions et votre équipe.
           </p>
         </Reveal>
         <Reveal delay={150}>
@@ -80,8 +74,7 @@ export default function HomePage() {
         <Reveal className="w-full max-w-230 text-center">
           <p className={eyebrow}>L'espace de travail</p>
           <h2 className="mb-11 text-2xl lg:text-[32px] font-semibold tracking-[-0.02em]">
-            Toutes vos pistes, vos versions et vos retours réunis au même
-            endroit.
+            Toutes vos pistes, vos versions et vos retours réunis au même endroit.
           </h2>
           <div className="relative">
             <div
@@ -108,8 +101,7 @@ export default function HomePage() {
         <Reveal className="mx-auto max-w-280 border-b border-border pb-14">
           <p className={eyebrow}>Fonctionnalités</p>
           <h2 className="max-w-160 text-3xl lg:text-[38px] font-semibold tracking-[-0.02em]">
-            Un flux de travail construit pour la production, pas pour les
-            fichiers.
+            Un flux de travail construit pour la production, pas pour les fichiers.
           </h2>
         </Reveal>
         <div className="mx-auto grid max-w-280 md:grid-cols-2">
@@ -117,10 +109,7 @@ export default function HomePage() {
             <Reveal
               key={number}
               delay={index * 60 + (index > 0 ? 20 : 0)}
-              className={cn(
-                "group border-border py-13",
-                featureCellClasses[index],
-              )}
+              className={cn("group border-border py-13", featureCellClasses[index])}
             >
               <div className="mb-5 font-heading text-[15px] text-muted-foreground transition-colors duration-300 group-hover:text-accent">
                 {number}
@@ -163,9 +152,7 @@ export default function HomePage() {
           <div className="font-heading text-[15px] font-semibold">
             <span className="text-accent">Music</span> Workspace
           </div>
-          <div className="text-[13px] text-muted-foreground">
-            © {new Date().getFullYear()}
-          </div>
+          <div className="text-[13px] text-muted-foreground">© {new Date().getFullYear()}</div>
         </div>
       </footer>
     </div>

@@ -15,7 +15,6 @@ interface Props {
   isOwner: boolean;
 }
 
-
 function MemberAvatar({ username }: { username: string }) {
   return (
     <div className="w-9 h-9 rounded-full bg-accent/20 text-accent text-sm font-bold flex items-center justify-center shrink-0">
@@ -95,9 +94,7 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
         </div>
       )}
 
-      {isError && (
-        <p className="text-sm text-destructive">Impossible de charger les membres.</p>
-      )}
+      {isError && <p className="text-sm text-destructive">Impossible de charger les membres.</p>}
 
       {sortedMembers.length > 0 && (
         <div className="space-y-3">
@@ -121,7 +118,10 @@ export function MembersSidebar({ projectId, isOwner }: Props) {
                       <select
                         value={member.role}
                         onChange={(e) =>
-                          handleRoleChange(member.user.id, e.target.value as Exclude<ProjectRole, "OWNER">)
+                          handleRoleChange(
+                            member.user.id,
+                            e.target.value as Exclude<ProjectRole, "OWNER">,
+                          )
                         }
                         disabled={updateRole.isPending}
                         aria-label={`Rôle de ${member.user.username}`}

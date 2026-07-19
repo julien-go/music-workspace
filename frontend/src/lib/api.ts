@@ -34,7 +34,8 @@ export function describeError(error: unknown, fallback: string): string {
     // 429 carries a user-facing French message from the rate limiter — hiding
     // it behind the fallback would invite the user to retry immediately.
     if (status === 429) return message || "Trop de tentatives, réessaie dans un instant.";
-    if (status >= 500) return "Le service est momentanément indisponible. Réessaie dans un instant.";
+    if (status >= 500)
+      return "Le service est momentanément indisponible. Réessaie dans un instant.";
   }
   return fallback;
 }
@@ -43,24 +44,9 @@ interface FetchApiOptions extends RequestInit {
   skipAuthRedirect?: boolean;
 }
 
-export async function fetchApi<T>(
-  endpoint: string,
-  options?: FetchApiOptions,
-): Promise<T> {
-  const { skipAuthRedirect, ...requestInit } = options ?? {};
-  const headers: Record<string, string> = {};
-
-  if (!(requestInit.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  let response: Response;
+async function fetchOrThrow(url: string, requestInit: RequestInit): Promise<Response> {
   try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...requestInit,
-      headers: { ...headers, ...(requestInit.headers as Record<string, string>) },
-      credentials: "include",
-    });
+    return await fetch(url, { ...requestInit, credentials: "include" });
   } catch {
     throw new ApiException({
       status: 0,
@@ -69,39 +55,61 @@ export async function fetchApi<T>(
       errors: [],
     });
   }
+}
 
-  if (response.status === 401 && !skipAuthRedirect) {
-    useAuthStore.getState().clearUser();
-    router.navigate({ to: "/login" });
+function redirectToLogin(): never {
+  useAuthStore.getState().clearUser();
+  router.navigate({ to: "/login" });
+  throw new ApiException({
+    status: 401,
+    error: "UNAUTHORIZED",
+    message: "Session expirée",
+    errors: [],
+  });
+}
+
+async function throwForErrorResponse(response: Response): Promise<never> {
+  if (response.status === 502 || response.status === 503 || response.status === 504) {
     throw new ApiException({
-      status: 401,
-      error: "UNAUTHORIZED",
-      message: "Session expirée",
+      status: response.status,
+      error: "SERVICE_UNAVAILABLE",
+      message: "Le serveur est momentanément indisponible.",
       errors: [],
     });
   }
+  try {
+    const apiError: ApiError = await response.json();
+    throw new ApiException(apiError);
+  } catch (e) {
+    if (e instanceof ApiException) throw e;
+    throw new ApiException({
+      status: response.status,
+      error: response.statusText || "ERROR",
+      message: "Une erreur inattendue est survenue.",
+      errors: [],
+    });
+  }
+}
+
+export async function fetchApi<T>(endpoint: string, options?: FetchApiOptions): Promise<T> {
+  const { skipAuthRedirect, ...requestInit } = options ?? {};
+  const headers: Record<string, string> = {};
+
+  if (!(requestInit.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetchOrThrow(`${API_BASE_URL}${endpoint}`, {
+    ...requestInit,
+    headers: { ...headers, ...(requestInit.headers as Record<string, string>) },
+  });
+
+  if (response.status === 401 && !skipAuthRedirect) {
+    redirectToLogin();
+  }
 
   if (!response.ok) {
-    if (response.status === 502 || response.status === 503 || response.status === 504) {
-      throw new ApiException({
-        status: response.status,
-        error: "SERVICE_UNAVAILABLE",
-        message: "Le serveur est momentanément indisponible.",
-        errors: [],
-      });
-    }
-    try {
-      const apiError: ApiError = await response.json();
-      throw new ApiException(apiError);
-    } catch (e) {
-      if (e instanceof ApiException) throw e;
-      throw new ApiException({
-        status: response.status,
-        error: response.statusText || "ERROR",
-        message: "Une erreur inattendue est survenue.",
-        errors: [],
-      });
-    }
+    await throwForErrorResponse(response);
   }
 
   if (response.status === 204) {

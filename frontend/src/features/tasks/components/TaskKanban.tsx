@@ -59,11 +59,10 @@ function DraggableCard({
   onDelete: () => void;
   onStatusChange: (status: TaskStatus) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: task.id });
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined;
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
   return (
     <div
@@ -73,21 +72,15 @@ function DraggableCard({
       {...listeners}
       className={`bg-surface-elevated border border-border rounded-md p-3 cursor-grab active:cursor-grabbing select-none transition-opacity ${isDragging ? "opacity-40" : ""}`}
     >
-      <p className="text-base font-medium text-foreground mb-1 leading-snug">
-        {task.title}
-      </p>
+      <p className="text-base font-medium text-foreground mb-1 leading-snug">{task.title}</p>
       {task.description && (
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-          {task.description}
-        </p>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{task.description}</p>
       )}
       <div className="flex items-center justify-between gap-2">
         {task.assignedTo ? (
           <div className="flex items-center gap-1.5">
             <UserAvatar username={task.assignedTo.username} />
-            <span className="text-sm text-muted-foreground">
-              {task.assignedTo.username}
-            </span>
+            <span className="text-sm text-muted-foreground">{task.assignedTo.username}</span>
           </div>
         ) : (
           <span />
@@ -124,11 +117,7 @@ function DraggableCard({
               }`}
             >
               {columns.map((c) => (
-                <option
-                  key={c.status}
-                  value={c.status}
-                  className="bg-surface text-foreground"
-                >
+                <option key={c.status} value={c.status} className="bg-surface text-foreground">
                   {c.label}
                 </option>
               ))}
@@ -184,11 +173,7 @@ function DroppableColumn({
   return (
     <div className="w-full md:flex-1 md:min-w-0 flex flex-col gap-2">
       <div className="flex items-center justify-between mb-1">
-        <h3
-          className={`text-sm font-semibold uppercase tracking-wide ${titleClass}`}
-        >
-          {label}
-        </h3>
+        <h3 className={`text-sm font-semibold uppercase tracking-wide ${titleClass}`}>{label}</h3>
         <span
           className="text-sm text-muted-foreground/60"
           aria-label={`${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`}
@@ -275,8 +260,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
     mutateStatus(taskId, status);
   };
 
-  const byStatus = (status: TaskStatus) =>
-    tasks.filter((t) => t.status === status);
+  const byStatus = (status: TaskStatus) => tasks.filter((t) => t.status === status);
 
   if (isLoading) {
     return (
@@ -289,9 +273,7 @@ export function TaskKanban({ projectId, canEdit }: Props) {
   }
 
   if (isError) {
-    return (
-      <p className="text-sm text-destructive">Impossible de charger les tâches.</p>
-    );
+    return <p className="text-sm text-destructive">Impossible de charger les tâches.</p>;
   }
 
   return (

@@ -11,9 +11,7 @@ describe("cldThumb", () => {
   });
 
   it("leaves non-Cloudinary URLs untouched", () => {
-    expect(cldThumb("https://example.com/pic.jpg", 48)).toBe(
-      "https://example.com/pic.jpg",
-    );
+    expect(cldThumb("https://example.com/pic.jpg", 48)).toBe("https://example.com/pic.jpg");
   });
 });
 

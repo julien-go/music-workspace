@@ -25,7 +25,12 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function CreateTrackDialog({ projectId, open, onClose }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,18 +56,26 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
     try {
       let trackId = createdTrackId;
       if (!trackId) {
-        const track = await createTrack(projectId, { name: data.name, description: data.description });
+        const track = await createTrack(projectId, {
+          name: data.name,
+          description: data.description,
+        });
         trackId = track.id;
         setCreatedTrackId(trackId);
       }
       if (audioFile) {
-        await createTrackVersion(projectId, trackId, audioFile, undefined, data.versionLabel?.trim() || undefined);
+        await createTrackVersion(projectId, trackId, audioFile, {
+          label: data.versionLabel?.trim() || undefined,
+        });
         toastSuccess("Version uploadée avec succès");
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks(projectId) });
       handleClose();
     } catch (err) {
-      notifyError(err, audioFile ? "Échec de l'upload, réessaie" : "Impossible de créer la track, réessaie");
+      notifyError(
+        err,
+        audioFile ? "Échec de l'upload, réessaie" : "Impossible de créer la track, réessaie",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -76,7 +89,9 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="create-track-name" className="text-sm font-medium text-foreground">Nom *</label>
+            <label htmlFor="create-track-name" className="text-sm font-medium text-foreground">
+              Nom *
+            </label>
             <input
               id="create-track-name"
               {...register("name")}
@@ -84,11 +99,17 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
               placeholder="Ex: Intro, Couplet 1…"
             />
-            {errors.name && <p role="alert" className="text-xs text-red-400">{errors.name.message}</p>}
+            {errors.name && (
+              <p role="alert" className="text-xs text-red-400">
+                {errors.name.message}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="create-track-desc" className="text-sm font-medium text-foreground">Description</label>
+            <label htmlFor="create-track-desc" className="text-sm font-medium text-foreground">
+              Description
+            </label>
             <textarea
               id="create-track-desc"
               {...register("description")}
@@ -99,7 +120,9 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="create-track-file" className="text-sm font-medium text-foreground">Audio (version initiale)</label>
+            <label htmlFor="create-track-file" className="text-sm font-medium text-foreground">
+              Audio (version initiale)
+            </label>
             <div
               className="border border-dashed border-border rounded-md px-4 py-3 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors"
               onClick={() => fileInputRef.current?.click()}
@@ -109,13 +132,18 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
                 {audioFile ? (
                   <p className="text-sm text-foreground truncate">{audioFile.name}</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Cliquer pour choisir un fichier audio…</p>
+                  <p className="text-sm text-muted-foreground">
+                    Cliquer pour choisir un fichier audio…
+                  </p>
                 )}
               </div>
               {audioFile && (
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); clearFile(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile();
+                  }}
                   aria-label="Retirer le fichier"
                   className="text-muted-foreground/50 hover:text-foreground text-xs"
                 >
@@ -132,13 +160,22 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
               onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
             />
             {fileError && (
-              <p role="alert" className="text-xs text-destructive">{fileError}</p>
+              <p role="alert" className="text-xs text-destructive">
+                {fileError}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">Optionnel — une première version sera créée automatiquement.</p>
+            <p className="text-xs text-muted-foreground">
+              Optionnel — une première version sera créée automatiquement.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="create-track-version-label" className="text-sm font-medium text-foreground">Nom de la version</label>
+            <label
+              htmlFor="create-track-version-label"
+              className="text-sm font-medium text-foreground"
+            >
+              Nom de la version
+            </label>
             <input
               id="create-track-version-label"
               {...register("versionLabel")}
@@ -149,7 +186,9 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
           </div>
 
           <div className="flex justify-end gap-3 pt-1">
-            <Button type="button" variant="ghost" onClick={handleClose}>Annuler</Button>
+            <Button type="button" variant="ghost" onClick={handleClose}>
+              Annuler
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Création…" : "Créer la track"}
             </Button>

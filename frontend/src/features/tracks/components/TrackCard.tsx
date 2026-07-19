@@ -19,8 +19,10 @@ interface Props {
 export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
   const navigate = useNavigate();
   const updateTrack = useUpdateTrack(projectId, track.id);
-  const { isCurrentTrack, isCurrentlyPlaying, canEditContent, versionsLabel } =
-    useTrackCard(track, canEdit);
+  const { isCurrentTrack, isCurrentlyPlaying, canEditContent, versionsLabel } = useTrackCard(
+    track,
+    canEdit,
+  );
   const actions = useTrackActions(projectId, projectName, track);
 
   const handleNavigate = () => {
@@ -72,7 +74,9 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
       <div className="mb-3" onClick={(e) => e.stopPropagation()}>
         <InlineEdit
           value={track.description ?? ""}
-          onSave={canEditContent ? (description) => updateTrack.mutateAsync({ description }) : undefined}
+          onSave={
+            canEditContent ? (description) => updateTrack.mutateAsync({ description }) : undefined
+          }
           multiline
           ariaLabel="Description de la track"
           className="text-base text-muted-foreground"
@@ -92,7 +96,9 @@ export function TrackCard({ track, projectId, projectName, canEdit }: Props) {
         <div className="text-sm text-muted-foreground border-t border-border/50 pt-2 mb-3">
           <span className="text-foreground/70">@{track.lastComment.author.username} </span>
           <span className="line-clamp-1">{track.lastComment.content}</span>
-          <span className="ml-1 text-muted-foreground/60">· {formatRelativeTime(track.lastComment.createdAt)}</span>
+          <span className="ml-1 text-muted-foreground/60">
+            · {formatRelativeTime(track.lastComment.createdAt)}
+          </span>
         </div>
       )}
 

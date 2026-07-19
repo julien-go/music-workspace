@@ -7,11 +7,7 @@ import { useDeleteVersionComment } from "./useDeleteVersionComment";
 import { useUpdateTrackVersion } from "./useUpdateTrackVersion";
 import type { TrackVersionResponse } from "../types";
 
-export function useVersionCard(
-  version: TrackVersionResponse,
-  projectId: string,
-  trackId: string,
-) {
+export function useVersionCard(version: TrackVersionResponse, projectId: string, trackId: string) {
   const [commentsOpen, setCommentsOpen] = useState(true);
   const currentUser = useAuthStore((s) => s.user);
 

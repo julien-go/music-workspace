@@ -64,6 +64,7 @@ class TrackVersionServiceTest {
     private Track track;
     private TrackVersion version;
     private TrackVersionResponse response;
+    private MockMultipartFile file;
 
     private static final byte[] MP3_MAGIC_BYTES = {
             (byte) 0xFF, (byte) 0xFB, (byte) 0x90, 0x00
@@ -80,12 +81,11 @@ class TrackVersionServiceTest {
         track = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).build();
         version = TrackVersion.builder().id(versionId).track(track).versionNumber(1).audioUrl("https://cloudinary.com/audio.mp3").notes("First take").build();
         response = new TrackVersionResponse(versionId, trackId, 1, "https://cloudinary.com/audio.mp3", "First take", "Rough mix", "track.mp3", Instant.now(), Instant.now());
+        file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
     }
 
     @Test
     void create_uploadsAudioAndSavesVersion() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -104,8 +104,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_incrementsVersionNumber() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(3);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -123,9 +121,13 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsWhenTrackIsArchived() {
-        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).archived(true).build();
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
+        Track archivedTrack = Track.builder()
+                .id(trackId)
+                .project(project)
+                .name("Intro")
+                .status(TrackStatus.DRAFT)
+                .archived(true)
+                .build();
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackVersionService.create(projectId, trackId, "notes", null, file, EMAIL))
@@ -134,8 +136,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsWhenProjectNotFound() {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new ProjectNotFoundException("Project not found"));
 
@@ -145,8 +145,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsWhenTrackNotFound() {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR))
                 .thenThrow(new TrackNotFoundException("Track not found"));
 
@@ -156,8 +154,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsVersionConflictOnDuplicateVersionNumber() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -170,8 +166,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_conflictCleanupDeletesOnlyItsOwnUpload() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -193,8 +187,6 @@ class TrackVersionServiceTest {
 
     @Test
     void create_throwsCloudinaryUploadExceptionOnIOError() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "track.mp3", "audio/mpeg", MP3_MAGIC_BYTES);
-
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(track);
         when(trackVersionRepository.findMaxVersionNumberByTrackId(trackId)).thenReturn(0);
         when(cloudinaryService.upload(any(), any(), any(), any(), any(Boolean.class)))
@@ -235,7 +227,8 @@ class TrackVersionServiceTest {
 
     @Test
     void findById_returnsVersion() {
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
+                .thenReturn(version);
         when(trackVersionMapper.toResponse(version)).thenReturn(response);
 
         TrackVersionResponse result = trackVersionService.findById(projectId, trackId, versionId, EMAIL);
@@ -282,7 +275,13 @@ class TrackVersionServiceTest {
 
     @Test
     void update_throwsWhenTrackIsArchived() {
-        Track archivedTrack = Track.builder().id(trackId).project(project).name("Intro").status(TrackStatus.DRAFT).archived(true).build();
+        Track archivedTrack = Track.builder()
+                .id(trackId)
+                .project(project)
+                .name("Intro")
+                .status(TrackStatus.DRAFT)
+                .archived(true)
+                .build();
         when(permissionService.checkTrackPermission(projectId, trackId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(archivedTrack);
 
         assertThatThrownBy(() -> trackVersionService.update(projectId, trackId, versionId, new UpdateTrackVersionRequest("x", null), EMAIL))

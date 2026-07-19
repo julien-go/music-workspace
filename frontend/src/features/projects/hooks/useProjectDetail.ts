@@ -1,10 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import {
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
+import { PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { notifyError } from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
@@ -23,9 +18,7 @@ import { useStopPlayerOnProjectChange } from "./useStopPlayerOnProjectChange";
 // when the *set* of ids changes (track added/archived) — a refetch that keeps
 // the same ids must not clobber the order the user just dragged.
 function useOrderedTrackIds(tracks: TrackResponse[]) {
-  const [orderedIds, setOrderedIds] = useState<string[]>(() =>
-    tracks.map((t) => t.id),
-  );
+  const [orderedIds, setOrderedIds] = useState<string[]>(() => tracks.map((t) => t.id));
   const prevServerIdsRef = useRef<string[]>(tracks.map((t) => t.id));
 
   useEffect(() => {
@@ -33,8 +26,7 @@ function useOrderedTrackIds(tracks: TrackResponse[]) {
     const prev = new Set(prevServerIdsRef.current);
     const next = new Set(serverIds);
     prevServerIdsRef.current = serverIds;
-    const setsMatch =
-      prev.size === next.size && [...next].every((id) => prev.has(id));
+    const setsMatch = prev.size === next.size && [...next].every((id) => prev.has(id));
     if (!setsMatch) setOrderedIds(serverIds);
   }, [tracks]);
 
@@ -61,12 +53,9 @@ export function useProjectDetail(projectId: string) {
   const addProjectComment = useAddProjectComment(projectId);
   const deleteProjectComment = useDeleteProjectComment(projectId);
 
-  const { orderedIds, setOrderedIds, orderedTracks } =
-    useOrderedTrackIds(tracks);
+  const { orderedIds, setOrderedIds, orderedTracks } = useOrderedTrackIds(tracks);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [createTrackOpen, setCreateTrackOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
