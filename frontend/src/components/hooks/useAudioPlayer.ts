@@ -2,6 +2,12 @@ import { useRef, useEffect, useState } from "react";
 import { Volume1, Volume2, VolumeX } from "lucide-react";
 import type { PlayingVersion } from "@/store/playerStore";
 
+function getVolumeIcon(isMuted: boolean, volume: number) {
+  if (isMuted || volume === 0) return VolumeX;
+  if (volume < 0.5) return Volume1;
+  return Volume2;
+}
+
 // Owns the <audio> element and all playback state (progress, volume, mute).
 // The component stays presentational: wire `audioProps` onto <audio> and read
 // the returned state/handlers.
@@ -89,8 +95,7 @@ export function useAudioPlayer(
     }
   }
 
-  const VolumeIcon =
-    isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  const VolumeIcon = getVolumeIcon(isMuted, volume);
 
   return {
     progress,

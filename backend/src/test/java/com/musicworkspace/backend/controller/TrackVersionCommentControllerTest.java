@@ -73,7 +73,8 @@ class TrackVersionCommentControllerTest {
         CreateCommentRequest request = new CreateCommentRequest("Tempo is off");
         when(trackVersionCommentService.create(eq(projectId), eq(trackId), eq(versionId), any(), any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments", projectId, trackId, versionId)
+        mockMvc.perform(post("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments",
+                        projectId, trackId, versionId)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -87,7 +88,8 @@ class TrackVersionCommentControllerTest {
         when(trackVersionCommentService.create(eq(projectId), eq(trackId), eq(versionId), any(), any()))
                 .thenThrow(new TrackVersionNotFoundException("Track version not found"));
 
-        mockMvc.perform(post("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments", projectId, trackId, versionId)
+        mockMvc.perform(post("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments",
+                        projectId, trackId, versionId)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -98,7 +100,8 @@ class TrackVersionCommentControllerTest {
     void list_returns200() throws Exception {
         when(trackVersionCommentService.findAll(eq(projectId), eq(trackId), eq(versionId), any())).thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments", projectId, trackId, versionId))
+        mockMvc.perform(get("/api/v1/projects/{projectId}/tracks/{trackId}/versions/{versionId}/comments",
+                        projectId, trackId, versionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].content").value("Tempo is off"));
     }

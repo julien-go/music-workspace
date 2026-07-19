@@ -113,13 +113,12 @@ export function createTrackVersion(
   projectId: string,
   trackId: string,
   file: File,
-  notes?: string,
-  label?: string,
+  metadata?: { notes?: string; label?: string },
 ) {
   const formData = new FormData();
   formData.append("file", file);
-  if (notes) formData.append("notes", notes);
-  if (label) formData.append("label", label);
+  if (metadata?.notes) formData.append("notes", metadata.notes);
+  if (metadata?.label) formData.append("label", metadata.label);
   return fetchApi<TrackVersionResponse>(`/projects/${projectId}/tracks/${trackId}/versions`, {
     method: "POST",
     body: formData,

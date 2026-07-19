@@ -56,7 +56,7 @@ export function CreateTrackDialog({ projectId, open, onClose }: Props) {
         setCreatedTrackId(trackId);
       }
       if (audioFile) {
-        await createTrackVersion(projectId, trackId, audioFile, undefined, data.versionLabel?.trim() || undefined);
+        await createTrackVersion(projectId, trackId, audioFile, { label: data.versionLabel?.trim() || undefined });
         toastSuccess("Version uploadée avec succès");
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks(projectId) });
