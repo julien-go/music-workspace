@@ -23,4 +23,7 @@ USER app
 
 # Railway injects $PORT and routes to it; server.port reads it (application.yml).
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Without -Xmx the JVM sizes the heap from the container's RAM (25% by default),
+# which is unrelated to what this app needs. SerialGC drops the G1 region
+# metadata and GC threads that dominate RSS at this heap size.
+ENTRYPOINT ["java", "-Xmx320m", "-XX:+UseSerialGC", "-jar", "app.jar"]
