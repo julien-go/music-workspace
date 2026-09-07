@@ -32,3 +32,13 @@ app:
     # Two trusted hops append to X-Forwarded-For in prod: the Netlify proxy
     # (adds the real client IP) then the Railway edge (adds Netlify's IP).
     trusted-proxies: ${TRUSTED_PROXY_HOPS:2}
+
+# Nothing links to Swagger in prod (the README link is localhost-only), so the
+# springdoc autoconfiguration is pure metaspace. Disabled here rather than by
+# dropping the dependency: the e2e workflow runs under the ci profile and uses
+# /v3/api-docs as its readiness probe.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
