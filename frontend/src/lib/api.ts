@@ -85,7 +85,8 @@ async function throwForErrorResponse(response: Response): Promise<never> {
     throw new ApiException({
       status: response.status,
       error: response.statusText || "ERROR",
-      message: "Une erreur inattendue est survenue.",
+      // Empty on 429 so describeError falls back to its rate-limit wording.
+      message: response.status === 429 ? "" : "Une erreur inattendue est survenue.",
       errors: [],
     });
   }
