@@ -110,7 +110,8 @@ class TrackVersionCommentServiceTest {
 
     @Test
     void findAll_returnsCommentsForVersion() {
-        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER)).thenReturn(version);
+        when(permissionService.checkTrackVersionPermission(projectId, trackId, versionId, EMAIL, ProjectRole.VIEWER))
+                .thenReturn(version);
         when(trackVersionCommentRepository.findByTrackVersionIdOrderByCreatedAtAsc(versionId)).thenReturn(List.of(comment));
         when(commentMapper.toResponse(comment)).thenReturn(response);
 
@@ -125,7 +126,8 @@ class TrackVersionCommentServiceTest {
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.VIEWER)).thenReturn(member);
         when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
-        when(trackVersionCommentRepository.findByIdAndTrackVersionId(comment.getId(), versionId)).thenReturn(Optional.of(comment));
+        when(trackVersionCommentRepository.findByIdAndTrackVersionId(comment.getId(), versionId))
+                .thenReturn(Optional.of(comment));
 
         trackVersionCommentService.delete(projectId, trackId, versionId, comment.getId(), EMAIL);
 
@@ -159,7 +161,8 @@ class TrackVersionCommentServiceTest {
         when(permissionService.resolveTrackVersion(trackId, versionId)).thenReturn(version);
         when(trackVersionCommentRepository.findByIdAndTrackVersionId(otherComment.getId(), versionId)).thenReturn(Optional.of(otherComment));
         doThrow(new CommentNotFoundException("Comment not found"))
-                .when(permissionService).checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
+                .when(permissionService)
+                .checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
 
         assertThatThrownBy(() -> trackVersionCommentService.delete(projectId, trackId, versionId, otherComment.getId(), EMAIL))
                 .isInstanceOf(CommentNotFoundException.class);

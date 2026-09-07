@@ -44,7 +44,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="login-email" className="sr-only">Email</label>
+            <label htmlFor="login-email" className="sr-only">
+              Email
+            </label>
             <input
               id="login-email"
               type="email"
@@ -63,7 +65,9 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="login-password" className="sr-only">Mot de passe</label>
+            <label htmlFor="login-password" className="sr-only">
+              Mot de passe
+            </label>
             <input
               id="login-password"
               type="password"
@@ -82,7 +86,9 @@ export default function LoginPage() {
           </div>
 
           {serverError && (
-            <p role="alert" className="text-sm text-destructive">{serverError}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {serverError}
+            </p>
           )}
 
           <Button type="submit" className="w-full" disabled={login.isPending}>

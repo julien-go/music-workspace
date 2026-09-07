@@ -105,7 +105,8 @@ class TrackCommentControllerTest {
     void delete_returns204() throws Exception {
         doNothing().when(trackCommentService).delete(eq(projectId), eq(trackId), eq(commentId), any());
 
-        mockMvc.perform(delete("/api/v1/projects/{projectId}/tracks/{trackId}/comments/{commentId}", projectId, trackId, commentId)
+        mockMvc.perform(delete("/api/v1/projects/{projectId}/tracks/{trackId}/comments/{commentId}",
+                        projectId, trackId, commentId)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
@@ -115,7 +116,8 @@ class TrackCommentControllerTest {
         doThrow(new CommentNotFoundException("Comment not found"))
                 .when(trackCommentService).delete(eq(projectId), eq(trackId), eq(commentId), any());
 
-        mockMvc.perform(delete("/api/v1/projects/{projectId}/tracks/{trackId}/comments/{commentId}", projectId, trackId, commentId)
+        mockMvc.perform(delete("/api/v1/projects/{projectId}/tracks/{trackId}/comments/{commentId}",
+                        projectId, trackId, commentId)
                         .with(csrf()))
                 .andExpect(status().isNotFound());
     }

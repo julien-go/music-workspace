@@ -2,7 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/InlineEdit";
 import type { useUpdateTrack } from "../hooks/useUpdateTrack";
-import { TRACK_STATUS_LABEL, TRACK_STATUS_CLASS, type TrackResponse, type TrackStatus } from "../types";
+import {
+  TRACK_STATUS_LABEL,
+  TRACK_STATUS_CLASS,
+  type TrackResponse,
+  type TrackStatus,
+} from "../types";
 
 function StatusControl({
   track,
@@ -23,9 +28,7 @@ function StatusControl({
   return (
     <select
       value={track.status}
-      onChange={(e) =>
-        updateTrack.mutate({ status: e.target.value as TrackStatus })
-      }
+      onChange={(e) => updateTrack.mutate({ status: e.target.value as TrackStatus })}
       disabled={updateTrack.isPending}
       aria-label="Statut de la track"
       className={`text-sm border rounded-md px-2 py-1 bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${TRACK_STATUS_CLASS[track.status]}`}
@@ -68,9 +71,7 @@ export function TrackHeader({
       </div>
       <InlineEdit
         value={track.description ?? ""}
-        onSave={
-          canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined
-        }
+        onSave={canEdit ? (description) => updateTrack.mutateAsync({ description }) : undefined}
         multiline
         ariaLabel="Description de la track"
         className="text-base text-foreground/70 whitespace-pre-wrap"

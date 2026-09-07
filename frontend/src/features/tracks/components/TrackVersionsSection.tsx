@@ -36,21 +36,13 @@ function VersionsBody({
     );
   }
   if (versionsError) {
-    return (
-      <p className="text-sm text-destructive">
-        Impossible de charger les versions.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Impossible de charger les versions.</p>;
   }
   if (versionCount === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
         <p className="text-base">Aucune version pour le moment.</p>
-        {canEdit && (
-          <p className="text-sm mt-1">
-            Ajoutez une première version pour commencer.
-          </p>
-        )}
+        {canEdit && <p className="text-sm mt-1">Ajoutez une première version pour commencer.</p>}
       </div>
     );
   }

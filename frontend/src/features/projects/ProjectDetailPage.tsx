@@ -1,12 +1,7 @@
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Settings, Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { InlineEdit } from "@/components/InlineEdit";
 import { ErrorState } from "@/components/ErrorState";
 import { SkeletonProjectDetail } from "@/components/SkeletonProjectDetail";
@@ -36,10 +31,7 @@ export default function ProjectDetailPage() {
   if (d.projectError)
     return (
       <ErrorState
-        message={describeError(
-          d.projectErrorObj,
-          "Impossible de charger ce projet.",
-        )}
+        message={describeError(d.projectErrorObj, "Impossible de charger ce projet.")}
         onRetry={() => d.refetchProject()}
       />
     );
@@ -52,10 +44,7 @@ export default function ProjectDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-              <Link
-                to="/dashboard"
-                className="hover:text-foreground transition-colors"
-              >
+              <Link to="/dashboard" className="hover:text-foreground transition-colors">
                 Dashboard
               </Link>
               <span>/</span>
@@ -63,19 +52,12 @@ export default function ProjectDetailPage() {
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="md:hidden shrink-0 gap-1.5"
-                >
+                <Button variant="outline" size="sm" className="md:hidden shrink-0 gap-1.5">
                   <Users className="w-4 h-4" />
                   Membres
                 </Button>
               </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="w-80 max-w-[85vw] overflow-y-auto p-4"
-              >
+              <SheetContent side="right" className="w-80 max-w-[85vw] overflow-y-auto p-4">
                 <SheetTitle className="sr-only">Membres</SheetTitle>
                 <MembersSidebar projectId={projectId} isOwner={isOwner} />
               </SheetContent>
@@ -83,19 +65,12 @@ export default function ProjectDetailPage() {
           </div>
 
           <div className="flex items-start gap-4 mb-8">
-            <ProjectCoverWithLightbox
-              name={project.name}
-              coverUrl={project.coverUrl}
-            />
+            <ProjectCoverWithLightbox name={project.name} coverUrl={project.coverUrl} />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <InlineEdit
                   value={project.name}
-                  onSave={
-                    canEdit
-                      ? (name) => d.updateProject.mutateAsync({ name })
-                      : undefined
-                  }
+                  onSave={canEdit ? (name) => d.updateProject.mutateAsync({ name }) : undefined}
                   ariaLabel="Nom du projet"
                   className="text-2xl font-bold font-heading text-foreground leading-tight"
                 />
@@ -114,8 +89,7 @@ export default function ProjectDetailPage() {
                 value={project.description ?? ""}
                 onSave={
                   canEdit
-                    ? (description) =>
-                        d.updateProject.mutateAsync({ description })
+                    ? (description) => d.updateProject.mutateAsync({ description })
                     : undefined
                 }
                 multiline
@@ -174,9 +148,7 @@ export default function ProjectDetailPage() {
               isOwner={isOwner}
               onAdd={(content) => d.addProjectComment.mutateAsync(content)}
               isAdding={d.addProjectComment.isPending}
-              onDelete={(commentId) =>
-                d.deleteProjectComment.mutateAsync(commentId)
-              }
+              onDelete={(commentId) => d.deleteProjectComment.mutateAsync(commentId)}
             />
           </div>
         </div>

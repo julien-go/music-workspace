@@ -25,10 +25,12 @@ export function VersionCard({
   canEdit,
 }: Props) {
   const card = useVersionCard(version, projectId, trackId);
-  const { isCurrentVersion, isCurrentlyPlaying, handlePlay } = useVersionActions(
-    version,
-    { projectId, projectName, trackId, trackName },
-  );
+  const { isCurrentVersion, isCurrentlyPlaying, handlePlay } = useVersionActions(version, {
+    projectId,
+    projectName,
+    trackId,
+    trackName,
+  });
 
   return (
     <div className="bg-surface border border-border rounded-lg p-5 shadow-card">
@@ -62,9 +64,7 @@ export function VersionCard({
         </div>
       ) : (
         version.notes && (
-          <p className="text-base text-foreground/70 whitespace-pre-wrap mb-3">
-            {version.notes}
-          </p>
+          <p className="text-base text-foreground/70 whitespace-pre-wrap mb-3">{version.notes}</p>
         )
       )}
 

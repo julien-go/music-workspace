@@ -13,7 +13,7 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
   // Reveal upfront when animation is unwanted or unobservable (reduced motion,
   // or no IntersectionObserver on very old engines) so nothing stays at opacity 0.
   const [shown, setShown] = useState(
-    () => prefersReducedMotion() || typeof IntersectionObserver === "undefined"
+    () => prefersReducedMotion() || typeof IntersectionObserver === "undefined",
   );
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
         observer.disconnect();
         timeout = window.setTimeout(() => setShown(true), delay);
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
     observer.observe(el);
 
@@ -44,7 +44,7 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
       className={cn(
         "transition-all duration-700 ease-out motion-reduce:transition-none motion-reduce:transform-none",
         shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-        className
+        className,
       )}
     >
       {children}

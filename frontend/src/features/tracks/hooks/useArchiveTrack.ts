@@ -11,7 +11,7 @@ export function useArchiveTrack(projectId: string) {
       await queryClient.cancelQueries({ queryKey: queryKeys.tracks(projectId) });
       const previous = queryClient.getQueryData<TrackResponse[]>(queryKeys.tracks(projectId));
       queryClient.setQueryData<TrackResponse[]>(queryKeys.tracks(projectId), (old) =>
-        old ? old.filter((t) => t.id !== trackId) : []
+        old ? old.filter((t) => t.id !== trackId) : [],
       );
       return { previous };
     },

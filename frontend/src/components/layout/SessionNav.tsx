@@ -32,11 +32,7 @@ export function SessionNavDesktop() {
       </Link>
       <Separator orientation="vertical" className="h-5" />
       <UserBadge username={user.username} />
-      <Button
-        variant="ghost"
-        onClick={() => logout.mutate()}
-        disabled={logout.isPending}
-      >
+      <Button variant="ghost" onClick={() => logout.mutate()} disabled={logout.isPending}>
         Logout
       </Button>
     </>

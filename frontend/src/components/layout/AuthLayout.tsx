@@ -13,11 +13,7 @@ export function AuthLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar
-        brand={brand}
-        desktopNav={<SessionNavDesktop />}
-        mobileNav={<SessionNavMobile />}
-      />
+      <Navbar brand={brand} desktopNav={<SessionNavDesktop />} mobileNav={<SessionNavMobile />} />
       <main id="main-content" tabIndex={-1} className="flex-1 pb-28 outline-none">
         <Outlet />
       </main>

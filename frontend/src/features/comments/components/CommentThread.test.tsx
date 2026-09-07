@@ -62,14 +62,10 @@ describe("CommentThread", () => {
     renderThread({ onDelete });
     const user = userEvent.setup();
 
-    await user.click(
-      screen.getByRole("button", { name: "Supprimer le commentaire de john" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Supprimer le commentaire de john" }));
 
     expect(onDelete).toHaveBeenCalledWith("c1");
-    expect(
-      await screen.findByText("Impossible de supprimer ce commentaire."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Impossible de supprimer ce commentaire.")).toBeInTheDocument();
   });
 
   it("submits the trimmed draft and clears it on success", async () => {
@@ -90,23 +86,16 @@ describe("CommentThread", () => {
     renderThread({ onAdd });
     const user = userEvent.setup();
 
-    await user.type(
-      screen.getByRole("textbox", { name: "Ajouter un commentaire" }),
-      "Hello",
-    );
+    await user.type(screen.getByRole("textbox", { name: "Ajouter un commentaire" }), "Hello");
     await user.click(screen.getByRole("button", { name: "Envoyer" }));
 
-    expect(
-      await screen.findByText("Impossible d'envoyer le commentaire."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Impossible d'envoyer le commentaire.")).toBeInTheDocument();
   });
 
   it("shows a load error instead of the empty state", () => {
     renderThread({ comments: [], loadError: true });
 
-    expect(
-      screen.getByText("Impossible de charger les commentaires."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les commentaires.")).toBeInTheDocument();
     expect(screen.queryByText("Aucun commentaire.")).not.toBeInTheDocument();
   });
 });

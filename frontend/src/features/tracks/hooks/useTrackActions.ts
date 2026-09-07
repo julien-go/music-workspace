@@ -8,11 +8,7 @@ import { useArchiveTrack } from "./useArchiveTrack";
 import { useUnarchiveTrack } from "./useUnarchiveTrack";
 import type { TrackResponse } from "../types";
 
-export function useTrackActions(
-  projectId: string,
-  projectName: string,
-  track: TrackResponse,
-) {
+export function useTrackActions(projectId: string, projectName: string, track: TrackResponse) {
   const play = usePlayerStore((s) => s.play);
   const pause = usePlayerStore((s) => s.pause);
   const resume = usePlayerStore((s) => s.resume);

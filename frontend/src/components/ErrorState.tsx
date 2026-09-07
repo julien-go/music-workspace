@@ -12,7 +12,9 @@ interface Props {
 export function ErrorState({ message, onRetry }: Props) {
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4 text-center gap-4">
-      <p role="alert" className="text-sm text-muted-foreground">{message}</p>
+      <p role="alert" className="text-sm text-muted-foreground">
+        {message}
+      </p>
       <Button variant="ghost" onClick={onRetry}>
         Réessayer
       </Button>

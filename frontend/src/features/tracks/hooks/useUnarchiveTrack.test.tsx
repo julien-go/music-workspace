@@ -59,11 +59,7 @@ describe("useUnarchiveTrack", () => {
     });
     const active = queryClient.getQueryData<TrackResponse[]>(["tracks", projectId]);
     expect(active?.find((t) => t.id === "track-1")?.archived).toBe(false);
-    const archived = queryClient.getQueryData<TrackResponse[]>([
-      "tracks",
-      projectId,
-      "archived",
-    ]);
+    const archived = queryClient.getQueryData<TrackResponse[]>(["tracks", projectId, "archived"]);
     expect(archived).toEqual([]);
   });
 
@@ -77,8 +73,6 @@ describe("useUnarchiveTrack", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(queryClient.getQueryData(["tracks", projectId])).toEqual([]);
-    expect(
-      queryClient.getQueryData(["tracks", projectId, "archived"]),
-    ).toEqual([archivedTrack]);
+    expect(queryClient.getQueryData(["tracks", projectId, "archived"])).toEqual([archivedTrack]);
   });
 });

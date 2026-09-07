@@ -29,9 +29,7 @@ function CommentItem({
     <div className="flex items-start gap-2 group">
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-sm font-medium text-foreground">
-            @{comment.author.username}
-          </span>
+          <span className="text-sm font-medium text-foreground">@{comment.author.username}</span>
           <span className="text-xs text-muted-foreground/60">
             {formatRelativeTime(comment.createdAt)}
           </span>
@@ -81,11 +79,7 @@ function CommentList({
     );
   }
   if (loadError) {
-    return (
-      <p className="text-sm text-destructive">
-        Impossible de charger les commentaires.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Impossible de charger les commentaires.</p>;
   }
   if (comments.length === 0) {
     return <p className="text-sm text-muted-foreground italic">Aucun commentaire.</p>;
@@ -178,7 +172,9 @@ export function CommentThread({
       />
 
       {form.deleteError && (
-        <p role="alert" className="text-xs text-destructive">{form.deleteError}</p>
+        <p role="alert" className="text-xs text-destructive">
+          {form.deleteError}
+        </p>
       )}
 
       <CommentComposer
@@ -189,7 +185,9 @@ export function CommentThread({
       />
 
       {form.addError && (
-        <p role="alert" className="text-xs text-destructive mt-1">{form.addError}</p>
+        <p role="alert" className="text-xs text-destructive mt-1">
+          {form.addError}
+        </p>
       )}
     </div>
   );

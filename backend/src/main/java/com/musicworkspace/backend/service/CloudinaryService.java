@@ -16,10 +16,14 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
+    // uploadLarge allocates a full buffer of this size per upload whatever the
+    // file weighs; 5MB is the smallest chunk Cloudinary accepts.
+    private static final int CHUNK_SIZE = 5 * 1024 * 1024;
+
     public String upload(MultipartFile file, String folder, String publicId,
                          String resourceType, boolean overwrite) {
-        // uploadLarge + InputStream: heap usage stays bounded by the 20MB
-        // chunk size instead of the full file (audio uploads go up to 70MB).
+        // uploadLarge + InputStream: heap usage stays bounded by CHUNK_SIZE
+        // instead of the full file (audio uploads go up to 70MB).
         // The SDK does not close the stream — try-with-resources does.
         try (InputStream input = file.getInputStream()) {
             @SuppressWarnings("unchecked")
@@ -29,7 +33,8 @@ public class CloudinaryService {
                             "folder", folder,
                             "public_id", publicId,
                             "resource_type", resourceType,
-                            "overwrite", overwrite
+                            "overwrite", overwrite,
+                            "chunk_size", CHUNK_SIZE
                     )
             );
             return (String) result.get("secure_url");

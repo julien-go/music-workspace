@@ -54,6 +54,18 @@ describe("useUpdateTask", () => {
     });
   });
 
+  it("invalidates the tasks query once settled", async () => {
+    const { queryClient, wrapper } = setup();
+    vi.mocked(updateTask).mockResolvedValue(makeTask({ status: "DOING" }));
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(() => useUpdateTask(projectId), { wrapper });
+    result.current.mutate({ taskId: "task-1", data: { status: "DOING" } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["tasks", projectId] });
+  });
+
   it("rolls back the cache when the mutation fails", async () => {
     const { queryClient, wrapper } = setup();
     vi.mocked(updateTask).mockRejectedValue(new Error("boom"));

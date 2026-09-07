@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchApi, ApiException } from "./api";
+import { fetchApi, ApiException, describeError, isUnauthorizedError } from "./api";
 import { useAuthStore } from "@/store/authStore";
 import { router } from "@/routes";
 
@@ -23,9 +23,7 @@ describe("fetchApi", () => {
   });
 
   it("sends credentials include", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
     await fetchApi("/test");
     expect(fetch).toHaveBeenCalledWith(
@@ -35,9 +33,7 @@ describe("fetchApi", () => {
   });
 
   it("sets Content-Type json by default", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
     await fetchApi("/test");
     expect(fetch).toHaveBeenCalledWith(
@@ -49,9 +45,7 @@ describe("fetchApi", () => {
   });
 
   it("skips Content-Type for FormData", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
     await fetchApi("/test", { body: new FormData() });
     const headers = vi.mocked(fetch).mock.calls[0][1]?.headers as Record<string, string>;
@@ -59,9 +53,7 @@ describe("fetchApi", () => {
   });
 
   it("returns undefined on 204", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(null, { status: 204 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
 
     const result = await fetchApi("/test");
     expect(result).toBeUndefined();
@@ -69,9 +61,7 @@ describe("fetchApi", () => {
 
   it("throws ApiException with error details on error response", async () => {
     const apiError = { status: 409, error: "CONFLICT", message: "Already exists", errors: [] };
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify(apiError), { status: 409 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(apiError), { status: 409 }));
 
     try {
       await fetchApi("/test");
@@ -84,9 +74,7 @@ describe("fetchApi", () => {
   });
 
   it("clears auth store and navigates to /login on 401", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(null, { status: 401 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 401 }));
     const navigateSpy = vi.spyOn(router, "navigate").mockResolvedValue(undefined as never);
 
     await expect(fetchApi("/test")).rejects.toThrow(ApiException);
@@ -96,10 +84,18 @@ describe("fetchApi", () => {
 
   it("skips 401 redirect when skipAuthRedirect is true", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ status: 401, error: "UNAUTHORIZED", message: "Bad credentials", errors: [] }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }),
+      new Response(
+        JSON.stringify({
+          status: 401,
+          error: "UNAUTHORIZED",
+          message: "Bad credentials",
+          errors: [],
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
     const navigateSpy = vi.spyOn(router, "navigate").mockResolvedValue(undefined as never);
 
@@ -119,5 +115,45 @@ describe("fetchApi", () => {
       expect(e).toBeInstanceOf(ApiException);
       expect((e as ApiException).apiError.status).toBe(502);
     }
+  });
+});
+
+function apiError(status: number, message = "msg"): ApiException {
+  return new ApiException({ status, error: "ERR", message, errors: [] });
+}
+
+describe("isUnauthorizedError", () => {
+  it("is true only for a 401 ApiException", () => {
+    expect(isUnauthorizedError(apiError(401))).toBe(true);
+    expect(isUnauthorizedError(apiError(403))).toBe(false);
+    expect(isUnauthorizedError(new Error("boom"))).toBe(false);
+    expect(isUnauthorizedError(null)).toBe(false);
+  });
+});
+
+describe("describeError", () => {
+  it("maps a connectivity failure (status 0) to a network message", () => {
+    expect(describeError(apiError(0), "fallback")).toContain("Connexion au serveur impossible");
+  });
+
+  it("surfaces the rate-limit message on 429 instead of the fallback", () => {
+    expect(
+      describeError(apiError(429, "Trop de tentatives, réessaie dans un instant."), "fallback"),
+    ).toBe("Trop de tentatives, réessaie dans un instant.");
+  });
+
+  it("falls back to a default rate-limit message when the 429 has none", () => {
+    expect(describeError(apiError(429, ""), "fallback")).toBe(
+      "Trop de tentatives, réessaie dans un instant.",
+    );
+  });
+
+  it("uses a generic message for 5xx errors", () => {
+    expect(describeError(apiError(503), "fallback")).toContain("momentanément indisponible");
+  });
+
+  it("defers to the caller fallback for 4xx and non-ApiException errors", () => {
+    expect(describeError(apiError(422), "fallback")).toBe("fallback");
+    expect(describeError(new Error("boom"), "fallback")).toBe("fallback");
   });
 });

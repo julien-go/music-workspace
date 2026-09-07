@@ -149,7 +149,8 @@ class TrackCommentServiceTest {
         when(permissionService.resolveTrack(projectId, trackId)).thenReturn(track);
         when(trackCommentRepository.findByIdAndTrackId(otherComment.getId(), trackId)).thenReturn(Optional.of(otherComment));
         doThrow(new CommentNotFoundException("Comment not found"))
-                .when(permissionService).checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
+                .when(permissionService)
+                .checkCommentDeletePermission(ProjectRole.COLLABORATOR, author.getId(), otherUser.getId());
 
         assertThatThrownBy(() -> trackCommentService.delete(projectId, trackId, otherComment.getId(), EMAIL))
                 .isInstanceOf(CommentNotFoundException.class);

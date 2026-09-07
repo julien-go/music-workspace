@@ -76,6 +76,16 @@ class TaskServiceTest {
                 ownerSummary, null, Instant.now(), Instant.now());
     }
 
+    private void stubForUpdate() {
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
+        when(taskMapper.toResponse(task)).thenReturn(response);
+    }
+
+    private ProjectMember memberWithRole(ProjectRole role) {
+        return ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(role).build();
+    }
+
     @Test
     void create_savesTaskWithDefaultStatusTodo() {
         CreateTaskRequest request = new CreateTaskRequest("Record guitar", null, null);
@@ -187,9 +197,7 @@ class TaskServiceTest {
     void update_updatesOnlyProvidedFields() {
         UpdateTaskRequest request = new UpdateTaskRequest("New title", null, TaskStatus.DOING, null);
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
-        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(taskMapper.toResponse(task)).thenReturn(response);
+        stubForUpdate();
 
         taskService.update(projectId, taskId, request, EMAIL);
 
@@ -203,9 +211,7 @@ class TaskServiceTest {
         task.setDescription("Old description");
         UpdateTaskRequest request = new UpdateTaskRequest(null, JsonNullable.of(null), null, null);
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
-        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(taskMapper.toResponse(task)).thenReturn(response);
+        stubForUpdate();
 
         taskService.update(projectId, taskId, request, EMAIL);
 
@@ -218,9 +224,7 @@ class TaskServiceTest {
         task.setAssignedTo(assignee);
         UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, JsonNullable.of(null));
 
-        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
-        when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
-        when(taskMapper.toResponse(task)).thenReturn(response);
+        stubForUpdate();
 
         taskService.update(projectId, taskId, request, EMAIL);
 
@@ -282,7 +286,7 @@ class TaskServiceTest {
 
     @Test
     void delete_removesTask() {
-        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.OWNER).build();
+        ProjectMember member = memberWithRole(ProjectRole.OWNER);
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
 
@@ -293,7 +297,7 @@ class TaskServiceTest {
 
     @Test
     void delete_throwsWhenTaskNotFound() {
-        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        ProjectMember member = memberWithRole(ProjectRole.COLLABORATOR);
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.empty());
 
@@ -305,7 +309,7 @@ class TaskServiceTest {
     void delete_throwsWhenCollaboratorDeletesOtherUsersTask() {
         User otherUser = User.builder().id(UUID.randomUUID()).email("other@test.com").username("other").build();
         Task otherTask = Task.builder().id(taskId).project(project).createdBy(otherUser).title("Other task").status(TaskStatus.TODO).build();
-        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        ProjectMember member = memberWithRole(ProjectRole.COLLABORATOR);
 
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(otherTask));
@@ -318,7 +322,7 @@ class TaskServiceTest {
 
     @Test
     void delete_succeedsWhenCollaboratorDeletesOwnTask() {
-        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).project(project).user(owner).role(ProjectRole.COLLABORATOR).build();
+        ProjectMember member = memberWithRole(ProjectRole.COLLABORATOR);
         when(permissionService.resolveMembership(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(member);
         when(taskRepository.findByIdAndProjectId(taskId, projectId)).thenReturn(Optional.of(task));
 

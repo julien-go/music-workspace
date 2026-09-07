@@ -1,9 +1,6 @@
 export function SkeletonTrackDetail() {
   return (
-    <div
-      className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 animate-pulse"
-      role="status"
-    >
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 animate-pulse" role="status">
       <span className="sr-only">Chargement de la track…</span>
       <div className="flex gap-8 items-start">
         <div className="flex-1 min-w-0 space-y-10">

@@ -2,12 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "@tanstack/react-router";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateProject } from "../hooks/useCreateProject";
 import { describeError } from "@/lib/api";
@@ -44,7 +39,7 @@ export function CreateProjectDialog({ open, onClose }: Props) {
           onClose();
           router.navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
         },
-      }
+      },
     );
   }
 
@@ -62,7 +57,9 @@ export function CreateProjectDialog({ open, onClose }: Props) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
-            <label htmlFor="create-project-name" className="text-sm font-medium text-foreground">Nom du projet</label>
+            <label htmlFor="create-project-name" className="text-sm font-medium text-foreground">
+              Nom du projet
+            </label>
             <input
               id="create-project-name"
               placeholder="Mon album, EP Printemps…"
@@ -72,7 +69,9 @@ export function CreateProjectDialog({ open, onClose }: Props) {
               autoFocus
             />
             {errors.name && (
-              <p role="alert" className="text-xs text-destructive">{errors.name.message}</p>
+              <p role="alert" className="text-xs text-destructive">
+                {errors.name.message}
+              </p>
             )}
           </div>
 
@@ -88,7 +87,9 @@ export function CreateProjectDialog({ open, onClose }: Props) {
               className={dialogTextareaClass}
             />
             {errors.description && (
-              <p role="alert" className="text-xs text-destructive">{errors.description.message}</p>
+              <p role="alert" className="text-xs text-destructive">
+                {errors.description.message}
+              </p>
             )}
           </div>
 

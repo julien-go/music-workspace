@@ -3,11 +3,7 @@ import { AddVersionDialog } from "./AddVersionDialog";
 import type { useTrackActions } from "../hooks/useTrackActions";
 import type { TrackResponse } from "../types";
 
-function playLabel(
-  isLoadingPlay: boolean,
-  isCurrentlyPlaying: boolean,
-  isCurrentTrack: boolean,
-) {
+function playLabel(isLoadingPlay: boolean, isCurrentlyPlaying: boolean, isCurrentTrack: boolean) {
   if (isLoadingPlay) return "…";
   if (isCurrentlyPlaying) return "⏸ En lecture";
   if (isCurrentTrack) return "▶ Reprendre";
@@ -61,9 +57,7 @@ export function TrackActions({
             {playLabel(actions.isLoadingPlay, isCurrentlyPlaying, isCurrentTrack)}
           </Button>
           {actions.playError && (
-            <span className="text-xs text-destructive">
-              Impossible de charger l'audio.
-            </span>
+            <span className="text-xs text-destructive">Impossible de charger l'audio.</span>
           )}
         </>
       )}
@@ -84,9 +78,7 @@ export function TrackActions({
       )}
       {canEdit && !track.archived && actions.confirmArchive && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            Archiver cette track ?
-          </span>
+          <span className="text-sm text-muted-foreground">Archiver cette track ?</span>
           <button
             onClick={(e) => {
               e.stopPropagation();

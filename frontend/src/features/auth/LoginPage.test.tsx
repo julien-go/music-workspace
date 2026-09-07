@@ -67,9 +67,7 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText("Mot de passe"), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
 
-    expect(
-      await screen.findByText("Email ou mot de passe incorrect."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Email ou mot de passe incorrect.")).toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();
   });
 

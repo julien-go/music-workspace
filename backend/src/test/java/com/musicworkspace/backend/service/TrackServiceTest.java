@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -29,7 +30,9 @@ import com.musicworkspace.backend.repository.TrackCommentRepository;
 import com.musicworkspace.backend.repository.TrackRepository;
 import com.musicworkspace.backend.repository.TrackVersionRepository;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -309,6 +312,37 @@ class TrackServiceTest {
 
         trackService.reorder(projectId, new ReorderTracksRequest(List.of(otherId, trackId)), EMAIL);
 
+        assertThat(other.getPosition()).isEqualTo(0);
+        assertThat(track.getPosition()).isEqualTo(1);
+    }
+
+    @Test
+    void reorder_parksOnNegativesBeforeAssigningFinalPositions() {
+        UUID otherId = UUID.randomUUID();
+        Track other = Track.builder().id(otherId).project(project).name("Outro")
+                .status(TrackStatus.DRAFT).position(1).build();
+        track.setPosition(0);
+
+        when(permissionService.checkProjectPermission(projectId, EMAIL, ProjectRole.COLLABORATOR)).thenReturn(project);
+        when(trackRepository.findByProjectIdAndArchivedFalseOrderByPositionAsc(projectId)).thenReturn(List.of(track, other));
+        when(trackVersionRepository.countsByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackVersionRepository.findLatestNotesByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackCommentRepository.findLatestByTrackIds(List.of(otherId, trackId))).thenReturn(List.of());
+        when(trackMapper.toResponse(any(Track.class), eq(0), isNull(), isNull())).thenReturn(response);
+
+        // Phase 1 parks tracks on distinct negatives (flushed) before phase 2
+        // compacts to 0..n-1, so the partial unique index is never transiently violated.
+        List<Map<UUID, Integer>> flushes = new ArrayList<>();
+        doAnswer(inv -> {
+            flushes.add(Map.of(trackId, track.getPosition(), otherId, other.getPosition()));
+            return null;
+        }).when(trackRepository).flush();
+
+        trackService.reorder(projectId, new ReorderTracksRequest(List.of(otherId, trackId)), EMAIL);
+
+        assertThat(flushes).hasSize(2);
+        assertThat(flushes.get(0).values()).allMatch(p -> p < 0).doesNotHaveDuplicates();
+        assertThat(flushes.get(1)).containsEntry(otherId, 0).containsEntry(trackId, 1);
         assertThat(other.getPosition()).isEqualTo(0);
         assertThat(track.getPosition()).isEqualTo(1);
     }

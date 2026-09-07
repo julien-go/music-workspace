@@ -24,16 +24,14 @@ export function useTrackDetail(projectId: string, trackId: string) {
   const versionsData = versionsQuery.data;
   const versions = versionsData ?? [];
   const sortedVersions = useMemo(
-    () =>
-      [...(versionsData ?? [])].sort((a, b) => b.versionNumber - a.versionNumber),
+    () => [...(versionsData ?? [])].sort((a, b) => b.versionNumber - a.versionNumber),
     [versionsData],
   );
 
   const projectData = project.data;
   const trackData = track.data;
   const hasWriteRole =
-    projectData?.currentUserRole === "OWNER" ||
-    projectData?.currentUserRole === "COLLABORATOR";
+    projectData?.currentUserRole === "OWNER" || projectData?.currentUserRole === "COLLABORATOR";
   // Everything on an archived track is read-only server-side (409) — don't
   // show edit affordances that can only fail.
   const canEdit = !!hasWriteRole && !!trackData && !trackData.archived;

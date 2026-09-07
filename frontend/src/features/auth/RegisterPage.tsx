@@ -51,8 +51,7 @@ function FormField({
 
 export default function RegisterPage() {
   useDocumentTitle("Inscription");
-  const { register, submit, errors, isPending, serverMessage, serverErrors } =
-    useRegisterForm();
+  const { register, submit, errors, isPending, serverMessage, serverErrors } = useRegisterForm();
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

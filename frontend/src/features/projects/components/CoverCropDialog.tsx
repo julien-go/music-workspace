@@ -20,11 +20,27 @@ async function getCroppedFile(imageSrc: string, pixelCrop: Area): Promise<File> 
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("No canvas context")); return; }
-      ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, size, size);
+      if (!ctx) {
+        reject(new Error("No canvas context"));
+        return;
+      }
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        size,
+        size,
+      );
       canvas.toBlob(
         (blob) => {
-          if (!blob) { reject(new Error("Canvas is empty")); return; }
+          if (!blob) {
+            reject(new Error("Canvas is empty"));
+            return;
+          }
           resolve(new File([blob], "cover.jpg", { type: "image/jpeg" }));
         },
         "image/jpeg",
@@ -91,7 +107,9 @@ export function CoverCropDialog({ imageSrc, open, onClose, onCrop }: Props) {
           </p>
         </div>
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
           <Button onClick={handleApply} disabled={isProcessing}>
             {isProcessing ? "Traitement…" : "Appliquer"}
           </Button>

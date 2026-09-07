@@ -54,13 +54,9 @@ describe("ShareProjectButton", () => {
   it("shows only the 'make public' action when the project is private", () => {
     renderButton({ isPublic: false });
 
-    expect(
-      screen.getByRole("button", { name: "Rendre public" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rendre public" })).toBeInTheDocument();
     expect(screen.queryByText(publicUrl)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Rendre privé" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Rendre privé" })).not.toBeInTheDocument();
   });
 
   it("makes the project public when clicking 'Rendre public'", async () => {
@@ -77,12 +73,8 @@ describe("ShareProjectButton", () => {
     renderButton({ isPublic: true });
 
     expect(screen.getByText(publicUrl)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Rendre privé" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Rendre public" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rendre privé" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Rendre public" })).not.toBeInTheDocument();
   });
 
   it("copies the public URL and toasts success", async () => {
@@ -90,9 +82,7 @@ describe("ShareProjectButton", () => {
     // userEvent installs its own clipboard stub; read it back to assert content.
     const user = userEvent.setup();
 
-    await user.click(
-      screen.getByRole("button", { name: "Copier le lien public" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Copier le lien public" }));
 
     await vi.waitFor(() => {
       expect(toastSuccess).toHaveBeenCalledWith("Lien copié");

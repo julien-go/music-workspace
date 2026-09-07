@@ -6,9 +6,7 @@ export default function NotFoundPage() {
   useDocumentTitle("Page introuvable");
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-background px-4 text-center">
-      <p className="font-heading text-7xl md:text-8xl font-bold text-muted-foreground/30">
-        404
-      </p>
+      <p className="font-heading text-7xl md:text-8xl font-bold text-muted-foreground/30">404</p>
       <div className="space-y-2">
         <h1 className="text-xl md:text-2xl font-heading font-bold text-foreground">
           Page introuvable

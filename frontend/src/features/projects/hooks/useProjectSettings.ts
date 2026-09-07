@@ -56,8 +56,7 @@ export function useProjectSettings(project: ProjectResponse, onClose: () => void
   const submit = handleSubmit((data) => {
     setEditError(null);
     updateProject.mutate(data, {
-      onError: (err) =>
-        setEditError(describeError(err, "Impossible de sauvegarder. Réessaie.")),
+      onError: (err) => setEditError(describeError(err, "Impossible de sauvegarder. Réessaie.")),
     });
   });
 
@@ -69,9 +68,7 @@ export function useProjectSettings(project: ProjectResponse, onClose: () => void
         navigate({ to: "/dashboard" });
       },
       onError: (err) => {
-        setDeleteError(
-          describeError(err, "Impossible de supprimer le projet. Réessaie."),
-        );
+        setDeleteError(describeError(err, "Impossible de supprimer le projet. Réessaie."));
         setConfirming(false);
       },
     });
